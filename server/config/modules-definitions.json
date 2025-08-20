@@ -55,6 +55,10 @@
     "description": "Génère automatiquement des variations créatives de l'effet",
     "category": "creativity"
   },
+  "VariationEngine2": {
+    "description": "VariationEngine 2.0 - Métamorphose avec IA créative et algorithmes génétiques pour variations infinies",
+    "category": "metamorphosis"
+  },
   "InfiniteAdaptabilityEngine": {
     "description": "Adaptabilité infinie aux contextes et situations",
     "category": "intelligence"
