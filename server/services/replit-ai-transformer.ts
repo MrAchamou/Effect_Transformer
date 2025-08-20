@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { replitTokenManager } from './replit-token-manager';
 
 export class ReplitAITransformer {
   private levels: any = null;
@@ -46,11 +47,12 @@ export class ReplitAITransformer {
       const prompt = this.buildTransformationPrompt(originalCode, levelConfig, level);
 
       // Use Replit's AI API (which uses your credits)
+      const replitToken = await replitTokenManager.getValidToken();
       const response = await fetch('https://api.replit.com/v1/ai/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.REPLIT_AI_TOKEN || 'replit_ai_default'}`,
+          'Authorization': `Bearer ${replitToken}`,
         },
         body: JSON.stringify({
           model: 'claude-3.5-sonnet',
@@ -66,13 +68,24 @@ export class ReplitAITransformer {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.warn(`❌ API Replit error (${response.status}):`, errorText);
+        
+        if (response.status === 401) {
+          console.log('🔄 Token invalide détecté, tentative de renouvellement...');
+          // Forcer la régénération du token au prochain appel
+          delete process.env.CACHED_REPLIT_TOKEN;
+        }
+        
         // Fallback: simulate transformation locally
         const transformedCode = await this.simulateTransformation(originalCode, level);
         const stats = this.generateStats(originalCode, transformedCode, level);
         
         return {
           code: transformedCode,
-          stats
+          stats,
+          documentation: `⚠️ Mode fallback activé - Token API non disponible\n\n` + 
+                        this.generateDocumentation(transformedCode, stats, effectAnalysis)
         };
       }
 
@@ -166,6 +179,67 @@ Le code doit être fonctionnel et optimisé selon les critères du niveau choisi
     }
 
     return transformedCode;
+  }
+
+  private async getReplitToken(): Promise<string> {
+    // Essayer différentes sources de token dans l'ordre de priorité
+    const tokenSources = [
+      process.env.REPLIT_AI_TOKEN,
+      process.env.REPL_TOKEN,
+      process.env.REPLIT_TOKEN,
+      process.env.REPL_API_KEY,
+      process.env.REPLIT_API_KEY
+    ];
+
+    for (const token of tokenSources) {
+      if (token && token !== 'replit_ai_default') {
+        // Tester la validité du token
+        try {
+          const testResponse = await fetch('https://api.replit.com/v1/user', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (testResponse.ok) {
+            console.log('✅ Token API Replit valide trouvé');
+            return token;
+          }
+        } catch (error) {
+          console.warn(`Token ${token.substring(0, 10)}... invalide, essai suivant`);
+        }
+      }
+    }
+
+    // Si aucun token valide n'est trouvé, essayer de détecter automatiquement
+    const autoToken = await this.detectReplitToken();
+    if (autoToken) {
+      return autoToken;
+    }
+
+    console.warn('⚠️ Aucun token API Replit valide trouvé, utilisation du mode fallback');
+    return 'fallback_mode';
+  }
+
+  private async detectReplitToken(): Promise<string | null> {
+    try {
+      // Méthode 1: Essayer de lire le token depuis les métadonnées Replit
+      if (process.env.REPL_ID && process.env.REPL_OWNER) {
+        // Dans un environnement Replit, essayer de récupérer le token automatiquement
+        const replitMetaUrl = `https://replit.com/@${process.env.REPL_OWNER}/${process.env.REPL_SLUG}`;
+        console.log(`🔍 Détection automatique pour: ${replitMetaUrl}`);
+      }
+
+      // Méthode 2: Vérifier les headers de la requête courante
+      if (process.env.REPL_DEPLOYMENT_ID) {
+        console.log('🚀 Environnement de déploiement Replit détecté');
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Erreur lors de la détection automatique:', error);
+      return null;
+    }
   }
 
   private async validateTransformedCode(code: string): Promise<boolean> {

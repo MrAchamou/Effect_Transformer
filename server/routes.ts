@@ -12,6 +12,7 @@ import { IntelligentCategorizer } from "./services/intelligent-categorizer";
 import { DocumentationPackager } from "./services/documentation-packager";
 import fs from "fs/promises";
 import path from "path";
+import { ReplitTokenManager } from "./services/replit-token-manager"; // Import the ReplitTokenManager
 
 // Configure multer for file uploads
 const upload = multer({
@@ -32,6 +33,9 @@ const upload = multer({
     }
   }
 });
+
+// Initialize the ReplitTokenManager
+const replitTokenManager = new ReplitTokenManager();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const aiTransformer = new ReplitAITransformer();
@@ -152,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .then(async (result) => {
           // Generate filename for the transformed code
           const filename = transformation.originalFilename.replace('.js', `_level${level}_transformed.js`);
-          
+
           // Save the result and package documentation
           await fileProcessor.saveFile(result.code, filename);
 
@@ -238,7 +242,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get transformation levels configuration
+  // Token diagnostics endpoint
+  app.get("/api/token-status", async (req, res) => {
+    try {
+      const diagnosis = await replitTokenManager.diagnoseTokenIssues();
+      let tokenStatus = 'unknown';
+
+      try {
+        const token = await replitTokenManager.getValidToken();
+        tokenStatus = token ? 'valid' : 'invalid';
+      } catch (error) {
+        tokenStatus = 'invalid';
+      }
+
+      res.json({
+        status: tokenStatus,
+        diagnosis,
+        environment: {
+          replId: process.env.REPL_ID || null,
+          replOwner: process.env.REPL_OWNER || null,
+          replSlug: process.env.REPL_SLUG || null,
+          isReplit: !!process.env.REPL_ID
+        }
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 'error',
+        message: error.message
+      });
+    }
+  });
+
+  // Get available transformation levels
   app.get("/api/levels", async (req, res) => {
     try {
       const levels = await fs.readFile(
