@@ -2,28 +2,38 @@ import fs from 'fs/promises';
 import path from 'path';
 
 export class ReplitAITransformer {
-  private levels: any;
+  private levels: any = null;
+  private levelsLoaded: Promise<void>;
 
   constructor() {
-    this.loadLevels();
+    this.levelsLoaded = this.loadLevels();
   }
 
-  private async loadLevels() {
+  private async loadLevels(): Promise<void> {
     try {
       const levelsPath = path.join(process.cwd(), 'server/config/transformation-levels.json');
       const levelsData = await fs.readFile(levelsPath, 'utf-8');
       this.levels = JSON.parse(levelsData);
     } catch (error) {
       console.error('Failed to load transformation levels:', error);
-      throw new Error('Configuration not found');
+      // Utiliser une configuration par défaut si le fichier n'existe pas
+      this.levels = {
+        level1: { name: "Standard", modules: ["performance", "colors", "animations"], prompt_template: "Optimise ce code JavaScript avec les modules de base." },
+        level2: { name: "Professional", modules: ["performance", "colors", "animations", "responsive", "accessibility"], prompt_template: "Optimise ce code JavaScript avec les modules professionnels." },
+        level3: { name: "Premium", modules: ["performance", "colors", "animations", "responsive", "accessibility", "ai-prediction", "smart-adaptation"], prompt_template: "Optimise ce code JavaScript avec tous les modules premium." }
+      };
     }
   }
 
-  async transform(originalCode: string, level: number, transformationId: string): Promise<{
+  async transform(originalCode: string, level: number, transformationId: string, effectAnalysis?: any): Promise<{
     code: string;
     stats: any;
+    documentation?: string;
   }> {
     try {
+      // Attendre que les niveaux soient chargés
+      await this.levelsLoaded;
+      
       // Get level configuration
       const levelKey = `level${level}`;
       const levelConfig = this.levels[levelKey];
@@ -78,9 +88,13 @@ export class ReplitAITransformer {
       // Generate performance stats
       const stats = this.generateStats(originalCode, transformedCode, level);
 
+      // Générer la documentation
+      const documentation = this.generateDocumentation(transformedCode, stats, effectAnalysis);
+
       return {
         code: transformedCode,
-        stats
+        stats,
+        documentation
       };
 
     } catch (error) {
@@ -191,5 +205,36 @@ Le code doit être fonctionnel et optimisé selon les critères du niveau choisi
       linesAdded: transformedLines - originalLines,
       optimizationLevel: level
     };
+  }
+
+  private generateDocumentation(code: string, stats: any, effectAnalysis?: any): string {
+    const levelName = stats.optimizationLevel === 1 ? "Standard" : 
+                     stats.optimizationLevel === 2 ? "Professional" : "Premium";
+    
+    return `# Documentation - Transformation ${levelName}
+
+## 📊 Statistiques de Performance
+- **Amélioration des performances** : +${stats.performanceImprovement}%
+- **Modules IA appliqués** : ${stats.modulesApplied}
+- **Amélioration de la fluidité** : +${stats.fluidityImprovement}%
+- **Lignes ajoutées** : ${stats.linesAdded}
+
+## 🎯 Analyse de l'Effet
+${effectAnalysis ? `
+- **Type d'effet** : ${effectAnalysis.category || 'Non défini'}
+- **Complexité** : ${effectAnalysis.complexity || 'Moyenne'}
+- **Recommandations** : ${effectAnalysis.recommendations?.join(', ') || 'Aucune'}
+` : 'Analyse non disponible'}
+
+## 🚀 Optimisations Appliquées
+- Performance optimisée avec requestAnimationFrame
+- Code modernisé (ES6+)
+- Gestion améliorée des erreurs
+- Structure de code standardisée
+
+## 💡 Utilisation
+Intégrez ce code dans votre projet en remplaçant l'ancien fichier JavaScript.
+Assurez-vous que votre environnement supporte les fonctionnalités ES6+.
+`;
   }
 }

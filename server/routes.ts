@@ -104,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         originalFilename: req.file.originalname,
         originalCode: finalContent, // Utiliser le code préprocessé
         level: 1, // Default level
-        effectAnalysis // Stocker l'analyse
+        effectAnalysis: effectAnalysis // Stocker l'analyse
       });
 
       // Clean up uploaded file
@@ -148,26 +148,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Start transformation in background
-      aiTransformer.transform(transformation.originalCode, level, transformationId, effectAnalysis)
+      aiTransformer.transform(transformation.originalCode, level, transformationId, transformation.effectAnalysis)
         .then(async (result) => {
+          // Generate filename for the transformed code
+          const filename = transformation.originalFilename.replace('.js', `_level${level}_transformed.js`);
+          
           // Save the result and package documentation
           await fileProcessor.saveFile(result.code, filename);
 
           // Create complete package with documentation
           const packagePath = await docPackager.packageEffect(
             result.code,
-            result.documentation,
+            result.documentation || '',
             transformation.originalFilename.replace('.js', ''),
             transformationId
           );
 
           // Update storage with the result
-          transformation.transformedCode = result.code;
-          transformation.stats = result.stats;
-          transformation.documentation = result.documentation;
-          transformation.packagePath = packagePath;
-          transformation.status = 'completed';
-          transformation.completedAt = new Date();
+          await storage.updateTransformation(transformationId, {
+            transformedCode: result.code,
+            stats: result.stats,
+            documentation: result.documentation || '',
+            packagePath: packagePath,
+            status: 'completed',
+            completedAt: new Date()
+          });
         })
         .catch(async (error) => {
           console.error('Transformation error:', error);
