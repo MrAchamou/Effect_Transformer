@@ -213,7 +213,7 @@ export const storage = {
     }
   },
 
-  private cleanupOldTransformations(): void {
+  cleanupOldTransformations(): void {
     try {
       const transformations = this.getAllTransformations();
       const toDelete = transformations.slice(this.maxStorageSize - 10); // Garder les 90 plus récentes
@@ -228,7 +228,7 @@ export const storage = {
     }
   },
 
-  private sanitizeFilename(filename: string): string {
+  sanitizeFilename(filename: string): string {
     return filename
       .replace(/[^a-zA-Z0-9.-_]/g, '_')
       .substring(0, 100);
