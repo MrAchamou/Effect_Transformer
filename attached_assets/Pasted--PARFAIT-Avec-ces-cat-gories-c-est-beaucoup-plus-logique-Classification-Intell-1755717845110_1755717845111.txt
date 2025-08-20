@@ -1,0 +1,109 @@
+🎯 **PARFAIT ! Avec ces catégories c'est beaucoup plus logique !**
+
+## 🏷️ **Classification Intelligente par Catégorie**
+
+### **🟢 NIVEAU 1 SEULEMENT**
+```javascript
+// Effets "complets" qui n'ont pas besoin de plus
+UI_UX: [
+  'animations_boutons', 'effets_loading', 'preloaders',
+  'animations_navigation', 'menus', 'micro_interactions',
+  'effets_hover', 'effets_focus'
+],
+
+TRANSITIONS_SIMPLES: [
+  'fade_transitions', 'slide_transitions', 'wipes_basiques'
+]
+```
+
+### **🟡 NIVEAUX 1 + 2**
+```javascript  
+// Effets avec potentiel d'amélioration modéré
+TEXTE: [
+  'typewriter', 'glitch_text', 'neon_text',
+  'fade_text', 'slide_text', 'rotate_text',
+  'morphing_text'  // Sauf effets 3D sur texte
+],
+
+IMAGES: [
+  'slideshow_effects', 'filtres_overlays', 
+  'parallaxe', 'zoom_pan', 'revelations_images',
+  'masques_creatifs'
+],
+
+AUDIO: [
+  'effets_sonores', 'musiques_ambiance', 
+  'transitions_audio', 'sound_design'
+]
+```
+
+### **🔴 TOUS NIVEAUX (1, 2, 3)**
+```javascript
+// Effets avec énorme potentiel d'amélioration IA
+PARTICULES_SIMULATION: [
+  'systemes_particules', 'feu', 'fumee', 'neige',
+  'effets_meteorologiques', 'simulations_physiques',
+  'effets_magie', 'effets_fantastique'
+],
+
+3D_MOTION: [
+  'elements_3d_animes', 'effets_camera', 'mouvements',
+  'rendus_visualisations', 'templates_after_effects',
+  'effets_3d_texte'  // Les effets 3D sur texte vont ici
+],
+
+VIDEO_AVANCE: [
+  'morphing_video', 'post_production', 'color_grading',
+  'overlays_animes', 'green_screen', 'compositing'
+]
+```
+
+## 🤖 **Algorithme de Détection**
+
+```javascript
+function detectAvailableLevels(effectName, category, subcategory) {
+  
+  // Niveau 1 seulement - Effets UI/UX et transitions simples
+  if (category === 'ui_ux' || isSimpleTransition(subcategory)) {
+    return { levels: [1], reason: "Effet UI optimisé" };
+  }
+  
+  // Niveaux 1+2 - Texte, images, audio
+  if (['texte', 'images', 'audio'].includes(category) && 
+      !isAdvanced3D(subcategory)) {
+    return { levels: [1, 2], reason: "Potentiel modéré d'amélioration" };
+  }
+  
+  // Tous niveaux - Particules, 3D, vidéo complexe
+  if (['particules_simulation', '3d_motion', 'video_avance'].includes(category)) {
+    return { levels: [1, 2, 3], reason: "Fort potentiel d'amélioration IA" };
+  }
+  
+  // Fallback sécurisé
+  return { levels: [1, 2], reason: "Classification par défaut" };
+}
+```
+
+## 💡 **Interface Résultante**
+
+```
+📂 EFFET: "particle_fire_system.js"
+📋 CATÉGORIE: Particules et Simulation > Feu
+🎯 NIVEAUX DISPONIBLES:
+
+✅ Standard (7 mod) - Base fonctionnelle  
+✅ Pro (13 mod) - Recommandé
+✅ Premium (23 mod) - Puissance IA maximale
+💬 Fort potentiel d'amélioration IA
+
+───────────────────────────────
+
+📂 EFFET: "button_hover_ripple.js"  
+📋 CATÉGORIE: UI/UX > Micro-interactions
+🎯 NIVEAU DISPONIBLE:
+
+✅ Standard (7 mod) - Parfaitement optimisé
+💬 Effet UI déjà complet
+```
+
+**Ça colle parfaitement à ta logique !** 🚀
