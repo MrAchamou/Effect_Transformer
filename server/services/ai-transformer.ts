@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import fs from 'fs/promises';
 import path from 'path';
+import { DocumentationGenerator } from './documentation-generator';
 
 /*
 The newest Anthropic model is "claude-sonnet-4-20250514", not "claude-3-7-sonnet-20250219", "claude-3-5-sonnet-20241022" nor "claude-3-sonnet-20240229". 
@@ -12,11 +13,13 @@ const DEFAULT_MODEL_STR = "claude-sonnet-4-20250514";
 export class AITransformer {
   private anthropic: Anthropic;
   private levels: any;
+  private docGenerator: DocumentationGenerator;
 
   constructor() {
     this.anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY || "default_key",
     });
+    this.docGenerator = new DocumentationGenerator();
     this.loadLevels();
   }
 
@@ -31,9 +34,15 @@ export class AITransformer {
     }
   }
 
-  async transform(originalCode: string, level: number, transformationId: string): Promise<{
+  async transform(originalCode: string, level: number, transformationId: string, effectAnalysis?: any): Promise<{
     code: string;
     stats: any;
+    documentation: {
+      markdown: string;
+      html: string;
+      readme: string;
+      changelog: string;
+    };
   }> {
     try {
       // Get level configuration
@@ -68,9 +77,20 @@ export class AITransformer {
       // Calculate stats
       const stats = this.calculateStats(originalCode, transformedCode, levelConfig);
 
+      // Generate comprehensive documentation
+      const documentation = await this.docGenerator.generateDocumentation(
+        originalCode,
+        transformedCode,
+        stats,
+        level,
+        effectAnalysis || { category: 'general', reason: 'Transformation automatique' },
+        transformationId
+      );
+
       return {
         code: transformedCode,
-        stats
+        stats,
+        documentation
       };
 
     } catch (error) {

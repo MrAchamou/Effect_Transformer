@@ -9,6 +9,7 @@ import { CodeValidator } from "./services/code-validator";
 import { JSPreprocessor } from "./services/js-preprocessor";
 import { AdvancedEnhancer } from "./services/advanced-enhancer";
 import { IntelligentCategorizer } from "./services/intelligent-categorizer";
+import { DocumentationPackager } from "./services/documentation-packager";
 import fs from "fs/promises";
 import path from "path";
 
@@ -23,7 +24,7 @@ const upload = multer({
       'application/x-javascript',
       'text/plain'
     ];
-    
+
     if (allowedMimes.includes(file.mimetype) || file.originalname.endsWith('.js')) {
       cb(null, true);
     } else {
@@ -39,12 +40,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const jsPreprocessor = new JSPreprocessor();
   const advancedEnhancer = new AdvancedEnhancer();
   const intelligentCategorizer = new IntelligentCategorizer();
+  const docPackager = new DocumentationPackager();
 
   // Upload JavaScript file
   app.post("/api/upload", upload.single('file'), async (req, res) => {
     try {
       console.log('Upload request received:', req.file, req.body);
-      
+
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
@@ -52,7 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Read file content
       const filePath = req.file.path;
       const content = await fs.readFile(filePath, 'utf-8');
-      
+
       // Validate file
       const validation = uploadFileSchema.safeParse({
         filename: req.file.originalname,
@@ -69,10 +71,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Préprocesser le JavaScript pour le standardiser
       const preprocessResult = await jsPreprocessor.preprocessJS(content, req.file.originalname);
-      
+
       let finalContent = content;
       let preprocessingChanges: string[] = [];
-      
+
       if (preprocessResult.isValid) {
         finalContent = preprocessResult.processedCode;
         preprocessingChanges = preprocessResult.changes;
@@ -133,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { transformationId, level } = validation.data;
-      
+
       const transformation = await storage.getTransformation(transformationId);
       if (!transformation) {
         return res.status(404).json({ message: "Transformation not found" });
@@ -146,14 +148,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Start transformation in background
-      aiTransformer.transform(transformation.originalCode, level, transformationId)
+      aiTransformer.transform(transformation.originalCode, level, transformationId, effectAnalysis)
         .then(async (result) => {
-          await storage.updateTransformation(transformationId, {
-            status: "completed",
-            transformedCode: result.code,
-            stats: result.stats,
-            completedAt: new Date()
-          });
+          // Save the result and package documentation
+          await fileProcessor.saveFile(result.code, filename);
+
+          // Create complete package with documentation
+          const packagePath = await docPackager.packageEffect(
+            result.code,
+            result.documentation,
+            transformation.originalFilename.replace('.js', ''),
+            transformationId
+          );
+
+          // Update storage with the result
+          transformation.transformedCode = result.code;
+          transformation.stats = result.stats;
+          transformation.documentation = result.documentation;
+          transformation.packagePath = packagePath;
+          transformation.status = 'completed';
+          transformation.completedAt = new Date();
         })
         .catch(async (error) => {
           console.error('Transformation error:', error);
@@ -185,22 +199,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Download transformed file
+  // Download transformed file with complete documentation package
   app.get("/api/download/:id", async (req, res) => {
     try {
-      const transformation = await storage.getTransformation(req.params.id);
-      if (!transformation || transformation.status !== "completed") {
-        return res.status(404).json({ message: "Transformation not found or not completed" });
+      const { id } = req.params;
+      const { type = 'package' } = req.query;
+      const transformation = storage.get(id);
+
+      if (!transformation || transformation.status !== 'completed') {
+        return res.status(404).json({ error: 'File not found' });
       }
 
-      const filename = transformation.originalFilename.replace('.js', '_transformed.js');
-      
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Type', 'application/javascript');
-      res.send(transformation.transformedCode);
+      if (type === 'code-only') {
+        // Télécharger uniquement le code JavaScript
+        const filename = fileProcessor.generateFilename(transformation.originalFilename, transformation.level);
+        res.setHeader('Content-Type', 'application/javascript');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(transformation.transformedCode);
+      } else if (type === 'package' && transformation.packagePath) {
+        // Télécharger le package complet avec documentation
+        const packageName = path.basename(transformation.packagePath);
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${packageName}"`);
+
+        const fileBuffer = await fs.readFile(transformation.packagePath);
+        res.send(fileBuffer);
+      } else {
+        return res.status(400).json({ error: 'Invalid download type' });
+      }
     } catch (error) {
       console.error('Download error:', error);
-      res.status(500).json({ message: "Download failed" });
+      res.status(500).json({ error: 'Download failed' });
     }
   });
 
@@ -222,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/analyze-suggestions", async (req, res) => {
     try {
       const { transformationId, currentLevel } = req.body;
-      
+
       const transformation = await storage.getTransformation(transformationId);
       if (!transformation) {
         return res.status(404).json({ error: 'Transformation not found' });

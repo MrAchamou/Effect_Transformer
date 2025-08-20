@@ -14,9 +14,9 @@ interface DownloadZoneProps {
 export default function DownloadZone({ transformation, onNewTransformation }: DownloadZoneProps) {
   const { toast } = useToast();
 
-  const handleDownload = async () => {
+  const handleDownload = async (type: string = 'package') => {
     try {
-      const response = await fetch(`/api/download/${transformation.id}`);
+      const response = await fetch(`/api/download/${transformation.id}?type=${type}`);
       if (!response.ok) {
         throw new Error('Download failed');
       }
@@ -25,7 +25,13 @@ export default function DownloadZone({ transformation, onNewTransformation }: Do
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = transformation.originalFilename.replace('.js', '_transformed.js');
+      
+      if (type === 'package') {
+        a.download = `${transformation.originalFilename.replace('.js', '')}_complet.zip`;
+      } else {
+        a.download = transformation.originalFilename.replace('.js', '_transformed.js');
+      }
+      
       document.body.appendChild(a);
       a.click();
       URL.revokeObjectURL(url);
@@ -33,7 +39,9 @@ export default function DownloadZone({ transformation, onNewTransformation }: Do
 
       toast({
         title: "Téléchargement réussi",
-        description: "Votre effet transformé a été téléchargé",
+        description: type === 'package' 
+          ? "Package complet avec documentation téléchargé" 
+          : "Code JavaScript téléchargé",
       });
     } catch (error) {
       toast({
@@ -45,10 +53,11 @@ export default function DownloadZone({ transformation, onNewTransformation }: Do
   };
 
   const handlePreview = () => {
-    // This would open a modal or new window with a preview
+    // Ouvrir la documentation dans un nouvel onglet
+    window.open(`/api/preview/${transformation.id}`, '_blank');
     toast({
-      title: "Prévisualisation",
-      description: "Fonctionnalité à venir",
+      title: "Documentation ouverte",
+      description: "La documentation interactive s'ouvre dans un nouvel onglet",
     });
   };
 
@@ -77,14 +86,26 @@ export default function DownloadZone({ transformation, onNewTransformation }: Do
           {/* Download Actions */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
             <Button
-              onClick={handleDownload}
+              onClick={() => handleDownload('package')}
               className="bg-green-500 hover:bg-green-600 text-white px-6 py-3"
-              data-testid="button-download"
+              data-testid="button-download-package"
             >
               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
-              Télécharger {transformation.originalFilename.replace('.js', `_${levelName}.js`)}
+              Package Complet avec Documentation
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={() => handleDownload('code-only')}
+              className="px-6 py-3"
+              data-testid="button-download-code"
+            >
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+              Code Seul (.js)
             </Button>
             
             <Button
@@ -97,7 +118,7 @@ export default function DownloadZone({ transformation, onNewTransformation }: Do
                 <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                 <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
               </svg>
-              Prévisualiser l'effet
+              Documentation Interactive
             </Button>
           </div>
           
@@ -107,8 +128,9 @@ export default function DownloadZone({ transformation, onNewTransformation }: Do
               <svg className="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
-              <strong>Conseil :</strong> Votre effet transformé est maintenant compatible avec tous les navigateurs modernes 
-              et s'adapte automatiquement aux préférences de vos utilisateurs.
+              <strong>Package Professionnel :</strong> Inclut le code optimisé, documentation complète, 
+              exemples d'utilisation, guide d'installation, et licence commerciale. 
+              Prêt pour ThemeForest/CodeCanyon !
             </div>
           </div>
           
