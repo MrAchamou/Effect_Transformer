@@ -63,11 +63,13 @@ export class CodeValidator {
     const hasObjectLiteral = /\{\s*\w+\s*:/.test(code);
     const hasClassDeclaration = /class\s+\w+/.test(code);
     const hasExport = /export\s+/.test(code);
+    const hasEffectPatterns = /(?:animate|render|draw|update)\s*\(/.test(code);
+    const has3DPatterns = /(?:THREE|WebGL|canvas|ctx|context)/i.test(code);
     
     // Should have at least one of these patterns
     return hasVariableDeclaration || hasFunctionDeclaration || 
            hasArrowFunction || hasMethodCall || hasObjectLiteral ||
-           hasClassDeclaration || hasExport;
+           hasClassDeclaration || hasExport || hasEffectPatterns || has3DPatterns;
   }
 
   /**
@@ -80,11 +82,17 @@ export class CodeValidator {
     prepared = prepared.replace(/export\s+(?:default\s+)?/g, '');
     prepared = prepared.replace(/import\s+.*?from\s+['"][^'"]*['"];\s*/g, '');
     
-    // Simplification des template literals complexes
-    prepared = prepared.replace(/`[\s\S]*?`/g, '"TEMPLATE_LITERAL"');
+    // Simplification des template literals complexes - plus permissive
+    prepared = prepared.replace(/`[^`]*`/g, '"TEMPLATE_LITERAL"');
     
     // Simplification des regex complexes
     prepared = prepared.replace(/\/[^\/\n]+\/[gimuy]*/g, '/REGEX/g');
+    
+    // Correction des noms de méthodes avec espaces
+    prepared = prepared.replace(/(\w+)\s+(\w+)\s*\(/g, '$1$2(');
+    
+    // Wrapping dans une fonction anonyme pour éviter les erreurs de syntaxe
+    prepared = `(function() { ${prepared} })();`;
     
     return prepared;
   }
@@ -93,7 +101,14 @@ export class CodeValidator {
    * Correction automatique basique pour la validation
    */
   private autoCorrectForValidation(code: string): string {
-    let corrected = this.prepareCodeForValidation(code);
+    let corrected = code;
+    
+    // Corrections spécifiques aux effets 3D
+    corrected = corrected.replace(/reconfigurer Atome\(/g, 'reconfigurerAtome(');
+    corrected = corrected.replace(/(\w+)\s+(\w+)\s*\(/g, '$1$2(');
+    
+    // Préparation pour validation
+    corrected = this.prepareCodeForValidation(corrected);
     
     // Correction des erreurs de syntaxe communes
     corrected = corrected.replace(/([^;\s}])\s*\n\s*([a-zA-Z])/g, '$1;\n$2');
