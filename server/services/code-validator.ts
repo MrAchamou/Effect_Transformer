@@ -61,10 +61,13 @@ export class CodeValidator {
     const hasArrowFunction = /\w+\s*=>\s*/.test(code);
     const hasMethodCall = /\w+\.\w+\s*\(/.test(code);
     const hasObjectLiteral = /\{\s*\w+\s*:/.test(code);
+    const hasClassDeclaration = /class\s+\w+/.test(code);
+    const hasExport = /export\s+/.test(code);
     
     // Should have at least one of these patterns
     return hasVariableDeclaration || hasFunctionDeclaration || 
-           hasArrowFunction || hasMethodCall || hasObjectLiteral;
+           hasArrowFunction || hasMethodCall || hasObjectLiteral ||
+           hasClassDeclaration || hasExport;
   }
 
   /**

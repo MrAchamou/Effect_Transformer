@@ -45,21 +45,28 @@ class BaseEffect {
     let processedCode = originalCode;
 
     try {
-      // 1. Détection et conversion des formats de modules
+      // 1. Détection de fichiers incomplets ou de métadonnées seulement
+      const metadataConversion = this.convertMetadataToEffect(processedCode, filename);
+      if (metadataConversion.converted) {
+        processedCode = metadataConversion.code;
+        changes.push(...metadataConversion.changes);
+      }
+
+      // 2. Détection et conversion des formats de modules
       const moduleConversion = this.convertModuleFormat(processedCode);
       if (moduleConversion.converted) {
         processedCode = moduleConversion.code;
         changes.push(...moduleConversion.changes);
       }
 
-      // 2. Extraction et conversion des exports d'objets
+      // 3. Extraction et conversion des exports d'objets
       const objectConversion = this.convertObjectExports(processedCode);
       if (objectConversion.converted) {
         processedCode = objectConversion.code;
         changes.push(...objectConversion.changes);
       }
 
-      // 3. Ajouter BaseEffect si nécessaire
+      // 4. Ajouter BaseEffect si nécessaire
       if (this.needsBaseEffect(processedCode)) {
         processedCode = this.baseEffectTemplate + '\n' + processedCode;
         changes.push('Classe BaseEffect ajoutée automatiquement');
@@ -115,6 +122,346 @@ class BaseEffect {
         error: `Erreur de preprocessing: ${error instanceof Error ? error.message : String(error)}`
       };
     }
+  }
+
+  /**
+   * Convertit les fichiers de métadonnées en effet JavaScript complet
+   */
+  private convertMetadataToEffect(code: string, filename: string): { 
+    converted: boolean; 
+    code: string; 
+    changes: string[];
+  } {
+    const changes: string[] = [];
+    
+    // Détecter si c'est uniquement des métadonnées (export const avec description template)
+    const metadataPattern = /export\s+const\s+(\w+)\s*=\s*{\s*id:\s*["']([^"']+)["'],?\s*name:\s*["']([^"']+)["'],?\s*description:\s*`([^`]+)`\s*}\s*;?\s*$/s;
+    const match = metadataPattern.exec(code.trim());
+    
+    if (match) {
+      const [, objectName, effectId, effectName, description] = match;
+      
+      // Extraire les informations de l'effet depuis la description
+      const categoryMatch = description.match(/\*\*CATÉGORIE\s*:\*\*\s*([^\n]+)/i);
+      const effectTypeMatch = description.match(/\*\*EFFET DEMANDÉ\s*:\*\*\s*([^\n]+)/i);
+      
+      const category = categoryMatch ? categoryMatch[1].trim() : 'particules';
+      const effectType = effectTypeMatch ? effectTypeMatch[1].trim() : 'AtomicDance';
+      
+      // Générer une classe d'effet complète basée sur les métadonnées
+      const generatedEffect = this.generateEffectFromMetadata(objectName, effectId, effectName, category, effectType, description);
+      
+      changes.push(`Fichier de métadonnées converti en effet JavaScript complet pour "${effectName}"`);
+      changes.push(`Classe ${this.capitalize(effectType)}Effect générée automatiquement`);
+      changes.push('Système d\'animation et de rendu ajouté');
+      
+      return { converted: true, code: generatedEffect, changes };
+    }
+    
+    // Détecter d'autres formats incomplets
+    if (code.trim().length < 100 && !code.includes('class') && !code.includes('function')) {
+      // Fichier probablement incomplet, générer un effet de base
+      const baseName = filename.replace(/\.js$/, '').replace(/[-_]/g, ' ');
+      const generatedEffect = this.generateBasicEffect(baseName);
+      
+      changes.push(`Fichier incomplet détecté, effet de base généré pour "${baseName}"`);
+      return { converted: true, code: generatedEffect, changes };
+    }
+    
+    return { converted: false, code, changes: [] };
+  }
+
+  /**
+   * Génère un effet complet à partir des métadonnées
+   */
+  private generateEffectFromMetadata(objectName: string, effectId: string, effectName: string, category: string, effectType: string, description: string): string {
+    const className = this.capitalize(effectType.replace(/[^a-zA-Z0-9]/g, '')) + 'Effect';
+    
+    return `${this.baseEffectTemplate}
+
+// Effet généré automatiquement à partir des métadonnées
+class ${className} extends BaseEffect {
+  constructor(config = {}) {
+    super({
+      id: '${effectId}',
+      name: '${effectName}',
+      category: '${category.toLowerCase()}',
+      version: '1.0',
+      performance: 'medium',
+      parameters: {
+        taille: { type: 'range', min: 0.5, max: 3, default: 1.2 },
+        charge: { type: 'range', min: 1, max: 118, default: 6 },
+        vitesse: { type: 'range', min: 0.1, max: 5, default: 1.5 },
+        masse: { type: 'range', min: 0.1, max: 3, default: 1 },
+        spin: { type: 'range', min: 0, max: 1, default: 0.5 },
+        configuration: { type: 'range', min: 0, max: 1, default: 0.7 },
+        ...config.parameters
+      }
+    });
+    
+    this.particles = [];
+    this.nucleus = { x: 0, y: 0, charge: this.parameters.charge.default };
+    this.orbits = [];
+    this.time = 0;
+  }
+  
+  initialize(canvas, element) {
+    super.initialize(canvas, element);
+    this.centerX = canvas.width / 2;
+    this.centerY = canvas.height / 2;
+    this.nucleus.x = this.centerX;
+    this.nucleus.y = this.centerY;
+    
+    this.initializeParticles();
+    this.initializeOrbits();
+  }
+  
+  initializeParticles() {
+    const numElectrons = Math.floor(this.parameters.charge.default);
+    this.particles = [];
+    
+    for (let i = 0; i < numElectrons; i++) {
+      this.particles.push({
+        type: 'electron',
+        charge: -1,
+        mass: this.parameters.masse.default,
+        orbitRadius: 50 + i * 30,
+        angle: (Math.PI * 2 * i) / numElectrons,
+        speed: this.parameters.vitesse.default,
+        x: 0,
+        y: 0,
+        spin: this.parameters.spin.default
+      });
+    }
+  }
+  
+  initializeOrbits() {
+    this.orbits = [];
+    for (let i = 0; i < 3; i++) {
+      this.orbits.push({
+        radius: 60 + i * 40,
+        opacity: 0.3 - i * 0.1
+      });
+    }
+  }
+  
+  animate(deltaTime = 16) {
+    if (!this.ctx || !this.canvas) return;
+    
+    this.time += deltaTime * 0.001;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Dessiner les orbites
+    this.drawOrbits();
+    
+    // Dessiner le noyau
+    this.drawNucleus();
+    
+    // Mettre à jour et dessiner les particules
+    this.updateParticles(deltaTime);
+    this.drawParticles();
+    
+    // Effets visuels avancés
+    this.drawQuantumEffects();
+  }
+  
+  drawOrbits() {
+    this.orbits.forEach(orbit => {
+      this.ctx.beginPath();
+      this.ctx.arc(this.nucleus.x, this.nucleus.y, orbit.radius, 0, Math.PI * 2);
+      this.ctx.strokeStyle = \`rgba(100, 200, 255, \${orbit.opacity})\`;
+      this.ctx.lineWidth = 1;
+      this.ctx.stroke();
+    });
+  }
+  
+  drawNucleus() {
+    const radius = 8 * this.parameters.taille.default;
+    
+    // Gradient radial pour le noyau
+    const gradient = this.ctx.createRadialGradient(
+      this.nucleus.x, this.nucleus.y, 0,
+      this.nucleus.x, this.nucleus.y, radius
+    );
+    gradient.addColorStop(0, '#ff4444');
+    gradient.addColorStop(0.7, '#cc2222');
+    gradient.addColorStop(1, '#881111');
+    
+    this.ctx.beginPath();
+    this.ctx.arc(this.nucleus.x, this.nucleus.y, radius, 0, Math.PI * 2);
+    this.ctx.fillStyle = gradient;
+    this.ctx.fill();
+    
+    // Lueur du noyau
+    this.ctx.shadowBlur = 20;
+    this.ctx.shadowColor = '#ff4444';
+    this.ctx.fill();
+    this.ctx.shadowBlur = 0;
+  }
+  
+  updateParticles(deltaTime) {
+    this.particles.forEach(particle => {
+      // Mouvement orbital
+      particle.angle += particle.speed * deltaTime * 0.001;
+      particle.x = this.nucleus.x + Math.cos(particle.angle) * particle.orbitRadius;
+      particle.y = this.nucleus.y + Math.sin(particle.angle) * particle.orbitRadius;
+      
+      // Oscillation quantique
+      const quantumOffset = Math.sin(this.time * 10 + particle.angle) * 5;
+      particle.x += quantumOffset;
+      particle.y += quantumOffset;
+    });
+  }
+  
+  drawParticles() {
+    this.particles.forEach(particle => {
+      const radius = 4 * this.parameters.taille.default;
+      
+      // Gradient pour l'électron
+      const gradient = this.ctx.createRadialGradient(
+        particle.x, particle.y, 0,
+        particle.x, particle.y, radius
+      );
+      gradient.addColorStop(0, '#4488ff');
+      gradient.addColorStop(0.7, '#2266cc');
+      gradient.addColorStop(1, '#114488');
+      
+      this.ctx.beginPath();
+      this.ctx.arc(particle.x, particle.y, radius, 0, Math.PI * 2);
+      this.ctx.fillStyle = gradient;
+      this.ctx.fill();
+      
+      // Traînée lumineuse
+      this.ctx.beginPath();
+      this.ctx.arc(particle.x, particle.y, radius * 2, 0, Math.PI * 2);
+      this.ctx.fillStyle = \`rgba(68, 136, 255, 0.1)\`;
+      this.ctx.fill();
+    });
+  }
+  
+  drawQuantumEffects() {
+    // Ondulations quantiques
+    const numWaves = 5;
+    for (let i = 0; i < numWaves; i++) {
+      const radius = 100 + i * 50 + Math.sin(this.time * 2 + i) * 10;
+      const opacity = 0.05 * Math.sin(this.time + i);
+      
+      if (opacity > 0) {
+        this.ctx.beginPath();
+        this.ctx.arc(this.nucleus.x, this.nucleus.y, radius, 0, Math.PI * 2);
+        this.ctx.strokeStyle = \`rgba(100, 255, 200, \${opacity})\`;
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+      }
+    }
+  }
+  
+  destroy() {
+    // Nettoyage
+    this.particles = [];
+    this.orbits = [];
+  }
+}
+
+// Export pour utilisation
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = ${className};
+}
+
+// Usage autonome si chargé directement  
+if (typeof window !== 'undefined') {
+  window.${className} = ${className};
+  
+  // Fonction utilitaire pour démarrage rapide
+  window.start${className} = function(canvasId, config = {}) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+      console.error('Canvas non trouvé:', canvasId);
+      return null;
+    }
+    
+    const effect = new ${className}(config);
+    effect.initialize(canvas, { 
+      width: canvas.width, 
+      height: canvas.height 
+    });
+    
+    let lastTime = 0;
+    const animationLoop = (currentTime) => {
+      const deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+      
+      effect.animate(deltaTime);
+      requestAnimationFrame(animationLoop);
+    };
+    
+    requestAnimationFrame(animationLoop);
+    return effect;
+  };
+}`;
+  }
+
+  /**
+   * Génère un effet de base pour les fichiers incomplets
+   */
+  private generateBasicEffect(baseName: string): string {
+    const className = this.capitalize(baseName.replace(/[^a-zA-Z0-9]/g, '')) + 'Effect';
+    
+    return `${this.baseEffectTemplate}
+
+// Effet de base généré automatiquement
+class ${className} extends BaseEffect {
+  constructor(config = {}) {
+    super({
+      id: 'effect-' + Date.now(),
+      name: '${baseName}',
+      category: 'general',
+      version: '1.0',
+      performance: 'medium',
+      parameters: config.parameters || {}
+    });
+  }
+  
+  initialize(canvas, element) {
+    super.initialize(canvas, element);
+    // Initialisation personnalisée ici
+  }
+  
+  animate(deltaTime = 16) {
+    if (!this.ctx || !this.canvas) return;
+    
+    // Animation de base
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Dessiner un effet de base
+    const time = Date.now() * 0.001;
+    this.ctx.beginPath();
+    this.ctx.arc(
+      this.canvas.width / 2 + Math.sin(time) * 50,
+      this.canvas.height / 2 + Math.cos(time) * 50,
+      20,
+      0,
+      Math.PI * 2
+    );
+    this.ctx.fillStyle = 'rgba(100, 150, 255, 0.8)';
+    this.ctx.fill();
+  }
+}
+
+// Export
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = ${className};
+}
+if (typeof window !== 'undefined') {
+  window.${className} = ${className};
+}`;
+  }
+
+  /**
+   * Capitalize first letter
+   */
+  private capitalize(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
   /**
