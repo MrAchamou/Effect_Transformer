@@ -1,0 +1,605 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛠️ Normalisateur d'Effets JavaScript</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.2em;
+        }
+        
+        .main-content {
+            padding: 40px;
+        }
+        
+        .upload-zone {
+            border: 3px dashed #e5e7eb;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: #f9fafb;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-zone:hover {
+            border-color: #4f46e5;
+            background: #f3f4f6;
+        }
+        
+        .upload-zone.dragover {
+            border-color: #4f46e5;
+            background: #eef2ff;
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 4em;
+            color: #9ca3af;
+            margin-bottom: 20px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .editor-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .editor-panel {
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .editor-header {
+            background: #f3f4f6;
+            padding: 15px;
+            font-weight: bold;
+            color: #374151;
+        }
+        
+        .editor {
+            width: 100%;
+            height: 400px;
+            border: none;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+        }
+        
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+        
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #ef4444;
+        }
+        
+        .status.warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 2px solid #f59e0b;
+        }
+        
+        .changes-list {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .changes-list h4 {
+            color: #0c4a6e;
+            margin-bottom: 10px;
+        }
+        
+        .changes-list ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .changes-list li {
+            padding: 5px 0;
+            color: #0369a1;
+        }
+        
+        .changes-list li:before {
+            content: "✓ ";
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .editor-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛠️ Normalisateur d'Effets JS</h1>
+            <p>Convertit automatiquement vos effets JavaScript en format standardisé</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">📁</div>
+                <h3>Glissez-déposez votre fichier .js ici</h3>
+                <p>ou cliquez pour sélectionner un fichier</p>
+                <input type="file" id="fileInput" class="file-input" accept=".js" />
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="btn" onclick="normalizeCode()">🔧 Normaliser le Code</button>
+                <button class="btn" onclick="downloadNormalized()" id="downloadBtn" disabled>💾 Télécharger</button>
+                <button class="btn" onclick="copyToClipboard()" id="copyBtn" disabled>📋 Copier</button>
+                <button class="btn" onclick="resetAll()" style="background: #ef4444;">🔄 Reset</button>
+            </div>
+            
+            <div id="status"></div>
+            
+            <div class="editor-container" id="editorContainer" style="display: none;">
+                <div class="editor-panel">
+                    <div class="editor-header">📝 Code Original</div>
+                    <textarea id="originalCode" class="editor" placeholder="Le code original apparaîtra ici..."></textarea>
+                </div>
+                
+                <div class="editor-panel">
+                    <div class="editor-header">✨ Code Normalisé</div>
+                    <textarea id="normalizedCode" class="editor" placeholder="Le code normalisé apparaîtra ici..."></textarea>
+                </div>
+            </div>
+            
+            <div id="changesList"></div>
+        </div>
+    </div>
+
+    <script>
+        let originalFileName = '';
+        let normalizedContent = '';
+
+        // Configuration de la zone de drop
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('dragover', handleDragOver);
+        uploadZone.addEventListener('dragleave', handleDragLeave);
+        uploadZone.addEventListener('drop', handleDrop);
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function processFile(file) {
+            if (!file.name.endsWith('.js')) {
+                showStatus('error', 'Veuillez sélectionner un fichier JavaScript (.js)');
+                return;
+            }
+
+            originalFileName = file.name;
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const content = e.target.result;
+                document.getElementById('originalCode').value = content;
+                document.getElementById('editorContainer').style.display = 'grid';
+                showStatus('success', `Fichier "${file.name}" chargé avec succès!`);
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function normalizeCode() {
+            const originalCode = document.getElementById('originalCode').value.trim();
+            
+            if (!originalCode) {
+                showStatus('error', 'Aucun code à normaliser');
+                return;
+            }
+
+            try {
+                const result = performNormalization(originalCode, originalFileName);
+                
+                document.getElementById('normalizedCode').value = result.normalizedCode;
+                normalizedContent = result.normalizedCode;
+                
+                // Activer les boutons
+                document.getElementById('downloadBtn').disabled = false;
+                document.getElementById('copyBtn').disabled = false;
+                
+                // Afficher les changements
+                if (result.changes.length > 0) {
+                    showChanges(result.changes);
+                    showStatus('success', `Code normalisé avec succès! ${result.changes.length} modifications appliquées.`);
+                } else {
+                    showStatus('warning', 'Le code était déjà dans un format correct.');
+                }
+                
+            } catch (error) {
+                showStatus('error', `Erreur lors de la normalisation: ${error.message}`);
+            }
+        }
+
+        function performNormalization(code, filename) {
+            const changes = [];
+            let normalized = code;
+
+            // 1. Détecter et convertir les métadonnées uniquement
+            const metadataPattern = /export\s+const\s+(\w+)\s*=\s*{\s*id:\s*["']([^"']+)["'],?\s*name:\s*["']([^"']+)["'],?\s*description:\s*`([^`]+)`\s*}\s*;?\s*$/s;
+            const metadataMatch = metadataPattern.exec(code.trim());
+            
+            if (metadataMatch) {
+                const [, objectName, effectId, effectName, description] = metadataMatch;
+                
+                // Extraire le type d'effet
+                const effectTypeMatch = description.match(/\*\*EFFET DEMANDÉ\s*:\*\*\s*([^\n]+)/i);
+                const effectType = effectTypeMatch ? effectTypeMatch[1].trim().replace(/[^a-zA-Z0-9]/g, '') : 'Custom';
+                
+                // Générer un effet JavaScript complet
+                normalized = generateCompleteEffect(effectType, effectId, effectName);
+                changes.push('Fichier de métadonnées converti en effet JavaScript complet');
+                changes.push(`Classe ${effectType}Effect générée automatiquement`);
+                changes.push('Système d\'animation et de rendu ajouté');
+                
+                return { normalizedCode: normalized, changes };
+            }
+
+            // 2. Nettoyer les exports/imports
+            if (/export\s+|import\s+.*from/.test(normalized)) {
+                normalized = normalized.replace(/export\s+default\s+/g, '');
+                normalized = normalized.replace(/export\s+/g, '');
+                normalized = normalized.replace(/import\s+.*from\s+['"][^'"]*['"];\s*/g, '');
+                changes.push('Exports et imports supprimés');
+            }
+
+            // 3. Nettoyer les commentaires excessifs
+            const originalCommentCount = (normalized.match(/\/\*[\s\S]*?\*\/|\/\/.*$/gm) || []).length;
+            if (originalCommentCount > 10) {
+                normalized = normalized.replace(/\/\*[\s\S]*?\*\//g, '');
+                normalized = normalized.replace(/\/\/.*$/gm, '');
+                changes.push('Commentaires excessifs supprimés');
+            }
+
+            // 4. Nettoyer les espaces et lignes vides
+            const originalLines = normalized.split('\n').length;
+            normalized = normalized.replace(/^\s*[\r\n]/gm, '').trim();
+            const newLines = normalized.split('\n').length;
+            if (originalLines > newLines + 5) {
+                changes.push('Lignes vides supprimées');
+            }
+
+            // 5. Corriger la syntaxe de base
+            if (normalized.includes('extends BaseEffect') && !normalized.includes('class BaseEffect')) {
+                const baseEffect = `
+class BaseEffect {
+    constructor(config = {}) {
+        this.id = config.id || 'effect-' + Date.now();
+        this.name = config.name || 'Effect';
+        this.parameters = config.parameters || {};
+    }
+    
+    initialize(canvas, element) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.element = element;
+    }
+    
+    animate(deltaTime) {
+        // À surcharger
+    }
+    
+    destroy() {
+        // Nettoyage
+    }
+}
+`;
+                normalized = baseEffect + '\n' + normalized;
+                changes.push('Classe BaseEffect ajoutée');
+            }
+
+            return { normalizedCode: normalized, changes };
+        }
+
+        function generateCompleteEffect(effectType, effectId, effectName) {
+            const className = effectType + 'Effect';
+            
+            return `// ${effectName}
+class ${className} {
+    constructor(config = {}) {
+        this.id = '${effectId}';
+        this.name = '${effectName}';
+        this.config = {
+            speed: 1,
+            size: 1,
+            color: '#ffffff',
+            ...config
+        };
+        
+        this.canvas = null;
+        this.ctx = null;
+        this.animationId = null;
+        this.time = 0;
+    }
+    
+    initialize(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.canvas.width = this.canvas.offsetWidth;
+        this.canvas.height = this.canvas.offsetHeight;
+        
+        // Initialisation spécifique à l'effet
+        this.setupEffect();
+    }
+    
+    setupEffect() {
+        // Configuration initiale de l'effet
+        this.particles = [];
+        for (let i = 0; i < 50; i++) {
+            this.particles.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                size: Math.random() * 3 + 1
+            });
+        }
+    }
+    
+    animate() {
+        if (!this.ctx || !this.canvas) return;
+        
+        this.time += 0.016; // ~60fps
+        
+        // Nettoyer le canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Dessiner l'effet
+        this.render();
+        
+        // Continuer l'animation
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+    
+    render() {
+        // Exemple de rendu de particules
+        this.ctx.fillStyle = this.config.color;
+        
+        this.particles.forEach(particle => {
+            // Mettre à jour la position
+            particle.x += particle.vx * this.config.speed;
+            particle.y += particle.vy * this.config.speed;
+            
+            // Rebond sur les bords
+            if (particle.x <= 0 || particle.x >= this.canvas.width) particle.vx *= -1;
+            if (particle.y <= 0 || particle.y >= this.canvas.height) particle.vy *= -1;
+            
+            // Dessiner la particule
+            this.ctx.beginPath();
+            this.ctx.arc(particle.x, particle.y, particle.size * this.config.size, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+    }
+    
+    start() {
+        this.animate();
+    }
+    
+    stop() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+    }
+    
+    destroy() {
+        this.stop();
+        this.particles = [];
+    }
+}
+
+// Export pour utilisation
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ${className};
+}
+
+// Usage global
+if (typeof window !== 'undefined') {
+    window.${className} = ${className};
+    
+    // Fonction d'initialisation rapide
+    window.start${className} = function(canvasId, config = {}) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) {
+            console.error('Canvas non trouvé:', canvasId);
+            return null;
+        }
+        
+        const effect = new ${className}(config);
+        effect.initialize(canvas);
+        effect.start();
+        
+        return effect;
+    };
+}`;
+        }
+
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        function showChanges(changes) {
+            const changesDiv = document.getElementById('changesList');
+            changesDiv.innerHTML = `
+                <div class="changes-list">
+                    <h4>📋 Modifications appliquées:</h4>
+                    <ul>
+                        ${changes.map(change => `<li>${change}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        function downloadNormalized() {
+            if (!normalizedContent) {
+                showStatus('error', 'Aucun code normalisé à télécharger');
+                return;
+            }
+
+            const blob = new Blob([normalizedContent], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            a.href = url;
+            a.download = originalFileName.replace('.js', '_normalized.js');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus('success', 'Fichier téléchargé avec succès!');
+        }
+
+        function copyToClipboard() {
+            if (!normalizedContent) {
+                showStatus('error', 'Aucun code normalisé à copier');
+                return;
+            }
+
+            navigator.clipboard.writeText(normalizedContent).then(() => {
+                showStatus('success', 'Code copié dans le presse-papiers!');
+            }).catch(() => {
+                // Fallback pour les navigateurs plus anciens
+                const textarea = document.createElement('textarea');
+                textarea.value = normalizedContent;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showStatus('success', 'Code copié dans le presse-papiers!');
+            });
+        }
+
+        function resetAll() {
+            document.getElementById('originalCode').value = '';
+            document.getElementById('normalizedCode').value = '';
+            document.getElementById('editorContainer').style.display = 'none';
+            document.getElementById('status').innerHTML = '';
+            document.getElementById('changesList').innerHTML = '';
+            document.getElementById('downloadBtn').disabled = true;
+            document.getElementById('copyBtn').disabled = true;
+            originalFileName = '';
+            normalizedContent = '';
+            fileInput.value = '';
+        }
+    </script>
+</body>
+</html>
