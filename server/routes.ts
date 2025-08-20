@@ -46,30 +46,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const intelligentCategorizer = new IntelligentCategorizer();
   const docPackager = new DocumentationPackager();
 
+  // Middleware de sécurité pour les uploads
+  const uploadSecurity = (req: any, res: any, next: any) => {
+    // Rate limiting basique
+    const clientId = req.ip;
+    const now = Date.now();
+    const windowMs = 60 * 1000; // 1 minute
+    const maxRequests = 10;
+    
+    if (!req.app.locals.rateLimits) {
+      req.app.locals.rateLimits = new Map();
+    }
+    
+    const clientRequests = req.app.locals.rateLimits.get(clientId) || [];
+    const recentRequests = clientRequests.filter((time: number) => now - time < windowMs);
+    
+    if (recentRequests.length >= maxRequests) {
+      return res.status(429).json({ message: "Trop de requêtes, veuillez patienter" });
+    }
+    
+    recentRequests.push(now);
+    req.app.locals.rateLimits.set(clientId, recentRequests);
+    next();
+  };
+
   // Upload JavaScript file
-  app.post("/api/upload", upload.single('file'), async (req, res) => {
+  app.post("/api/upload", uploadSecurity, upload.single('file'), async (req, res) => {
+    const startTime = Date.now();
+    let uploadedFilePath: string | null = null;
+    
     try {
-      console.log('Upload request received:', req.file, req.body);
+      console.log('Upload request received:', {
+        filename: req.file?.originalname,
+        size: req.file?.size,
+        mimetype: req.file?.mimetype
+      });
 
       if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
+        return res.status(400).json({ 
+          message: "Aucun fichier uploadé",
+          error: "FILE_MISSING"
+        });
+      }
+      
+      uploadedFilePath = req.file.path;
+
+      // Validation de la taille du fichier
+      if (req.file.size > 2 * 1024 * 1024) { // 2MB max
+        await fs.unlink(uploadedFilePath);
+        return res.status(400).json({ 
+          message: "Fichier trop volumineux (max 2MB)",
+          error: "FILE_TOO_LARGE"
+        });
       }
 
-      // Read file content
-      const filePath = req.file.path;
-      const content = await fs.readFile(filePath, 'utf-8');
+      // Read file content avec timeout
+      let content: string;
+      try {
+        const readPromise = fs.readFile(uploadedFilePath, 'utf-8');
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout lecture fichier')), 10000)
+        );
+        
+        content = await Promise.race([readPromise, timeoutPromise]);
+      } catch (readError) {
+        await fs.unlink(uploadedFilePath);
+        return res.status(400).json({
+          message: "Erreur de lecture du fichier",
+          error: "FILE_READ_ERROR"
+        });
+      }
 
-      // Validate file
+      // Validate file avec gestion d'erreurs robuste
       const validation = uploadFileSchema.safeParse({
         filename: req.file.originalname,
         content
       });
 
       if (!validation.success) {
-        await fs.unlink(filePath); // Clean up
+        await fs.unlink(uploadedFilePath);
         return res.status(400).json({ 
-          message: "Invalid file", 
-          errors: validation.error.errors 
+          message: "Fichier invalide", 
+          errors: validation.error.errors.map(err => ({
+            field: err.path.join('.'),
+            message: err.message
+          })),
+          error: "VALIDATION_FAILED"
         });
       }
 
@@ -112,18 +174,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Clean up uploaded file
-      await fs.unlink(filePath);
+      await fs.unlink(uploadedFilePath);
+      
+      const processingTime = Date.now() - startTime;
+      console.log(`Upload terminé en ${processingTime}ms pour ${transformation.originalFilename}`);
 
       res.json({ 
         success: true, 
         transformationId: transformation.id,
         filename: transformation.originalFilename,
+        fileSize: req.file.size,
+        processingTime,
         preprocessingChanges,
-        effectAnalysis // Retourner l'analyse au client
+        effectAnalysis
       });
+      
     } catch (error) {
       console.error('Upload error:', error);
-      res.status(500).json({ message: "Upload failed" });
+      
+      // Nettoyage en cas d'erreur
+      if (uploadedFilePath) {
+        try {
+          await fs.unlink(uploadedFilePath);
+        } catch (unlinkError) {
+          console.error('Erreur nettoyage fichier:', unlinkError);
+        }
+      }
+      
+      res.status(500).json({ 
+        message: "Échec de l'upload",
+        error: error instanceof Error ? error.message : "Erreur inconnue"
+      });
     }
   });
 
@@ -292,6 +373,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { transformationId, currentLevel } = req.body;
 
+      if (!transformationId) {
+        return res.status(400).json({ error: 'transformationId requis' });
+      }
+
       const transformation = await storage.getTransformation(transformationId);
       if (!transformation) {
         return res.status(404).json({ error: 'Transformation not found' });
@@ -307,6 +392,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error analyzing suggestions:', error);
       res.status(500).json({ error: 'Failed to analyze suggestions' });
+    }
+  });
+
+  // Health check et diagnostics
+  app.get("/api/health", async (req, res) => {
+    try {
+      const stats = storage.getStats();
+      const memoryUsage = process.memoryUsage();
+      const uptime = process.uptime();
+      
+      // Test des services critiques
+      let tokenStatus = 'unknown';
+      try {
+        const token = await replitTokenManager.getValidToken();
+        tokenStatus = token ? 'valid' : 'invalid';
+      } catch (error) {
+        tokenStatus = 'error';
+      }
+
+      const health = {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: Math.floor(uptime),
+        version: '1.0.0',
+        services: {
+          storage: stats,
+          tokenManager: tokenStatus,
+          memory: {
+            used: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+            total: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+            external: Math.round(memoryUsage.external / 1024 / 1024),
+            rss: Math.round(memoryUsage.rss / 1024 / 1024)
+          }
+        },
+        environment: {
+          nodeVersion: process.version,
+          platform: process.platform,
+          arch: process.arch,
+          isReplit: !!process.env.REPL_ID
+        }
+      };
+
+      res.json(health);
+    } catch (error) {
+      console.error('Health check error:', error);
+      res.status(500).json({
+        status: 'unhealthy',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // Diagnostics avancés (endpoint sécurisé)
+  app.get("/api/diagnostics", async (req, res) => {
+    try {
+      const { includeDetails } = req.query;
+      
+      const diagnostics = {
+        storage: {
+          stats: storage.getStats(),
+          transformations: includeDetails === 'true' ? storage.getAllTransformations() : undefined
+        },
+        tokenManager: await replitTokenManager.diagnoseTokenIssues(),
+        system: {
+          memory: process.memoryUsage(),
+          cpuUsage: process.cpuUsage(),
+          uptime: process.uptime(),
+          versions: process.versions
+        },
+        environment: {
+          replId: process.env.REPL_ID || null,
+          replOwner: process.env.REPL_OWNER || null,
+          nodeEnv: process.env.NODE_ENV || null,
+          hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY
+        }
+      };
+
+      res.json(diagnostics);
+    } catch (error) {
+      console.error('Diagnostics error:', error);
+      res.status(500).json({ error: 'Diagnostics failed' });
     }
   });
 

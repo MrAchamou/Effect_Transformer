@@ -31,28 +31,64 @@ export class ReplitAITransformer {
     stats: any;
     documentation?: string;
   }> {
+    const startTime = Date.now();
+    console.log(`[Transform] Starting transformation for ID: ${transformationId}, Level: ${level}`);
+
     try {
-      // Attendre que les niveaux soient chargés
-      await this.levelsLoaded;
-      
-      // Get level configuration
-      const levelKey = `level${level}`;
-      const levelConfig = this.levels[levelKey];
-      
+      // Validation des paramètres d'entrée
+      if (!originalCode || typeof originalCode !== 'string' || originalCode.trim().length === 0) {
+        throw new Error('Code source invalide ou vide');
+      }
+
+      if (originalCode.length > 5 * 1024 * 1024) { // 5MB max
+        throw new Error('Code source trop volumineux');
+      }
+
+      if (level < 1 || level > 6 || !Number.isInteger(level)) {
+        throw new Error(`Niveau de transformation invalide: ${level}`);
+      }
+
+      if (!transformationId || typeof transformationId !== 'string') {
+        throw new Error('ID de transformation invalide');
+      }
+
+      // Tentative d'obtention du token avec retry
+      let validToken: string;
+      let tokenAttempts = 0;
+      const maxTokenAttempts = 3;
+
+      while (tokenAttempts < maxTokenAttempts) {
+        try {
+          validToken = await replitTokenManager.getValidToken();
+          console.log(`[Transform] Token obtained for transformation ${transformationId} (attempt ${tokenAttempts + 1})`);
+          break;
+        } catch (tokenError) {
+          tokenAttempts++;
+          console.warn(`[Transform] Token attempt ${tokenAttempts} failed:`, tokenError.message);
+
+          if (tokenAttempts >= maxTokenAttempts) {
+            throw new Error(`Impossible d'obtenir un token valide après ${maxTokenAttempts} tentatives`);
+          }
+
+          // Attendre avant la prochaine tentative
+          await new Promise(resolve => setTimeout(resolve, 1000 * tokenAttempts));
+        }
+      }
+
+      const levelConfig = this.levels[`level${level}`];
       if (!levelConfig) {
-        throw new Error(`Invalid transformation level: ${level}`);
+        throw new Error(`Configuration non trouvée pour le niveau ${level}`);
       }
 
       // Build the transformation prompt
       const prompt = this.buildTransformationPrompt(originalCode, levelConfig, level);
 
       // Use Replit's AI API (which uses your credits)
-      const replitToken = await replitTokenManager.getValidToken();
       const response = await fetch('https://api.replit.com/v1/ai/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${replitToken}`,
+          'Authorization': `Bearer ${validToken}`,
         },
         body: JSON.stringify({
           model: 'claude-3.5-sonnet',
@@ -70,21 +106,21 @@ export class ReplitAITransformer {
       if (!response.ok) {
         const errorText = await response.text();
         console.warn(`❌ API Replit error (${response.status}):`, errorText);
-        
+
         if (response.status === 401) {
           console.log('🔄 Token invalide détecté, tentative de renouvellement...');
           // Forcer la régénération du token au prochain appel
           delete process.env.CACHED_REPLIT_TOKEN;
         }
-        
+
         // Fallback: simulate transformation locally
         const transformedCode = await this.simulateTransformation(originalCode, level);
         const stats = this.generateStats(originalCode, transformedCode, level);
-        
+
         return {
           code: transformedCode,
           stats,
-          documentation: `⚠️ Mode fallback activé - Token API non disponible\n\n` + 
+          documentation: `⚠️ Mode fallback activé - Token API non disponible\n\n` +
                         this.generateDocumentation(transformedCode, stats, effectAnalysis)
         };
       }
@@ -104,6 +140,9 @@ export class ReplitAITransformer {
       // Générer la documentation
       const documentation = this.generateDocumentation(transformedCode, stats, effectAnalysis);
 
+      const endTime = Date.now();
+      console.log(`[Transform] Transformation ${transformationId} completed in ${endTime - startTime}ms`);
+
       return {
         code: transformedCode,
         stats,
@@ -111,22 +150,47 @@ export class ReplitAITransformer {
       };
 
     } catch (error) {
-      console.error('AI Transformation error:', error);
-      
+      console.error(`[Transform] AI Transformation error for ${transformationId}:`, error);
+
       // Fallback: simulate transformation if AI fails
-      const transformedCode = await this.simulateTransformation(originalCode, level);
-      const stats = this.generateStats(originalCode, transformedCode, level);
-      
-      return {
-        code: transformedCode,
-        stats
+      let fallbackCode = originalCode;
+      let fallbackStats = {
+        performanceImprovement: 0,
+        modulesApplied: 0,
+        sizeReduction: 0,
+        fluidityImprovement: 0,
+        linesAdded: 0,
+        optimizationLevel: level
       };
+
+      try {
+        fallbackCode = await this.simulateTransformation(originalCode, level);
+        fallbackStats = this.generateStats(originalCode, fallbackCode, level);
+        const fallbackDocumentation = this.generateDocumentation(fallbackCode, fallbackStats, effectAnalysis);
+
+        return {
+          code: fallbackCode,
+          stats: fallbackStats,
+          documentation: `⚠️ Erreur lors de la transformation IA. Mode fallback activé.\n\n` + fallbackDocumentation
+        };
+      } catch (fallbackError) {
+        console.error(`[Transform] Fallback simulation failed for ${transformationId}:`, fallbackError);
+        // En cas d'échec du fallback, retourner le code original avec une erreur documentée
+        return {
+          code: originalCode,
+          stats: {
+            ...fallbackStats,
+            error: `Échec de la transformation IA et du fallback: ${fallbackError.message}`
+          },
+          documentation: `❌ Échec critique de la transformation.\nLe code original est retourné avec des erreurs.\n\nErreur: ${error.message}\nErreur Fallback: ${fallbackError.message}`
+        };
+      }
     }
   }
 
   private buildTransformationPrompt(originalCode: string, levelConfig: any, level: number): string {
     const modulesList = levelConfig.modules.join(', ');
-    
+
     return `Tu es un expert en transformation d'effets visuels JavaScript. 
 
 NIVEAU ${level}: ${levelConfig.name}
@@ -181,66 +245,9 @@ Le code doit être fonctionnel et optimisé selon les critères du niveau choisi
     return transformedCode;
   }
 
-  private async getReplitToken(): Promise<string> {
-    // Essayer différentes sources de token dans l'ordre de priorité
-    const tokenSources = [
-      process.env.REPLIT_AI_TOKEN,
-      process.env.REPL_TOKEN,
-      process.env.REPLIT_TOKEN,
-      process.env.REPL_API_KEY,
-      process.env.REPLIT_API_KEY
-    ];
-
-    for (const token of tokenSources) {
-      if (token && token !== 'replit_ai_default') {
-        // Tester la validité du token
-        try {
-          const testResponse = await fetch('https://api.replit.com/v1/user', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (testResponse.ok) {
-            console.log('✅ Token API Replit valide trouvé');
-            return token;
-          }
-        } catch (error) {
-          console.warn(`Token ${token.substring(0, 10)}... invalide, essai suivant`);
-        }
-      }
-    }
-
-    // Si aucun token valide n'est trouvé, essayer de détecter automatiquement
-    const autoToken = await this.detectReplitToken();
-    if (autoToken) {
-      return autoToken;
-    }
-
-    console.warn('⚠️ Aucun token API Replit valide trouvé, utilisation du mode fallback');
-    return 'fallback_mode';
-  }
-
-  private async detectReplitToken(): Promise<string | null> {
-    try {
-      // Méthode 1: Essayer de lire le token depuis les métadonnées Replit
-      if (process.env.REPL_ID && process.env.REPL_OWNER) {
-        // Dans un environnement Replit, essayer de récupérer le token automatiquement
-        const replitMetaUrl = `https://replit.com/@${process.env.REPL_OWNER}/${process.env.REPL_SLUG}`;
-        console.log(`🔍 Détection automatique pour: ${replitMetaUrl}`);
-      }
-
-      // Méthode 2: Vérifier les headers de la requête courante
-      if (process.env.REPL_DEPLOYMENT_ID) {
-        console.log('🚀 Environnement de déploiement Replit détecté');
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Erreur lors de la détection automatique:', error);
-      return null;
-    }
-  }
+  // Note: Les méthodes getReplitToken et detectReplitToken ne sont plus utilisées directement
+  // car replitTokenManager gère cette logique. Elles sont laissées ici pour référence
+  // mais devraient idéalement être supprimées ou réintégrées dans replitTokenManager.
 
   private async validateTransformedCode(code: string): Promise<boolean> {
     try {
@@ -257,18 +264,18 @@ Le code doit être fonctionnel et optimisé selon les critères du niveau choisi
     const originalLines = originalCode.split('\n').length;
     const transformedLines = transformedCode.split('\n').length;
     const sizeReduction = ((originalCode.length - transformedCode.length) / originalCode.length * 100).toFixed(1);
-    
+
     // Simulate performance improvements based on level
     const performanceBoost = (level: number) => {
       switch(level) {
         case 1: return 25 + Math.random() * 25; // 25-50%
         case 2: return 50 + Math.random() * 37; // 50-87%
         case 3: return 80 + Math.random() * 50; // 80-130%
-        default: return 25;
+        default: return 25; // Fallback for unexpected levels
       }
     };
 
-    const modulesApplied = level === 1 ? 7 : level === 2 ? 13 : 23;
+    const modulesApplied = level === 1 ? 7 : level === 2 ? 13 : 23; // Assuming these are fixed numbers per level
     const fluidityImprovement = performanceBoost(level) * 0.8;
 
     return {
@@ -282,9 +289,9 @@ Le code doit être fonctionnel et optimisé selon les critères du niveau choisi
   }
 
   private generateDocumentation(code: string, stats: any, effectAnalysis?: any): string {
-    const levelName = stats.optimizationLevel === 1 ? "Standard" : 
+    const levelName = stats.optimizationLevel === 1 ? "Standard" :
                      stats.optimizationLevel === 2 ? "Professional" : "Premium";
-    
+
     return `# Documentation - Transformation ${levelName}
 
 ## 📊 Statistiques de Performance

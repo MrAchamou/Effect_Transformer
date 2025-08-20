@@ -99,11 +99,14 @@ export class DocumentationPackager {
         )
       ]);
 
-    // Créer une archive ZIP
-    const zipPath = path.join(this.outputDir, `${effectName}_${timestamp}.zip`);
-    await this.createZipArchive(packageDir, zipPath);
+      // Créer une archive ZIP
+      const zipPath = path.join(this.outputDir, `${effectName}_${timestamp}.zip`);
+      await this.createZipArchive(packageDir, zipPath);
 
-    return zipPath;
+      return zipPath;
+    } catch (error) {
+      throw new Error(`Erreur lors de la création du package: ${error.message}`);
+    }
   }
 
   private generateExampleHTML(effectName: string): string {
