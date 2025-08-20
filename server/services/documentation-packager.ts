@@ -417,5 +417,3 @@ Pour toute question ou problème:
     }
   }
 }
-
-export { DocumentationPackager };
