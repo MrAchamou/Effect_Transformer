@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CodeEditor from "./CodeEditor";
 
 interface InteractivePreviewProps {
   transformedCode: string;
@@ -38,15 +40,22 @@ export default function InteractivePreview({
   const [originalInstance, setOriginalInstance] = useState<EffectInstance | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [currentCode, setCurrentCode] = useState(transformedCode);
+  const [activeTab, setActiveTab] = useState<'preview' | 'editor' | 'stats'>('preview');
   
   // Paramètres de contrôle
   const [speed, setSpeed] = useState([1]);
   const [opacity, setOpacity] = useState([1]);
   const [scale, setScale] = useState([1]);
 
+  // Mettre à jour le code courant quand le code transformé change
+  useEffect(() => {
+    setCurrentCode(transformedCode);
+  }, [transformedCode]);
+
   // Initialiser l'effet transformé
   useEffect(() => {
-    if (!canvasRef.current || !transformedCode) return;
+    if (!canvasRef.current || !currentCode) return;
 
     try {
       setError(null);
@@ -67,7 +76,7 @@ export default function InteractivePreview({
             const canvas = arguments[0];
             const ctx = canvas.getContext('2d');
             
-            ${transformedCode}
+            ${currentCode}
             
             // Essayer de retourner une instance de l'effet
             if (typeof ${effectName} !== 'undefined') {
@@ -100,7 +109,13 @@ export default function InteractivePreview({
       console.error('Erreur lors de l\'initialisation de l\'effet:', err);
       setError('Impossible d\'initialiser l\'effet transformé');
     }
-  }, [transformedCode, effectName]);
+  }, [currentCode, effectName]);
+
+  // Gérer les changements de code en temps réel
+  const handleCodeChange = (newCode: string) => {
+    setCurrentCode(newCode);
+    setError(null);
+  };
 
   // Initialiser l'effet original pour la comparaison
   useEffect(() => {
@@ -249,38 +264,114 @@ export default function InteractivePreview({
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Zone de prévisualisation */}
-          <div className={`preview-area ${showComparison ? 'grid grid-cols-2 gap-4' : ''}`}>
-            {/* Canvas principal (effet transformé) */}
-            <div className="canvas-container relative">
-              <div className="canvas-header text-sm font-medium text-gray-700 mb-2">
-                ✨ Effet Transformé
-              </div>
-              <canvas
-                ref={canvasRef}
-                width={showComparison ? 400 : 800}
-                height={showComparison ? 300 : 400}
-                className="border-2 border-blue-200 rounded-lg bg-gray-50 w-full"
-                style={{ maxWidth: '100%', height: 'auto' }}
-              />
-            </div>
+          {/* Onglets principaux */}
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="preview">
+                🎮 Prévisualisation Live
+              </TabsTrigger>
+              <TabsTrigger value="editor">
+                💻 Éditeur de Code
+              </TabsTrigger>
+              <TabsTrigger value="stats">
+                📊 Statistiques
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Canvas de comparaison (effet original) */}
-            {showComparison && (
-              <div className="canvas-container relative">
-                <div className="canvas-header text-sm font-medium text-gray-700 mb-2">
-                  📝 Effet Original
+            <TabsContent value="preview">
+              {/* Zone de prévisualisation */}
+              <div className={`preview-area ${showComparison ? 'grid grid-cols-2 gap-4' : ''}`}>
+                {/* Canvas principal (effet transformé) */}
+                <div className="canvas-container relative">
+                  <div className="canvas-header text-sm font-medium text-gray-700 mb-2">
+                    ✨ Effet Transformé
+                  </div>
+                  <canvas
+                    ref={canvasRef}
+                    width={showComparison ? 400 : 800}
+                    height={showComparison ? 300 : 400}
+                    className="border-2 border-blue-200 rounded-lg bg-gray-50 w-full"
+                    style={{ maxWidth: '100%', height: 'auto' }}
+                  />
                 </div>
-                <canvas
-                  ref={originalCanvasRef}
-                  width={400}
-                  height={300}
-                  className="border-2 border-gray-200 rounded-lg bg-gray-50 w-full"
-                  style={{ maxWidth: '100%', height: 'auto' }}
-                />
+
+                {/* Canvas de comparaison (effet original) */}
+                {showComparison && (
+                  <div className="canvas-container relative">
+                    <div className="canvas-header text-sm font-medium text-gray-700 mb-2">
+                      📝 Effet Original
+                    </div>
+                    <canvas
+                      ref={originalCanvasRef}
+                      width={400}
+                      height={300}
+                      className="border-2 border-gray-200 rounded-lg bg-gray-50 w-full"
+                      style={{ maxWidth: '100%', height: 'auto' }}
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </TabsContent>
+
+            <TabsContent value="editor">
+              <CodeEditor
+                initialCode={transformedCode}
+                originalCode={originalCode}
+                onCodeChange={handleCodeChange}
+                effectName={effectName}
+                language="javascript"
+              />
+            </TabsContent>
+
+            <TabsContent value="stats">
+              {/* Informations de performance */}
+              <div className="performance-info bg-blue-50 p-4 rounded-lg border">
+                <h4 className="font-medium text-blue-900 mb-2">📊 Informations de Performance</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="text-blue-600">🖼️ FPS:</span>
+                    <span className="ml-1 font-mono">60</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-600">💾 Mémoire:</span>
+                    <span className="ml-1 font-mono">~2MB</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-600">⚡ CPU:</span>
+                    <span className="ml-1 font-mono">~15%</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-600">🎯 Statut:</span>
+                    <span className="ml-1 font-mono text-green-600">
+                      {isPlaying ? 'En cours' : 'Arrêté'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="stats-details mt-4 p-4 bg-white rounded border">
+                  <h5 className="font-medium mb-3">📈 Analyse Détaillée</h5>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Lignes de code:</span>
+                      <span className="font-mono">{currentCode.split('\n').length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Caractères:</span>
+                      <span className="font-mono">{currentCode.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Fonctions détectées:</span>
+                      <span className="font-mono">{(currentCode.match(/function/g) || []).length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Classes détectées:</span>
+                      <span className="font-mono">{(currentCode.match(/class\s+\w+/g) || []).length}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           {/* Contrôles de lecture */}
           <div className="controls-section">
@@ -368,30 +459,7 @@ export default function InteractivePreview({
             </div>
           </div>
 
-          {/* Informations de performance */}
-          <div className="performance-info bg-blue-50 p-4 rounded-lg border">
-            <h4 className="font-medium text-blue-900 mb-2">📊 Informations de Performance</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <span className="text-blue-600">🖼️ FPS:</span>
-                <span className="ml-1 font-mono">60</span>
-              </div>
-              <div>
-                <span className="text-blue-600">💾 Mémoire:</span>
-                <span className="ml-1 font-mono">~2MB</span>
-              </div>
-              <div>
-                <span className="text-blue-600">⚡ CPU:</span>
-                <span className="ml-1 font-mono">~15%</span>
-              </div>
-              <div>
-                <span className="text-blue-600">🎯 Statut:</span>
-                <span className="ml-1 font-mono text-green-600">
-                  {isPlaying ? 'En cours' : 'Arrêté'}
-                </span>
-              </div>
-            </div>
-          </div>
+          
 
           {/* Conseils d'utilisation */}
           <div className="tips-section bg-yellow-50 p-4 rounded-lg border border-yellow-200">
