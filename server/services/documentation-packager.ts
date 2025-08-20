@@ -17,70 +17,87 @@ export class DocumentationPackager {
     effectName: string,
     transformationId: string
   ): Promise<string> {
-    const timestamp = Date.now();
-    const packageDir = path.join(this.outputDir, `${effectName}_${timestamp}`);
-    
-    // Créer le dossier du package
-    await fs.mkdir(packageDir, { recursive: true });
+    try {
+      // Validation des paramètres
+      if (!transformedCode || typeof transformedCode !== 'string') {
+        throw new Error('Code transformé invalide');
+      }
+      
+      if (!documentation || typeof documentation !== 'object') {
+        throw new Error('Documentation invalide');
+      }
+      
+      if (!effectName || typeof effectName !== 'string') {
+        effectName = `Effect_${Date.now()}`;
+      }
+      
+      if (!transformationId || typeof transformationId !== 'string') {
+        transformationId = `transformation_${Date.now()}`;
+      }
 
-    // Sauvegarder tous les fichiers
-    await Promise.all([
-      // Code JavaScript optimisé
-      fs.writeFile(
-        path.join(packageDir, `${effectName.toLowerCase()}.js`),
-        transformedCode,
-        'utf-8'
-      ),
+      // Sanitisation du nom d'effet
+      const sanitizedEffectName = this.sanitizeFileName(effectName);
+      const timestamp = Date.now();
+      const packageDir = path.join(this.outputDir, `${sanitizedEffectName}_${timestamp}`);
       
-      // Documentation Markdown
-      fs.writeFile(
-        path.join(packageDir, 'DOCUMENTATION.md'),
-        documentation.markdown,
-        'utf-8'
-      ),
-      
-      // Documentation HTML interactive
-      fs.writeFile(
-        path.join(packageDir, 'documentation.html'),
-        documentation.html,
-        'utf-8'
-      ),
-      
-      // README pour marketplace
-      fs.writeFile(
-        path.join(packageDir, 'README.md'),
-        documentation.readme,
-        'utf-8'
-      ),
-      
-      // Changelog
-      fs.writeFile(
-        path.join(packageDir, 'CHANGELOG.md'),
-        documentation.changelog,
-        'utf-8'
-      ),
-      
-      // Fichier d'exemple d'utilisation
-      fs.writeFile(
-        path.join(packageDir, 'example.html'),
-        this.generateExampleHTML(effectName),
-        'utf-8'
-      ),
-      
-      // Informations de licence
-      fs.writeFile(
-        path.join(packageDir, 'LICENSE.txt'),
-        this.generateLicense(),
-        'utf-8'
-      ),
-      
-      // Guide d'installation
-      fs.writeFile(
-        path.join(packageDir, 'INSTALLATION.md'),
-        this.generateInstallationGuide(effectName),
-        'utf-8'
-      )
-    ]);
+      // Créer le dossier du package avec gestion d'erreurs
+      try {
+        await fs.mkdir(this.outputDir, { recursive: true });
+        await fs.mkdir(packageDir, { recursive: true });
+      } catch (dirError) {
+        throw new Error(`Impossible de créer le dossier: ${dirError.message}`);
+      }
+
+    // Sauvegarder tous les fichiers avec gestion d'erreurs
+      await Promise.all([
+        // Code JavaScript optimisé
+        this.safeWriteFile(
+          path.join(packageDir, `${sanitizedEffectName.toLowerCase()}.js`),
+          transformedCode
+        ),
+        
+        // Documentation Markdown
+        this.safeWriteFile(
+          path.join(packageDir, 'DOCUMENTATION.md'),
+          documentation.markdown || 'Documentation non disponible'
+        ),
+        
+        // Documentation HTML interactive
+        this.safeWriteFile(
+          path.join(packageDir, 'documentation.html'),
+          documentation.html || this.generateExampleHTML(sanitizedEffectName)
+        ),
+        
+        // README pour marketplace
+        this.safeWriteFile(
+          path.join(packageDir, 'README.md'),
+          documentation.readme || `# ${sanitizedEffectName}\n\nEffet JavaScript optimisé`
+        ),
+        
+        // Changelog
+        this.safeWriteFile(
+          path.join(packageDir, 'CHANGELOG.md'),
+          documentation.changelog || '# Changelog\n\nVersion 1.0 - Première version'
+        ),
+        
+        // Fichier d'exemple d'utilisation
+        this.safeWriteFile(
+          path.join(packageDir, 'example.html'),
+          this.generateExampleHTML(sanitizedEffectName)
+        ),
+        
+        // Informations de licence
+        this.safeWriteFile(
+          path.join(packageDir, 'LICENSE.txt'),
+          this.generateLicense()
+        ),
+        
+        // Guide d'installation
+        this.safeWriteFile(
+          path.join(packageDir, 'INSTALLATION.md'),
+          this.generateInstallationGuide(sanitizedEffectName)
+        )
+      ]);
 
     // Créer une archive ZIP
     const zipPath = path.join(this.outputDir, `${effectName}_${timestamp}.zip`);
@@ -336,15 +353,66 @@ Pour toute question ou problème:
 
   private async createZipArchive(sourceDir: string, outputPath: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const output = createWriteStream(outputPath);
-      const archive = archiver('zip', { zlib: { level: 9 } });
+      try {
+        const output = createWriteStream(outputPath);
+        const archive = archiver('zip', { zlib: { level: 9 } });
 
-      output.on('close', () => resolve());
-      archive.on('error', (err) => reject(err));
+        // Timeout de sécurité
+        const timeout = setTimeout(() => {
+          reject(new Error('Timeout lors de la création de l\'archive'));
+        }, 30000);
 
-      archive.pipe(output);
-      archive.directory(sourceDir, false);
-      archive.finalize();
+        output.on('close', () => {
+          clearTimeout(timeout);
+          console.log(`Archive créée: ${archive.pointer()} bytes`);
+          resolve();
+        });
+
+        output.on('error', (err) => {
+          clearTimeout(timeout);
+          reject(new Error(`Erreur d'écriture: ${err.message}`));
+        });
+
+        archive.on('error', (err) => {
+          clearTimeout(timeout);
+          reject(new Error(`Erreur d'archivage: ${err.message}`));
+        });
+
+        archive.on('warning', (err) => {
+          console.warn('Archive warning:', err);
+        });
+
+        archive.pipe(output);
+        archive.directory(sourceDir, false);
+        archive.finalize();
+        
+      } catch (error) {
+        reject(new Error(`Erreur lors de la création de l'archive: ${error.message}`));
+      }
     });
   }
+
+  private sanitizeFileName(filename: string): string {
+    // Nettoyer le nom de fichier pour éviter les problèmes de sécurité
+    return filename
+      .replace(/[^a-zA-Z0-9-_]/g, '_')
+      .replace(/__+/g, '_')
+      .substring(0, 50)
+      .trim();
+  }
+
+  private async safeWriteFile(filePath: string, content: string): Promise<void> {
+    try {
+      // Vérifier que le contenu n'est pas trop volumineux
+      if (content.length > 10 * 1024 * 1024) { // 10MB max
+        throw new Error('Contenu trop volumineux');
+      }
+      
+      await fs.writeFile(filePath, content, 'utf-8');
+    } catch (error) {
+      throw new Error(`Erreur d'écriture fichier ${path.basename(filePath)}: ${error.message}`);
+    }
+  }
 }
+
+export { DocumentationPackager };
