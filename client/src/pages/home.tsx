@@ -33,25 +33,25 @@ interface Level {
 // ==================== COMPOSANTS ====================
 const ParticleBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
-    
+
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
-    
+
     const particles: Particle[] = [];
     const particleCount = 50;
-    
+
     class Particle {
       x: number;
       y: number;
@@ -68,17 +68,17 @@ const ParticleBackground = () => {
         this.speedY = Math.random() * 1 - 0.5;
         this.color = `rgba(${Math.random() > 0.5 ? '0, 245, 255' : '255, 215, 0'}, ${Math.random() * 0.5 + 0.2})`;
       }
-      
+
       update() {
         this.x += this.speedX;
         this.y += this.speedY;
-        
+
         if (canvas) {
           if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
           if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
         }
       }
-      
+
       draw() {
         if (!ctx) return;
         ctx.fillStyle = this.color;
@@ -87,11 +87,11 @@ const ParticleBackground = () => {
         ctx.fill();
       }
     }
-    
+
     for (let i = 0; i < particleCount; i++) {
       particles.push(new Particle());
     }
-    
+
     const connectParticles = () => {
       if (!ctx) return;
       for (let i = 0; i < particles.length; i++) {
@@ -99,7 +99,7 @@ const ParticleBackground = () => {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          
+
           if (distance < 80) {
             ctx.strokeStyle = `rgba(0, 245, 255, ${0.2 * (1 - distance / 80)})`;
             ctx.lineWidth = 0.5;
@@ -111,27 +111,27 @@ const ParticleBackground = () => {
         }
       }
     };
-    
+
     const animate = () => {
       if (!ctx) return;
       ctx.clearRect(0, 0, canvas?.width || 800, canvas?.height || 600);
-      
+
       particles.forEach(particle => {
         particle.update();
         particle.draw();
       });
-      
+
       connectParticles();
       requestAnimationFrame(animate);
     };
-    
+
     animate();
-    
+
     return () => {
       window.removeEventListener('resize', resizeCanvas);
     };
   }, []);
-  
+
   return (
     <canvas 
       ref={canvasRef} 
@@ -165,11 +165,11 @@ const Header = () => {
         >
           <div className="logo">⚗️</div>
         </motion.div>
-        
+
         <h1 className="app-title">
           <span className="title-highlight">VISUAL EFFECTS</span> TRANSFORMER
         </h1>
-        
+
         <p className="app-subtitle">Digital Alchemy Lab</p>
       </motion.div>
     </header>
@@ -181,13 +181,13 @@ const DropZone = ({ onFileSelect, file }: {
   file: File | null; 
 }) => {
   const [isDragActive, setIsDragActive] = useState(false);
-  
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles && acceptedFiles.length > 0) {
       onFileSelect(acceptedFiles[0]);
     }
   }, [onFileSelect]);
-  
+
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
     accept: { 
@@ -200,7 +200,7 @@ const DropZone = ({ onFileSelect, file }: {
     onDragEnter: () => setIsDragActive(true),
     onDragLeave: () => setIsDragActive(false),
   });
-  
+
   return (
     <motion.div 
       className="dropzone-container"
@@ -213,7 +213,7 @@ const DropZone = ({ onFileSelect, file }: {
         className={`dropzone ${isDragActive ? 'active' : ''} ${file ? 'has-file' : ''}`}
       >
         <input {...getInputProps()} />
-        
+
         <div className="dropzone-border">
           <div className="corner-markers">
             <div className="corner top-left"></div>
@@ -221,7 +221,7 @@ const DropZone = ({ onFileSelect, file }: {
             <div className="corner bottom-left"></div>
             <div className="corner bottom-right"></div>
           </div>
-          
+
           <div className="dropzone-content">
             <div className="dropzone-icon-container">
               <motion.div 
@@ -233,11 +233,11 @@ const DropZone = ({ onFileSelect, file }: {
               </motion.div>
               <div className="pulse-ring"></div>
             </div>
-            
+
             <h3 className="dropzone-title">
               {file ? "FICHIER SÉLECTIONNÉ" : "SOURCE CODE ANALYZER"}
             </h3>
-            
+
             {file ? (
               <div className="file-info">
                 <div className="file-name">{file.name}</div>
@@ -248,7 +248,7 @@ const DropZone = ({ onFileSelect, file }: {
                 Glissez-déposez votre fichier .js ici ou cliquez pour sélectionner
               </p>
             )}
-            
+
             <div className="tech-specs">
               <span className="spec">📊 JavaScript ES6+</span>
               <span className="spec">🔒 Max: 1MB</span>
@@ -256,7 +256,7 @@ const DropZone = ({ onFileSelect, file }: {
             </div>
           </div>
         </div>
-        
+
         <div className="scan-lines"></div>
       </div>
     </motion.div>
@@ -310,7 +310,7 @@ const AlchemyLevelSelector = ({
       transition={{ duration: 0.7, delay: 0.2 }}
     >
       <h3 className="section-title">🎛️ INTENSITÉ DE TRANSFORMATION</h3>
-      
+
       <div className="levels-grid">
         {levelConfigs.map((level) => (
           <motion.div
@@ -324,20 +324,20 @@ const AlchemyLevelSelector = ({
             onClick={() => onLevelSelect(level.id)}
           >
             <div className="level-glow" style={{ '--glow-color': level.color } as React.CSSProperties}></div>
-            
+
             <div className="level-content">
               <div className="level-icon">{level.icon}</div>
               <h4>{level.name}</h4>
               <div className="module-count">{level.modules} MODULES</div>
               <p>{level.description}</p>
-              
+
               <div className="features-list">
                 {level.features.map((feature, idx) => (
                   <span key={idx} className="feature-tag">{feature}</span>
                 ))}
               </div>
             </div>
-            
+
             <div className="selection-indicator">
               <div className="pulse-dot"></div>
             </div>
@@ -377,7 +377,7 @@ const TransformationButton = ({
           <div className="energy-waves"></div>
           <div className="lightning-effect"></div>
         </div>
-        
+
         <div className="button-content">
           <span className="button-icon">⚗️</span>
           <span className="button-text">
@@ -391,15 +391,15 @@ const TransformationButton = ({
 
 const ProcessingScreen = ({ transformation }: { transformation: Transformation }) => {
   const [progress, setProgress] = useState(0);
-  
+
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress(prev => Math.min(prev + Math.random() * 10, 85));
     }, 500);
-    
+
     return () => clearInterval(interval);
   }, []);
-  
+
   return (
     <motion.div 
       className="processing-screen"
@@ -413,7 +413,7 @@ const ProcessingScreen = ({ transformation }: { transformation: Transformation }
           <h3>TRANSFORMATION QUANTIQUE EN COURS</h3>
           <p>Niveau {transformation.level} • {transformation.level === 1 ? '7' : transformation.level === 2 ? '13' : '23'} modules IA activés</p>
         </div>
-        
+
         <div className="progress-section">
           <div className="progress-bar-container">
             <div className="progress-bar" style={{ width: `${progress}%` }}></div>
@@ -421,7 +421,7 @@ const ProcessingScreen = ({ transformation }: { transformation: Transformation }
           </div>
           <div className="progress-text">{Math.round(progress)}%</div>
         </div>
-        
+
         <div className="processing-steps">
           <div className="step active">
             <span className="step-icon">🔍</span>
@@ -444,7 +444,7 @@ const ProcessingScreen = ({ transformation }: { transformation: Transformation }
 const ResultsSection = ({ transformation }: { transformation: Transformation }) => {
   const [showFullCode, setShowFullCode] = useState(false);
   const { toast } = useToast();
-  
+
   const handleDownload = async () => {
     try {
       const response = await fetch(`/api/download/${transformation.id}`);
@@ -474,7 +474,7 @@ const ResultsSection = ({ transformation }: { transformation: Transformation }) 
       });
     }
   };
-  
+
   return (
     <motion.div 
       className="results-section"
@@ -487,7 +487,7 @@ const ResultsSection = ({ transformation }: { transformation: Transformation }) 
         <h3>TRANSFORMATION RÉUSSIE</h3>
         <p>Votre effet a été optimisé avec {transformation.stats?.modulesApplied || 0} modules IA</p>
       </div>
-      
+
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-value">+{transformation.stats?.performanceImprovement || 0}%</div>
@@ -506,7 +506,7 @@ const ResultsSection = ({ transformation }: { transformation: Transformation }) 
           <div className="stat-label">Fluidité</div>
         </div>
       </div>
-      
+
       <div className="code-comparison">
         <div className="code-panel">
           <h4>Code Original</h4>
@@ -519,7 +519,7 @@ const ResultsSection = ({ transformation }: { transformation: Transformation }) 
              (transformation.originalCode || '').split('\n').slice(0, 10).join('\n') + '\n// ...'}
           </SyntaxHighlighter>
         </div>
-        
+
         <div className="code-panel enhanced">
           <h4>Code Transformé</h4>
           <SyntaxHighlighter 
@@ -532,7 +532,7 @@ const ResultsSection = ({ transformation }: { transformation: Transformation }) 
           </SyntaxHighlighter>
         </div>
       </div>
-      
+
       <div className="results-actions">
         <button 
           className="toggle-code-btn"
@@ -540,7 +540,7 @@ const ResultsSection = ({ transformation }: { transformation: Transformation }) 
         >
           {showFullCode ? 'Masquer le code complet' : 'Afficher le code complet'}
         </button>
-        
+
         <button 
           className="download-btn"
           onClick={handleDownload}
@@ -582,13 +582,13 @@ export default function Home() {
       console.log('Creating FormData for file:', file.name, file.type);
       const formData = new FormData();
       formData.append('file', file);
-      
+
       // Log FormData content
       console.log('FormData has file:', formData.has('file'));
       Array.from(formData.entries()).forEach(([key, value]) => {
         console.log('FormData entry:', key, value);
       });
-      
+
       const response = await apiRequest('POST', '/api/upload', formData);
       console.log('Upload response status:', response.status);
       return response.json();
@@ -658,10 +658,10 @@ export default function Home() {
   return (
     <div className="digital-alchemy-app">
       <ParticleBackground />
-      
+
       <div className="app-container">
         <Header />
-        
+
         <main className="main-content">
           <AnimatePresence mode="wait">
             {!selectedFile && (
@@ -669,7 +669,7 @@ export default function Home() {
                 <DropZone onFileSelect={handleFileUpload} file={selectedFile} />
               </motion.div>
             )}
-            
+
             {selectedFile && !isProcessing && !isCompleted && !hasFailed && (
               <motion.div key="config" className="config-section">
                 <DropZone onFileSelect={handleFileUpload} file={selectedFile} />
@@ -678,7 +678,7 @@ export default function Home() {
                   onLevelSelect={setSelectedLevel}
                   levels={levels}
                 />
-                
+
                 {/* Analyse intelligente de l'effet uploadé */}
                 {effectAnalysis && (
                   <motion.div 
@@ -689,28 +689,43 @@ export default function Home() {
                   >
                     <h3>🧠 Analyse Intelligente de l'Effet</h3>
                     <div className="analysis-content">
-                      <div className="category-info">
-                        <strong>📂 Catégorie:</strong> {effectAnalysis.category}
+                      <div className="effect-category">
+                        <strong>{effectAnalysis.icon || '📂'} Catégorie:</strong> {effectAnalysis.category}
                         {effectAnalysis.subcategory && (
                           <span className="subcategory"> → {effectAnalysis.subcategory}</span>
                         )}
                       </div>
-                      
+
+                      <div className="category-type-indicator">
+                        {effectAnalysis.category_type === 'complete' && (
+                          <span className="type-badge complete">🟢 Effet Complet - Niveau Standard Parfait</span>
+                        )}
+                        {effectAnalysis.category_type === 'moderate' && (
+                          <span className="type-badge moderate">🟡 Potentiel Modéré - Niveaux 1-2</span>
+                        )}
+                        {effectAnalysis.category_type === 'revolutionary' && (
+                          <span className="type-badge revolutionary">🔴 Potentiel Révolutionnaire - Tous Niveaux</span>
+                        )}
+                      </div>
+
                       <div className="available-levels">
                         <strong>🎯 Niveaux Disponibles:</strong>
                         <div className="levels-badges">
                           {effectAnalysis.availableLevels.map((level: number) => (
                             <span key={level} className={`level-badge level-${level}`}>
-                              Niveau {level}
+                              {level <= 3 ? `Niveau ${level}` : `Pro ${level}`}
+                              {level === 1 && ' (Standard)'}
+                              {level === 2 && ' (Pro)'}
+                              {level === 3 && ' (Premium)'}
                             </span>
                           ))}
                         </div>
                       </div>
-                      
+
                       <div className="analysis-reason">
-                        <strong>💡 Raison:</strong> {effectAnalysis.reason}
+                        <strong>💡 Analyse:</strong> {effectAnalysis.reason}
                       </div>
-                      
+
                       {effectAnalysis.recommendations && (
                         <div className="recommendations">
                           <strong>🚀 Recommandations:</strong>
@@ -721,7 +736,7 @@ export default function Home() {
                           </ul>
                         </div>
                       )}
-                      
+
                       <div className="confidence-meter">
                         <strong>🎯 Confiance:</strong>
                         <div className="confidence-bar">
@@ -744,13 +759,13 @@ export default function Home() {
                 />
               </motion.div>
             )}
-            
+
             {isProcessing && transformation && (
               <motion.div key="processing" className="processing-section">
                 <ProcessingScreen transformation={transformation} />
               </motion.div>
             )}
-            
+
             {isCompleted && transformation && (
               <motion.div key="results" className="results-section-container">
                 <ResultsSection transformation={transformation} />
@@ -762,7 +777,7 @@ export default function Home() {
                 </button>
               </motion.div>
             )}
-            
+
             {hasFailed && transformation && (
               <motion.div key="error" className="error-section">
                 <div className="error-content">

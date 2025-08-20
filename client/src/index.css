@@ -31,7 +31,7 @@
   --chart-4: hsl(142, 69%, 42%);
   --chart-5: hsl(340, 75%, 55%);
   --radius: 0.75rem;
-  
+
   /* Custom colors for Visual Effects Transformer */
   --success: hsl(142, 76%, 36%);
   --success-foreground: hsl(0, 0%, 100%);
@@ -39,6 +39,13 @@
   --danger-foreground: hsl(0, 0%, 100%);
   --light: hsl(220, 14%, 98%);
   --dark: hsl(220, 20%, 16%);
+
+  /* Custom colors for Cyberpunk theme */
+  --cyber-blue: hsl(204, 87%, 70%);
+  --neon-green: hsl(138, 92%, 74%);
+  --gold: hsl(48, 100%, 67%);
+  --text-primary: hsl(220, 15%, 85%);
+  --text-secondary: hsl(220, 15%, 60%);
 }
 
 .dark {
@@ -66,7 +73,7 @@
   --chart-3: hsl(47, 90%, 56%);
   --chart-4: hsl(142, 69%, 42%);
   --chart-5: hsl(340, 75%, 55%);
-  
+
   /* Custom colors for dark mode */
   --success: hsl(142, 76%, 36%);
   --success-foreground: hsl(0, 0%, 100%);
@@ -74,6 +81,13 @@
   --danger-foreground: hsl(0, 0%, 100%);
   --light: hsl(220, 20%, 10%);
   --dark: hsl(220, 6%, 90%);
+
+  /* Custom colors for Cyberpunk theme (dark mode) */
+  --cyber-blue: hsl(204, 87%, 60%);
+  --neon-green: hsl(138, 92%, 64%);
+  --gold: hsl(48, 100%, 57%);
+  --text-primary: hsl(220, 15%, 80%);
+  --text-secondary: hsl(220, 15%, 50%);
 }
 
 @layer base {
@@ -867,28 +881,28 @@
   .app-container {
     padding: 1rem;
   }
-  
+
   .app-title {
     font-size: 2rem;
   }
-  
+
   .dropzone {
     padding: 2rem;
   }
-  
+
   .levels-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .results-actions {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .processing-steps {
     flex-direction: column;
     align-items: center;
@@ -1022,6 +1036,95 @@
     font-size: 0.8rem;
     margin: 0;
   }
+
+  /* === NOUVEAUX STYLES POUR LES NIVEAUX ET CATÉGORIES === */
+  .level-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    margin: 2px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+  }
+
+  .level-badge.level-1 {
+    background: linear-gradient(135deg, #10b981, #059669);
+  }
+
+  .level-badge.level-2 {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  }
+
+  .level-badge.level-3 {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  }
+
+  .level-badge.level-4 {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+  }
+
+  .level-badge.level-5 {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+  }
+
+  .level-badge.level-6 {
+    background: linear-gradient(135deg, #ec4899, #be185d);
+  }
+
+  /* Indicateurs de type de catégorie */
+  .category-type-indicator {
+    margin: 8px 0;
+  }
+
+  .type-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    width: 100%;
+    margin: 4px 0;
+  }
+
+  .type-badge.complete {
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+    color: #166534;
+    border: 1px solid #16a34a;
+  }
+
+  .type-badge.moderate {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    border: 1px solid #f59e0b;
+  }
+
+  .type-badge.revolutionary {
+    background: linear-gradient(135deg, #fecaca, #fca5a5);
+    color: #991b1b;
+    border: 1px solid #ef4444;
+  }
+
+  /* Amélioration de l'affichage des sous-catégories */
+  .subcategory {
+    font-style: italic;
+    color: var(--text-secondary);
+    font-weight: normal;
+  }
+
+  .effect-category {
+    margin-bottom: 12px;
+  }
+
+  .analysis-reason {
+    margin-top: 12px;
+    padding: 8px;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 8px;
+    border-left: 3px solid var(--primary);
+  }
 }
 
 @layer utilities {
@@ -1029,15 +1132,15 @@
   .text-success {
     color: var(--success);
   }
-  
+
   .text-danger {
     color: var(--danger);
   }
-  
+
   .text-light {
     color: var(--light);
   }
-  
+
   .text-dark {
     color: var(--dark);
   }
@@ -1046,15 +1149,15 @@
   .bg-success {
     background-color: var(--success);
   }
-  
+
   .bg-danger {
     background-color: var(--danger);
   }
-  
+
   .bg-light {
     background-color: var(--light);
   }
-  
+
   .bg-dark {
     background-color: var(--dark);
   }
@@ -1107,7 +1210,7 @@
   .mobile-padding {
     @apply px-4 py-6;
   }
-  
+
   .mobile-text {
     @apply text-sm;
   }

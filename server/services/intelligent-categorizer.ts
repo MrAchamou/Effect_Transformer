@@ -9,6 +9,8 @@ interface EffectCategory {
   availableLevels: number[];
   reason: string;
   description: string;
+  category_type: 'complete' | 'moderate' | 'revolutionary';
+  icon: string;
 }
 
 interface ClassificationResult {
@@ -18,12 +20,15 @@ interface ClassificationResult {
   reason: string;
   confidence: number;
   recommendations: string[];
+  category_type?: 'complete' | 'moderate' | 'revolutionary';
+  icon?: string;
 }
 
 export class IntelligentCategorizer {
   private categories: Record<string, EffectCategory> = {
+    // 🟢 NIVEAU 1 SEULEMENT - Effets "complets" qui n'ont pas besoin de plus
     ui_ux: {
-      name: "Interface Utilisateur",
+      name: "Interface Utilisateur (UI/UX)",
       subcategories: [
         'animations_boutons', 'effets_loading', 'preloaders',
         'animations_navigation', 'menus', 'micro_interactions',
@@ -31,8 +36,10 @@ export class IntelligentCategorizer {
         'button', 'menu', 'navigation', 'loading'
       ],
       availableLevels: [1],
-      reason: "Effet UI déjà optimisé - niveau Standard parfait",
-      description: "Effets d'interface utilisateur complets qui n'ont pas besoin d'améliorations complexes"
+      reason: "Effet UI optimisé - Parfaitement complet au niveau Standard",
+      description: "🟢 Effets d'interface utilisateur déjà optimisés qui n'ont pas besoin d'améliorations complexes",
+      category_type: "complete",
+      icon: "🎯"
     },
 
     transitions_simples: {
@@ -42,10 +49,13 @@ export class IntelligentCategorizer {
         'fade', 'slide', 'wipe', 'simple_transition'
       ],
       availableLevels: [1],
-      reason: "Transitions simples déjà complètes",
-      description: "Transitions basiques qui fonctionnent parfaitement au niveau Standard"
+      reason: "Transitions simples déjà complètes - Niveau Standard parfait",
+      description: "🟢 Transitions basiques qui fonctionnent parfaitement sans améliorations",
+      category_type: "complete",
+      icon: "⚡"
     },
 
+    // 🟡 NIVEAUX 1 + 2 - Effets avec potentiel d'amélioration modéré
     texte: {
       name: "Effets de Texte",
       subcategories: [
@@ -55,7 +65,9 @@ export class IntelligentCategorizer {
       ],
       availableLevels: [1, 2],
       reason: "Potentiel modéré d'amélioration avec IA",
-      description: "Effets de texte avec possibilités d'optimisation intelligente"
+      description: "🟡 Effets de texte avec possibilités d'optimisation intelligente (sauf effets 3D sur texte)",
+      category_type: "moderate",
+      icon: "📝"
     },
 
     images: {
@@ -68,7 +80,9 @@ export class IntelligentCategorizer {
       ],
       availableLevels: [1, 2],
       reason: "Améliorations visuelles possibles avec IA",
-      description: "Effets d'images avec potentiel d'amélioration modéré"
+      description: "🟡 Effets d'images avec potentiel d'amélioration modéré",
+      category_type: "moderate",
+      icon: "🖼️"
     },
 
     audio: {
@@ -80,9 +94,12 @@ export class IntelligentCategorizer {
       ],
       availableLevels: [1, 2],
       reason: "Optimisations audio intelligentes disponibles",
-      description: "Effets audio avec possibilités d'amélioration sonore"
+      description: "🟡 Effets audio avec possibilités d'amélioration sonore",
+      category_type: "moderate",
+      icon: "🔊"
     },
 
+    // 🔴 TOUS NIVEAUX (1, 2, 3+) - Effets avec énorme potentiel d'amélioration IA
     particules_simulation: {
       name: "Particules et Simulation",
       subcategories: [
@@ -93,8 +110,10 @@ export class IntelligentCategorizer {
         'physics', 'magic', 'fantasy', 'explosion'
       ],
       availableLevels: [1, 2, 3, 4, 5, 6],
-      reason: "ÉNORME potentiel d'amélioration IA - Tous niveaux recommandés",
-      description: "Systèmes complexes avec potentiel révolutionnaire d'amélioration"
+      reason: "🚀 ÉNORME potentiel d'amélioration IA - Tous niveaux recommandés",
+      description: "🔴 Systèmes complexes avec potentiel révolutionnaire d'amélioration",
+      category_type: "revolutionary",
+      icon: "✨"
     },
 
     motion_3d: {
@@ -107,8 +126,10 @@ export class IntelligentCategorizer {
         'matrix', 'perspective', 'depth'
       ],
       availableLevels: [1, 2, 3, 4, 5, 6],
-      reason: "Technologies 3D avancées - Maximum d'améliorations IA possible",
-      description: "Effets 3D complexes avec potentiel maximal d'optimisation"
+      reason: "🚀 Technologies 3D avancées - Maximum d'améliorations IA possible",
+      description: "🔴 Effets 3D complexes avec potentiel maximal d'optimisation (inclut les effets 3D sur texte)",
+      category_type: "revolutionary",
+      icon: "🎮"
     },
 
     video_avance: {
@@ -120,8 +141,10 @@ export class IntelligentCategorizer {
         'composite', 'chroma', 'filter'
       ],
       availableLevels: [1, 2, 3, 4, 5, 6],
-      reason: "Traitement vidéo complexe - IA révolutionnaire applicable",
-      description: "Effets vidéo avancés nécessitant toute la puissance de l'IA"
+      reason: "🚀 Traitement vidéo complexe - IA révolutionnaire applicable",
+      description: "🔴 Effets vidéo avancés nécessitant toute la puissance de l'IA",
+      category_type: "revolutionary",
+      icon: "🎬"
     }
   };
 
@@ -138,7 +161,9 @@ export class IntelligentCategorizer {
       availableLevels: category.availableLevels,
       reason: category.reason,
       confidence: analysis.confidence,
-      recommendations: this.generateRecommendations(category, analysis)
+      recommendations: this.generateRecommendations(category, analysis),
+      category_type: category.category_type,
+      icon: category.icon
     };
   }
 
@@ -301,29 +326,146 @@ export class IntelligentCategorizer {
   }
 
   /**
-   * Classification par contenu
+   * Classification par contenu utilisant l'algorithme intelligent
    */
   private classifyByContent(analysis: any): EffectCategory {
-    // Vérifier chaque catégorie
-    for (const [key, category] of Object.entries(this.categories)) {
-      const matchScore = this.calculateCategoryMatch(analysis, category);
-      if (matchScore > 0.6) {
-        return category;
-      }
-    }
+    const { keywords, patterns, complexity, detectedSubcategory } = analysis;
+    
+    // Applique l'algorithme de détection des niveaux disponibles
+    const detectionResult = this.detectAvailableLevels(
+      detectedSubcategory, 
+      keywords, 
+      patterns, 
+      complexity
+    );
 
-    // Classification par complexité si pas de match exact
-    if (analysis.patterns.includes('3d_math') || analysis.patterns.includes('webgl') || 
-        analysis.patterns.includes('particle_system')) {
-      return this.categories.motion_3d;
-    }
+    return detectionResult.category;
+  }
 
-    if (analysis.complexity === 'low' && analysis.patterns.includes('interaction')) {
-      return this.categories.ui_ux;
+  /**
+   * Algorithme de détection intelligent des niveaux disponibles
+   */
+  private detectAvailableLevels(
+    effectName: string, 
+    keywords: string[], 
+    patterns: string[], 
+    complexity: string
+  ): { category: EffectCategory; levels: number[]; reason: string } {
+    
+    // 🟢 Niveau 1 seulement - Effets UI/UX et transitions simples
+    if (this.isUIUXEffect(keywords, patterns) || this.isSimpleTransition(effectName, keywords)) {
+      return { 
+        category: this.categories.ui_ux, 
+        levels: [1], 
+        reason: "Effet UI optimisé" 
+      };
     }
-
+    
+    // 🟡 Niveaux 1+2 - Texte, images, audio (sauf 3D avancé)
+    if (this.isTextEffect(keywords, patterns) && !this.isAdvanced3D(keywords, patterns)) {
+      return { 
+        category: this.categories.texte, 
+        levels: [1, 2], 
+        reason: "Potentiel modéré d'amélioration" 
+      };
+    }
+    
+    if (this.isImageEffect(keywords, patterns) && !this.isAdvanced3D(keywords, patterns)) {
+      return { 
+        category: this.categories.images, 
+        levels: [1, 2], 
+        reason: "Améliorations visuelles possibles" 
+      };
+    }
+    
+    if (this.isAudioEffect(keywords, patterns)) {
+      return { 
+        category: this.categories.audio, 
+        levels: [1, 2], 
+        reason: "Optimisations audio intelligentes" 
+      };
+    }
+    
+    // 🔴 Tous niveaux - Particules, 3D, vidéo complexe
+    if (this.isParticleSimulation(keywords, patterns)) {
+      return { 
+        category: this.categories.particules_simulation, 
+        levels: [1, 2, 3, 4, 5, 6], 
+        reason: "Fort potentiel d'amélioration IA" 
+      };
+    }
+    
+    if (this.is3DMotion(keywords, patterns) || this.isAdvanced3D(keywords, patterns)) {
+      return { 
+        category: this.categories.motion_3d, 
+        levels: [1, 2, 3, 4, 5, 6], 
+        reason: "Technologies 3D avancées" 
+      };
+    }
+    
+    if (this.isAdvancedVideo(keywords, patterns)) {
+      return { 
+        category: this.categories.video_avance, 
+        levels: [1, 2, 3, 4, 5, 6], 
+        reason: "Traitement vidéo complexe" 
+      };
+    }
+    
     // Fallback sécurisé
-    return this.categories.texte;
+    return { 
+      category: this.categories.texte, 
+      levels: [1, 2], 
+      reason: "Classification par défaut" 
+    };
+  }
+
+  // Méthodes d'aide pour la détection
+  private isUIUXEffect(keywords: string[], patterns: string[]): boolean {
+    const uiKeywords = ['button', 'menu', 'navigation', 'loading', 'hover', 'ripple'];
+    return keywords.some(k => uiKeywords.some(ui => k.includes(ui))) || 
+           patterns.includes('interaction');
+  }
+
+  private isSimpleTransition(name: string, keywords: string[]): boolean {
+    const transitionKeywords = ['fade', 'slide', 'wipe', 'transition'];
+    return transitionKeywords.some(t => name.includes(t) || keywords.some(k => k.includes(t)));
+  }
+
+  private isTextEffect(keywords: string[], patterns: string[]): boolean {
+    const textKeywords = ['text', 'font', 'typography', 'typewriter', 'glitch_text'];
+    return keywords.some(k => textKeywords.some(t => k.includes(t)));
+  }
+
+  private isImageEffect(keywords: string[], patterns: string[]): boolean {
+    const imageKeywords = ['image', 'photo', 'gallery', 'slideshow', 'parallax'];
+    return keywords.some(k => imageKeywords.some(i => k.includes(i)));
+  }
+
+  private isAudioEffect(keywords: string[], patterns: string[]): boolean {
+    const audioKeywords = ['audio', 'sound', 'music', 'voice'];
+    return keywords.some(k => audioKeywords.some(a => k.includes(a)));
+  }
+
+  private isParticleSimulation(keywords: string[], patterns: string[]): boolean {
+    const particleKeywords = ['particle', 'fire', 'smoke', 'snow', 'magic', 'physics'];
+    return keywords.some(k => particleKeywords.some(p => k.includes(p))) || 
+           patterns.includes('particle_system') || patterns.includes('physics');
+  }
+
+  private is3DMotion(keywords: string[], patterns: string[]): boolean {
+    const motionKeywords = ['3d', 'camera', 'render', 'rotation', 'transform', 'matrix'];
+    return keywords.some(k => motionKeywords.some(m => k.includes(m))) || 
+           patterns.includes('3d_math') || patterns.includes('webgl');
+  }
+
+  private isAdvanced3D(keywords: string[], patterns: string[]): boolean {
+    return patterns.includes('webgl') || patterns.includes('3d_math') ||
+           keywords.some(k => k.includes('webgl') || k.includes('three') || k.includes('3d'));
+  }
+
+  private isAdvancedVideo(keywords: string[], patterns: string[]): boolean {
+    const videoKeywords = ['video', 'morphing', 'grading', 'composite', 'chroma'];
+    return keywords.some(k => videoKeywords.some(v => k.includes(v)));
   }
 
   /**
