@@ -6,6 +6,7 @@ import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import InteractivePreview from "@/components/InteractivePreview";
 
 // Types
 interface Transformation {
@@ -443,6 +444,7 @@ const ProcessingScreen = ({ transformation }: { transformation: Transformation }
 
 const ResultsSection = ({ transformation }: { transformation: Transformation }) => {
   const [showFullCode, setShowFullCode] = useState(false);
+  const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'stats'>('preview');
   const { toast } = useToast();
 
   const handleDownload = async () => {
@@ -507,42 +509,118 @@ const ResultsSection = ({ transformation }: { transformation: Transformation }) 
         </div>
       </div>
 
-      <div className="code-comparison">
-        <div className="code-panel">
-          <h4>Code Original</h4>
-          <SyntaxHighlighter 
-            language="javascript" 
-            style={atomDark}
-            className="code-display"
+      {/* Onglets de navigation */}
+      <div className="results-tabs">
+        <div className="tabs-navigation">
+          <button 
+            className={`tab-button ${activeTab === 'preview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('preview')}
           >
-            {showFullCode ? transformation.originalCode || '' : 
-             (transformation.originalCode || '').split('\n').slice(0, 10).join('\n') + '\n// ...'}
-          </SyntaxHighlighter>
+            🎮 Prévisualisation Interactive
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'code' ? 'active' : ''}`}
+            onClick={() => setActiveTab('code')}
+          >
+            💻 Comparaison de Code
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'stats' ? 'active' : ''}`}
+            onClick={() => setActiveTab('stats')}
+          >
+            📊 Statistiques Détaillées
+          </button>
         </div>
 
-        <div className="code-panel enhanced">
-          <h4>Code Transformé</h4>
-          <SyntaxHighlighter 
-            language="javascript" 
-            style={atomDark}
-            className="code-display"
-          >
-            {showFullCode ? transformation.transformedCode || '' : 
-             (transformation.transformedCode || '').split('\n').slice(0, 10).join('\n') + '\n// ...'}
-          </SyntaxHighlighter>
+        <div className="tab-content">
+          {activeTab === 'preview' && (
+            <InteractivePreview
+              transformedCode={transformation.transformedCode || ''}
+              originalCode={transformation.originalCode || ''}
+              effectName={transformation.originalFilename?.replace('.js', '') || 'VisualEffect'}
+            />
+          )}
+
+          {activeTab === 'code' && (
+            <div className="code-comparison">
+              <div className="code-panel">
+                <h4>Code Original</h4>
+                <SyntaxHighlighter 
+                  language="javascript" 
+                  style={atomDark}
+                  className="code-display"
+                >
+                  {showFullCode ? transformation.originalCode || '' : 
+                   (transformation.originalCode || '').split('\n').slice(0, 10).join('\n') + '\n// ...'}
+                </SyntaxHighlighter>
+              </div>
+
+              <div className="code-panel enhanced">
+                <h4>Code Transformé</h4>
+                <SyntaxHighlighter 
+                  language="javascript" 
+                  style={atomDark}
+                  className="code-display"
+                >
+                  {showFullCode ? transformation.transformedCode || '' : 
+                   (transformation.transformedCode || '').split('\n').slice(0, 10).join('\n') + '\n// ...'}
+                </SyntaxHighlighter>
+              </div>
+
+              <div className="code-actions">
+                <button 
+                  className="toggle-code-btn"
+                  onClick={() => setShowFullCode(!showFullCode)}
+                >
+                  {showFullCode ? 'Masquer le code complet' : 'Afficher le code complet'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'stats' && (
+            <div className="detailed-stats">
+              <div className="stats-panels">
+                <div className="stat-panel">
+                  <h4>📈 Métriques de Performance</h4>
+                  <div className="metrics-list">
+                    <div className="metric-item">
+                      <span className="metric-label">Amélioration performance:</span>
+                      <span className="metric-value">+{transformation.stats?.performanceImprovement || 0}%</span>
+                    </div>
+                    <div className="metric-item">
+                      <span className="metric-label">Amélioration fluidité:</span>
+                      <span className="metric-value">+{transformation.stats?.fluidityImprovement || 0}%</span>
+                    </div>
+                    <div className="metric-item">
+                      <span className="metric-label">Réduction de taille:</span>
+                      <span className="metric-value">{transformation.stats?.sizeReduction || 0}%</span>
+                    </div>
+                    <div className="metric-item">
+                      <span className="metric-label">Modules appliqués:</span>
+                      <span className="metric-value">{transformation.stats?.modulesApplied || 0}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="stat-panel">
+                  <h4>🎯 Analyse de l'Effet</h4>
+                  <div className="analysis-info">
+                    <p><strong>Nom du fichier:</strong> {transformation.originalFilename}</p>
+                    <p><strong>Niveau de transformation:</strong> {transformation.level}</p>
+                    <p><strong>Date de transformation:</strong> {new Date().toLocaleDateString('fr-FR')}</p>
+                    <p><strong>Statut:</strong> <span className="status-success">Complété avec succès</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="results-actions">
         <button 
-          className="toggle-code-btn"
-          onClick={() => setShowFullCode(!showFullCode)}
-        >
-          {showFullCode ? 'Masquer le code complet' : 'Afficher le code complet'}
-        </button>
-
-        <button 
-          className="download-btn"
+          className="download-btn primary"
           onClick={handleDownload}
         >
           <span className="btn-icon">💾</span>
