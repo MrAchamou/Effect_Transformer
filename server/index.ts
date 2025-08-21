@@ -12,36 +12,31 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware de base
-app.use(cors({
-  origin: (origin, callback) => {
-    // Permettre les requêtes sans origin (comme les requêtes directes depuis Postman/curl)
-    if (!origin) return callback(null, true);
-    
-    // Patterns autorisés
-    const allowedPatterns = [
-      /^https?:\/\/localhost(:\d+)?$/,
-      /^https?:\/\/.*\.replit\.dev$/,
-      /^https?:\/\/.*\.replit\.app$/,
-      /^https?:\/\/.*\.replit\.co$/,
-      /^https?:\/\/.*-00-.*\.riker\.replit\.dev$/,
-      /^https?:\/\/.*-00-.*\..*\.replit\.dev$/
-    ];
-    
-    const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
-    
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      console.log(`⚠️ CORS: Origin refusée: ${origin}`);
-      callback(null, true); // Permettre quand même en développement
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
+// Configuration CORS ultra-permissive pour Replit
+app.use((req, res, next) => {
+  // Permettre toutes les origines en développement
+  const origin = req.headers.origin;
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+  } else {
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+  
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma, X-Forwarded-For');
+  res.header('Access-Control-Max-Age', '86400'); // 24 heures
+  
+  // Gestion preflight OPTIONS
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
+  next();
+});
 
+// Configuration Express standard
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -77,27 +72,10 @@ const upload = multer({
   }
 });
 
-// Middleware de logging avec debug CORS
+// Middleware de logging simplifié
 app.use((req, res, next) => {
   const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${req.method} ${req.path}`);
-  
-  // Debug CORS
-  if (req.headers.origin) {
-    console.log(`📍 Origin: ${req.headers.origin}`);
-  }
-  
-  // Headers CORS pour toutes les réponses
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-  
+  console.log(`[${timestamp}] ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
   next();
 });
 
@@ -107,7 +85,8 @@ app.get('/api/health', (req, res) => {
     status: 'OK',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    cors: 'enabled-permissive'
   });
 });
 
@@ -126,7 +105,8 @@ app.get('/', (req, res) => {
     message: 'Code Enhancement Server', 
     status: 'Running',
     version: '1.0.0',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    cors: 'Fully configured for Replit'
   });
 });
 
@@ -185,7 +165,7 @@ app.post('/api/transform', upload.single('file'), async (req, res) => {
     const content = await fs.readFile(filePath, 'utf-8');
 
     // Transformation basique (à remplacer par votre logique)
-    const transformedCode = `// Code transformé (niveau ${level})\n${content}`;
+    const transformedCode = `// Code transformé (niveau ${level})\n// Timestamp: ${new Date().toISOString()}\n${content}`;
 
     // Nettoyage du fichier temporaire
     await fs.unlink(filePath).catch(console.error);
@@ -216,8 +196,13 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 } else {
+  // En développement, servir les fichiers clients si disponibles
   const clientPath = path.join(__dirname, '..', 'client');
-  app.use(express.static(clientPath));
+  try {
+    app.use(express.static(clientPath));
+  } catch (e) {
+    console.log('Pas de fichiers clients statiques trouvés');
+  }
 }
 
 // Gestionnaire d'erreurs global
@@ -231,15 +216,16 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Démarrage du serveur
+// Démarrage du serveur sur toutes les interfaces
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('\n🚀 === SERVEUR DÉMARRÉ AVEC SUCCÈS ===');
-  console.log(`📡 Port: ${PORT} (sur toutes les interfaces)`);
+  console.log(`📡 Port: ${PORT} (écoute sur 0.0.0.0 - toutes interfaces)`);
   console.log(`🌐 URL locale: http://0.0.0.0:${PORT}`);
-  console.log(`🔗 URL Replit: https://${process.env.REPL_SLUG || process.env.REPL_ID || 'repl'}-${PORT}.${process.env.REPL_OWNER || 'user'}.replit.dev`);
+  console.log(`🔗 URL Replit: Accessible via l'interface preview`);
   console.log(`⚙️ Environnement: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`✅ CORS configuré pour accepter les domaines Replit`);
-  console.log('✅ Prêt à recevoir des requêtes\n');
+  console.log(`✅ CORS: Configuration ultra-permissive pour Replit`);
+  console.log(`✅ Toutes les origines autorisées en développement`);
+  console.log('🎯 Serveur prêt à recevoir des requêtes\n');
 });
 
 // Gestion de l'arrêt propre
