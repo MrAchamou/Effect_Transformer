@@ -1,54 +1,44 @@
-
 #!/usr/bin/env node
 
-const { spawn, exec } = require('child_process');
-const fs = require('fs').promises;
+const { spawn } = require('child_process');
+const fs = require('fs');
 
-async function cleanupAndStart() {
-  console.log('🧹 Nettoyage des processus existants...');
-  
-  // Tuer tous les processus Node/TSX existants
-  try {
-    await new Promise((resolve) => {
-      exec('pkill -f "node\\|tsx" 2>/dev/null || true', () => resolve());
+console.log('🚀 Démarrage du serveur...');
+
+// Vérifier si le serveur est déjà en cours d'exécution
+const { exec } = require('child_process');
+exec('lsof -ti:5000', (error, stdout) => {
+  if (stdout.trim()) {
+    console.log('⚠️ Port 5000 déjà utilisé, arrêt du processus existant...');
+    exec(`kill -9 ${stdout.trim()}`, () => {
+      startServer();
     });
-    console.log('✅ Processus nettoyés');
-  } catch (error) {
-    console.log('⚠️ Nettoyage partiel des processus');
+  } else {
+    startServer();
   }
-  
-  // Attendre un peu pour que les ports se libèrent
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  console.log('🚀 Démarrage du serveur...');
-  
-  // Démarrer le serveur avec gestion d'erreurs
+});
+
+function startServer() {
   const server = spawn('npm', ['run', 'dev'], {
     stdio: 'inherit',
     env: { ...process.env, NODE_ENV: 'development' }
   });
-  
+
   server.on('error', (error) => {
     console.error('❌ Erreur de démarrage:', error);
     process.exit(1);
   });
-  
+
   server.on('exit', (code) => {
     if (code !== 0) {
-      console.error(`❌ Serveur arrêté avec le code: ${code}`);
-      process.exit(code);
+      console.log(`⚠️ Serveur arrêté avec le code ${code}`);
     }
   });
-  
-  // Gestionnaire de signaux pour arrêt propre
+
+  // Graceful shutdown
   process.on('SIGINT', () => {
     console.log('\n🛑 Arrêt du serveur...');
     server.kill('SIGTERM');
     process.exit(0);
   });
 }
-
-cleanupAndStart().catch(error => {
-  console.error('❌ Erreur fatale:', error);
-  process.exit(1);
-});
