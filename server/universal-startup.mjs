@@ -1,5 +1,3 @@
-
-
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -132,7 +130,7 @@ app.listen(PORT, '0.0.0.0', () => {
 
 export default app;
 `;
-    
+
     await fs.promises.writeFile('server/index.ts', content, 'utf-8');
   }
 
@@ -151,7 +149,7 @@ router.get('/health', (req, res) => {
 export { router as routes };
 export default router;
 `;
-    
+
     await fs.promises.writeFile('server/routes.ts', content, 'utf-8');
   }
 
@@ -170,7 +168,7 @@ export default router;
 
 export default logger;
 `;
-    
+
     await fs.promises.writeFile('server/utils/logger.ts', content, 'utf-8');
   }
 
@@ -181,9 +179,9 @@ export default logger;
         ['node', ['--loader', 'tsx/esm', 'server/index.ts']];
 
       const [command, args] = startCommand;
-      
-      console.log(\`📡 Démarrage avec: \${command} \${args.join(' ')}\`);
-      
+
+      console.log(`Démarrage avec: ${command} ${args.join(' ')}`);
+
       const server = spawn(command, args, {
         stdio: 'inherit',
         env: { 
@@ -196,6 +194,8 @@ export default logger;
       server.on('spawn', () => {
         console.log('✅ Serveur lancé avec succès!');
         console.log('🌐 Application disponible sur http://0.0.0.0:5000');
+        console.log('📡 API disponible sur http://0.0.0.0:5000/api');
+        console.log('💓 Health check: http://0.0.0.0:5000/health');
         setTimeout(() => resolve(true), 1000);
       });
 
@@ -206,8 +206,8 @@ export default logger;
 
       server.on('exit', (code) => {
         if (code !== 0) {
-          console.error(\`❌ Serveur arrêté avec le code: \${code}\`);
-          reject(new Error(\`Exit code: \${code}\`));
+          console.error(`❌ Serveur arrêté avec le code: ${code}`);
+          reject(new Error(`Exit code: ${code}`));
         }
       });
     });
@@ -216,8 +216,8 @@ export default logger;
   async emergencyFallback() {
     console.log('🚨 === MODE DE SECOURS ===');
     console.log('🔧 Création d\'un serveur de secours...');
-    
-    const emergencyServer = \`const express = require('express');
+
+    const emergencyServer = `const express = require('express');
 const cors = require('cors');
 
 const app = express();
@@ -242,12 +242,12 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(\\\`🚨 Serveur de secours sur port \\\${PORT}\\\`);
+  console.log(\`🚨 Serveur de secours sur port \${PORT}\`);
 });
-\`;
+`;
 
     await fs.promises.writeFile('emergency-server.js', emergencyServer, 'utf-8');
-    
+
     console.log('🚀 Démarrage du serveur de secours...');
     const emergency = spawn('node', ['emergency-server.js'], {
       stdio: 'inherit',
@@ -262,16 +262,16 @@ app.listen(PORT, '0.0.0.0', () => {
   async runCommand(command, args) {
     return new Promise((resolve, reject) => {
       const process = spawn(command, args, { stdio: 'pipe' });
-      
+
       let output = '';
       process.stdout?.on('data', (data) => output += data.toString());
       process.stderr?.on('data', (data) => output += data.toString());
-      
+
       process.on('close', (code) => {
         if (code === 0) {
           resolve(output);
         } else {
-          reject(new Error(\`Command failed: \${command} \${args.join(' ')}\`));
+          reject(new Error(`Command failed: ${command} ${args.join(' ')}`));
         }
       });
     });
