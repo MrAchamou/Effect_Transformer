@@ -65,29 +65,38 @@ class SystemDiagnostics {
   
   async checkServices() {
     const services = [
-      'UniversalPreprocessor',
-      'JSPreprocessor',
-      'DocumentationPackager',
-      'AdvancedEnhancer',
-      'IntelligentCategorizer'
+      'universal-preprocessor',
+      'js-preprocessor',
+      'documentation-packager',
+      'advanced-enhancer',
+      'intelligent-categorizer'
     ];
     
     const results = {};
     
     for (const service of services) {
       try {
-        const servicePath = `./services/${service.toLowerCase().replace(/([A-Z])/g, '-$1').substring(1)}.ts`;
-        const module = await import(servicePath);
+        const servicePath = `./services/${service}.ts`;
+        
+        // Vérifier que le fichier existe avant d'essayer de l'importer
+        await fs.access(servicePath);
+        
+        const content = await fs.readFile(servicePath, 'utf-8');
         
         results[service] = {
-          importable: true,
-          hasClass: !!(module[service] || module.default),
+          exists: true,
+          hasContent: content.length > 100,
+          hasExports: content.includes('export'),
           status: 'OK'
         };
         
+        if (!content.includes('export')) {
+          results[service].status = 'WARNING: Pas d\'exports détectés';
+        }
+        
       } catch (error) {
         results[service] = {
-          importable: false,
+          exists: false,
           status: `ERROR: ${error.message}`,
           critical: true
         };

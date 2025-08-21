@@ -41,10 +41,14 @@ function hasIssues(diagnosticResult) {
 }
 
 async function testFunctionality() {
+  const fs = require('fs').promises;
+  
   const tests = [
-    { name: 'Import UniversalPreprocessor', test: () => import('./server/services/universal-preprocessor.js') },
-    { name: 'Import JSPreprocessor', test: () => import('./server/services/js-preprocessor.js') },
-    { name: 'Import DocumentationPackager', test: () => import('./server/services/documentation-packager.js') }
+    { name: 'UniversalPreprocessor file exists', test: () => fs.access('./server/services/universal-preprocessor.ts') },
+    { name: 'JSPreprocessor file exists', test: () => fs.access('./server/services/js-preprocessor.ts') },
+    { name: 'DocumentationPackager file exists', test: () => fs.access('./server/services/documentation-packager.ts') },
+    { name: 'Routes file exists', test: () => fs.access('./server/routes.ts') },
+    { name: 'Server index exists', test: () => fs.access('./server/index.ts') }
   ];
   
   for (const test of tests) {

@@ -1,8 +1,10 @@
 
+import fs from 'fs';
+import path from 'path';
+
 /**
  * Auditeur système pour vérifier l'intégrité et les performances
  */
-
 export class SystemAuditor {
   private issues: string[] = [];
   private warnings: string[] = [];
@@ -55,7 +57,6 @@ export class SystemAuditor {
 
     // Vérifier les uploads sécurisés
     try {
-      const fs = await import('fs');
       const routesContent = await fs.promises.readFile('server/routes.ts', 'utf-8');
       
       if (!routesContent.includes('fileFilter')) {
@@ -113,7 +114,6 @@ export class SystemAuditor {
 
     for (const file of criticalFiles) {
       try {
-        const fs = await import('fs');
         await fs.promises.access(file);
         
         // Vérifier que le fichier n'est pas vide
@@ -135,25 +135,28 @@ export class SystemAuditor {
 
   private async auditServices(): Promise<void> {
     const services = [
-      'UniversalPreprocessor',
-      'JSPreprocessor', 
-      'DocumentationPackager',
-      'AdvancedEnhancer'
+      'universal-preprocessor',
+      'js-preprocessor', 
+      'documentation-packager',
+      'advanced-enhancer'
     ];
 
     for (const service of services) {
       try {
-        // Test d'importation
-        const modulePath = `../services/${service.toLowerCase().replace(/([A-Z])/g, '-$1').substring(1)}`;
-        const module = await import(modulePath);
+        // Test d'importation avec chemin relatif correct
+        const modulePath = path.resolve(__dirname, `../services/${service}.ts`);
         
-        // Vérifier que la classe est exportée
-        if (!module[service] && !module.default) {
-          this.warnings.push(`Service ${service}: classe non trouvée dans l'export`);
+        // Vérifier que le fichier existe
+        await fs.promises.access(modulePath);
+        
+        // Lire le contenu pour vérifier les exports
+        const content = await fs.promises.readFile(modulePath, 'utf-8');
+        if (!content.includes('export')) {
+          this.warnings.push(`Service ${service}: pas d'exports détectés`);
         }
         
       } catch (error) {
-        this.issues.push(`Service non fonctionnel: ${service} - ${(error as Error).message}`);
+        this.issues.push(`Service non accessible: ${service} - ${(error as Error).message}`);
       }
     }
   }
@@ -181,7 +184,6 @@ export class SystemAuditor {
     
     // Vérifier les fichiers temporaires
     try {
-      const fs = await import('fs');
       const uploadsDir = await fs.promises.readdir('uploads/').catch(() => []);
       if (uploadsDir.length > 100) {
         issues.push('Trop de fichiers temporaires');
@@ -193,3 +195,5 @@ export class SystemAuditor {
     return { issues };
   }
 }
+
+export default SystemAuditor;

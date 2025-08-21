@@ -1,112 +1,24 @@
+
 {
-  "level1": {
+  "1": {
     "name": "Standard",
-    "description": "Optimisation de base avec 7 modules essentiels",
-    "modules": [
-      "CodeOptimizationEngine",
-      "ContentAnalyzer",
-      "SmartOptimizer", 
-      "VisualFocusEngine",
-      "TimingMaster",
-      "ColorHarmonyEngine",
-      "PerformanceAdaptiveEngine"
-    ],
-    "prompt_template": "Tu es un expert en optimisation JavaScript. Transforme ce code d'effet visuel en appliquant ces 7 modules d'amélioration:\n\n1. CodeOptimizationEngine: Optimise la structure du code, élimine les redondances\n2. ContentAnalyzer: Analyse le contenu pour des améliorations contextuelles\n3. SmartOptimizer: Optimise les performances et la mémoire\n4. VisualFocusEngine: Améliore l'impact visuel\n5. TimingMaster: Optimise les timings et animations\n6. ColorHarmonyEngine: Harmonise les couleurs\n7. PerformanceAdaptiveEngine: Adapte aux capacités de l'appareil\n\nRègles:\n- Garde la compatibilité navigateur\n- Améliore les performances\n- Rends le code plus maintenable\n- Préserve la fonctionnalité originale\n- Retourne uniquement le code JavaScript transformé, sans explications"
+    "description": "Optimisations de base avec améliorations essentielles",
+    "modules": ["performance", "security", "documentation"],
+    "complexity": "low",
+    "transformations": 3
   },
-  "level2": {
-    "name": "Professionnel",
-    "description": "Intelligence contextuelle avec 13 modules",
-    "modules": [
-      "CodeOptimizationEngine",
-      "ContentAnalyzer",
-      "SmartOptimizer", 
-      "VisualFocusEngine",
-      "TimingMaster",
-      "ColorHarmonyEngine",
-      "PerformanceAdaptiveEngine",
-      "UserPreferenceEngine",
-      "ContextualAdaptationEngine",
-      "IntelligentCachingEngine",
-      "ResponsiveDesignEngine",
-      "AccessibilityEnhancer",
-      "AnimationFlowOptimizer"
-    ],
-    "prompt_template": "Tu es un expert en développement JavaScript avancé. Transforme ce code d'effet visuel en appliquant ces 13 modules professionnels:\n\n1-7. Modules Standard (voir niveau 1)\n8. UserPreferenceEngine: Adapte aux préférences utilisateur\n9. ContextualAdaptationEngine: Adaptation contextuelle intelligente\n10. IntelligentCachingEngine: Système de cache intelligent\n11. ResponsiveDesignEngine: Adaptation responsive automatique\n12. AccessibilityEnhancer: Améliorations d'accessibilité\n13. AnimationFlowOptimizer: Optimisation des flux d'animation\n\nRègles:\n- Architecture modulaire professionnelle\n- Patterns de design avancés\n- Optimisation pour tous les appareils\n- Accessibilité WCAG 2.1\n- Performance optimale\n- Code maintenable et extensible\n- Retourne uniquement le code JavaScript transformé, sans explications"
+  "2": {
+    "name": "Avancé",
+    "description": "Transformations intermédiaires avec intelligence contextuelle",
+    "modules": ["performance", "security", "animations", "responsive", "accessibility", "documentation"],
+    "complexity": "medium",
+    "transformations": 6
   },
-  "level3": {
-    "name": "Premium", 
-    "description": "Créativité révolutionnaire avec 23 modules",
-    "modules": [
-      "CodeOptimizationEngine",
-      "ContentAnalyzer",
-      "SmartOptimizer", 
-      "VisualFocusEngine",
-      "TimingMaster",
-      "ColorHarmonyEngine",
-      "PerformanceAdaptiveEngine",
-      "UserPreferenceEngine",
-      "ContextualAdaptationEngine",
-      "IntelligentCachingEngine",
-      "ResponsiveDesignEngine",
-      "AccessibilityEnhancer",
-      "AnimationFlowOptimizer",
-      "CreativeVariationEngine",
-      "VariationEngine2",
-      "InfiniteAdaptabilityEngine",
-      "EmotionalResonanceEngine",
-      "CulturalAdaptationEngine",
-      "SeasonalThemeEngine",
-      "BiometricAdaptationEngine",
-      "PredictivePersonalizationEngine",
-      "QuantumOptimizationEngine",
-      "NeuralNetworkEnhancer",
-      "UniversalCompatibilityEngine"
-    ],
-    "prompt_template": "Tu es un génie de l'innovation JavaScript. Transforme ce code d'effet visuel en appliquant ces 23 modules révolutionnaires:\n\n1-13. Modules Professionnels (voir niveaux précédents)\n14. CreativeVariationEngine: Génère des variations créatives\n15. VariationEngine2: MÉTAMORPHOSE - Variations infinies avec IA créative et algorithmes génétiques (50+ points de mutation, 100+ variantes, Infinite Combination Matrix)\n16. InfiniteAdaptabilityEngine: Adaptabilité infinie aux contextes\n17. EmotionalResonanceEngine: Adaptation émotionnelle\n18. CulturalAdaptationEngine: Adaptation culturelle\n19. SeasonalThemeEngine: Thèmes saisonniers automatiques\n20. BiometricAdaptationEngine: Adaptation biométrique\n21. PredictivePersonalizationEngine: Personnalisation prédictive\n22. QuantumOptimizationEngine: Optimisation quantique\n23. NeuralNetworkEnhancer: Amélioration par réseau neuronal\n24. UniversalCompatibilityEngine: Compatibilité universelle\n\nRègles:\n- Innovation technologique de pointe\n- IA intégrée pour l'adaptation\n- Créativité algorithmique avancée\n- Performance révolutionnaire\n- Expérience utilisateur transcendante\n- Architecture future-proof\n- Retourne uniquement le code JavaScript transformé, sans explications"
-  },
-  "level4": {
-    "name": "Professional Plus",
-    "description": "Optimisations avancées avec WebGL, Workers et rendu adaptatif",
-    "modules": 30,
-    "complexity": "élevée",
-    "features": [
-      "Intégration WebGL/Three.js automatique",
-      "Système Level of Detail (LOD)",
-      "Web Workers pour calculs lourds",
-      "Rendu adaptatif multi-device",
-      "Cache prédictif intelligent",
-      "Système de résilience et fallbacks",
-      "Optimisations de performance avancées"
-    ]
-  },
-  "level5": {
-    "name": "Enterprise",
-    "description": "Solution complète avec IA prédictive et WebAssembly",
-    "modules": 45,
-    "complexity": "très élevée", 
-    "features": [
-      "Tous les modules Professional Plus",
-      "IA prédictive comportementale",
-      "Accélération WebAssembly",
-      "Traitement parallèle avancé",
-      "Sécurisation et obfuscation",
-      "Analytics temps-réel intégrées",
-      "Architecture microservices"
-    ]
-  },
-  "level6": {
-    "name": "Revolutionary",
-    "description": "Plateforme futuriste avec AR/VR et adaptation émotionnelle",
-    "modules": 60,
-    "complexity": "révolutionnaire",
-    "features": [
-      "Tous les modules Enterprise",
-      "Adaptation émotionnelle IA",
-      "Support AR/VR complet (XR)",
-      "Infrastructure cloud native",
-      "Réseaux de neurones intégrés",
-      "Génération procédurale avancée",
-      "Interface multi-dimensionnelle"
-    ]
+  "3": {
+    "name": "Premium",
+    "description": "Transformation complète avec technologies révolutionnaires",
+    "modules": ["performance", "security", "animations", "responsive", "accessibility", "documentation", "ai-learning", "predictive", "optimization"],
+    "complexity": "high",
+    "transformations": 12
   }
 }
