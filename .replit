@@ -16,7 +16,7 @@ localPort = 5001
 externalPort = 3000
 
 [workflows]
-runButton = "Conversion ES + Démarrage"
+runButton = "Start Development Server"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -153,6 +153,10 @@ args = "npm run dev"
 name = "Start Development Server"
 author = 46726990
 mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"

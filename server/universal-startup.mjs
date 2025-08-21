@@ -1,72 +1,169 @@
 import { spawn } from 'child_process';
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
-
-console.log('🚀 === DÉMARRAGE UNIVERSEL ROBUSTE ===\n');
 
 class UniversalStartup {
   constructor() {
-    this.issues = [];
-    this.fixes = [];
+    this.baseDir = process.cwd();
+    this.serverDir = path.join(this.baseDir, 'server');
+    this.startupAttempts = 0;
+    this.maxAttempts = 5;
   }
 
   async start() {
+    console.log('🚀 === DÉMARRAGE UNIVERSEL DE L\'APPLICATION ===\n');
+
     try {
-      console.log('1️⃣ Installation des dépendances critiques...');
-      await this.installCriticalDeps();
+      // 1. Vérifications préliminaires
+      await this.performPreflightChecks();
 
-      console.log('\n2️⃣ Vérification et création des fichiers...');
-      await this.ensureCriticalFiles();
+      // 2. Diagnostic système
+      await this.runSystemDiagnostic();
 
-      console.log('\n3️⃣ Démarrage du serveur...');
+      // 3. Démarrage du serveur
       await this.startServer();
 
     } catch (error) {
-      console.error('💥 Erreur critique:', error.message);
-      await this.emergencyFallback();
+      console.error('💥 ERREUR CRITIQUE:', error.message);
+      await this.handleStartupFailure(error);
     }
   }
 
-  async installCriticalDeps() {
-    // Vérifier si tsx est installé
-    try {
-      await this.runCommand('npx', ['tsx', '--version']);
-      console.log('✅ tsx déjà disponible');
-    } catch {
-      console.log('📦 Installation de tsx...');
+  async performPreflightChecks() {
+    console.log('🔍 Vérifications préliminaires...');
+
+    const criticalFiles = [
+      'server/index.ts',
+      'server/routes.ts', 
+      'server/services',
+      'package.json'
+    ];
+
+    for (const file of criticalFiles) {
       try {
-        await this.runCommand('npm', ['install', 'tsx']);
-        console.log('✅ tsx installé avec succès');
+        await fs.access(file);
+        console.log(`  ✅ ${file}: OK`);
       } catch (error) {
-        console.log('⚠️ Installation tsx échouée, utilisation de node...');
+        console.log(`  ❌ ${file}: MANQUANT`);
+        throw new Error(`Fichier critique manquant: ${file}`);
+      }
+    }
+
+    console.log('✅ Vérifications préliminaires terminées\n');
+  }
+
+  async runSystemDiagnostic() {
+    console.log('🔧 Diagnostic système rapide...');
+
+    try {
+      // Vérifier les dépendances npm
+      const packageJson = JSON.parse(await fs.readFile('package.json', 'utf-8'));
+
+      if (!packageJson.dependencies.tsx) {
+        console.log('  ⚠️ tsx manquant, installation automatique...');
+        await this.executeCommand('npm', ['install', 'tsx']);
+      }
+
+      // Vérifier les modules ES
+      const indexContent = await fs.readFile('server/index.ts', 'utf-8');
+      if (!indexContent.includes('import')) {
+        console.log('  ⚠️ Conversion ES6 nécessaire');
+      }
+
+      console.log('✅ Diagnostic système terminé\n');
+
+    } catch (error) {
+      console.warn('⚠️ Diagnostic système partiel:', error.message);
+    }
+  }
+
+  async startServer() {
+    console.log('🎯 Démarrage du serveur...');
+
+    const startupCommands = [
+      { cmd: 'npm', args: ['run', 'dev'], description: 'Serveur de développement' },
+      { cmd: 'node', args: ['--import', 'tsx/esm', 'server/index.ts'], description: 'Mode direct TSX' },
+      { cmd: 'node', args: ['quick-fix-server.mjs'], description: 'Serveur de secours' }
+    ];
+
+    for (const command of startupCommands) {
+      try {
+        console.log(`📡 Tentative: ${command.description}`);
+        await this.executeCommand(command.cmd, command.args);
+        console.log(`✅ ${command.description} démarré avec succès`);
+        return;
+
+      } catch (error) {
+        console.log(`❌ ${command.description} échoué: ${error.message}`);
+        this.startupAttempts++;
+
+        if (this.startupAttempts >= this.maxAttempts) {
+          throw new Error('Tous les modes de démarrage ont échoué');
+        }
       }
     }
   }
 
-  async ensureCriticalFiles() {
-    // Vérifier server/index.ts
-    if (!fs.existsSync('server/index.ts')) {
-      console.log('🔧 Création de server/index.ts...');
-      await this.createServerIndex();
-    }
+  async executeCommand(command, args = []) {
+    return new Promise((resolve, reject) => {
+      console.log(`📡 Exécution: ${command} ${args.join(' ')}`);
 
-    // Vérifier server/routes.ts
-    if (!fs.existsSync('server/routes.ts')) {
-      console.log('🔧 Création de server/routes.ts...');
-      await this.createServerRoutes();
-    }
+      const process = spawn(command, args, {
+        stdio: ['inherit', 'inherit', 'inherit'],
+        shell: true,
+        cwd: this.baseDir
+      });
 
-    // Vérifier logger
-    if (!fs.existsSync('server/utils/logger.ts')) {
-      console.log('🔧 Création du logger...');
-      await this.createLogger();
-    }
+      let startupTimer = null;
 
-    console.log('✅ Tous les fichiers critiques sont présents');
+      // Pour les serveurs, on considère le démarrage réussi après 3 secondes
+      if (command === 'npm' && args.includes('dev')) {
+        startupTimer = setTimeout(() => {
+          console.log('✅ Serveur démarré (timeout atteint)');
+          resolve();
+        }, 3000);
+      }
+
+      process.on('exit', (code) => {
+        if (startupTimer) clearTimeout(startupTimer);
+
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error(`Processus terminé avec le code ${code}`));
+        }
+      });
+
+      process.on('error', (error) => {
+        if (startupTimer) clearTimeout(startupTimer);
+        reject(error);
+      });
+    });
   }
 
-  async createServerIndex() {
-    const content = `import express from 'express';
+  async handleStartupFailure(error) {
+    console.log('\n🚨 === MODE DE RÉCUPÉRATION ===');
+    console.log('Tentative de création d\'un serveur de secours...');
+
+    try {
+      await this.createEmergencyServer();
+      await this.executeCommand('node', ['emergency-server.mjs']);
+      console.log('✅ Serveur de secours démarré');
+
+    } catch (recoveryError) {
+      console.error('❌ Récupération impossible:', recoveryError.message);
+      console.log('\n📋 Actions suggérées:');
+      console.log('1. Vérifier les dépendances: npm install');
+      console.log('2. Nettoyer le cache: npm cache clean --force');
+      console.log('3. Redémarrer le processus');
+
+      process.exit(1);
+    }
+  }
+
+  async createEmergencyServer() {
+    const emergencyServerCode = `
+import express from 'express';
 import cors from 'cors';
 import path from 'path';
 
@@ -75,212 +172,38 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware de base
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json());
+app.use(express.static('client'));
 
 // Route de santé
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    memory: process.memoryUsage()
-  });
-});
-
-// API basique
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'Serveur opérationnel',
-    services: ['universal-preprocessor', 'js-preprocessor'],
-    timestamp: new Date().toISOString()
-  });
+  res.json({ status: 'OK', message: 'Serveur de secours actif' });
 });
 
-// Route de test
-app.post('/api/transform', (req, res) => {
-  try {
-    res.json({
-      success: true,
-      message: 'Service de transformation prêt',
-      timestamp: new Date().toISOString(),
-      data: req.body
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Middleware d'erreur
-app.use((error, req, res, next) => {
-  console.error('Erreur serveur:', error);
-  res.status(500).json({ 
-    error: 'Erreur interne',
-    message: error.message,
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Démarrage
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(\`🚀 Serveur démarré sur http://0.0.0.0:\${PORT}\`);
-  console.log(\`📡 API disponible sur http://0.0.0.0:\${PORT}/api\`);
-  console.log(\`💓 Health check: http://0.0.0.0:\${PORT}/health\`);
-});
-
-export default app;
-`;
-
-    await fs.promises.writeFile('server/index.ts', content, 'utf-8');
-  }
-
-  async createServerRoutes() {
-    const content = `import { Router } from 'express';
-
-const router = Router();
-
-router.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK',
-    timestamp: new Date().toISOString()
-  });
-});
-
-export { router as routes };
-export default router;
-`;
-
-    await fs.promises.writeFile('server/routes.ts', content, 'utf-8');
-  }
-
-  async createLogger() {
-    // Créer le dossier utils s'il n'existe pas
-    if (!fs.existsSync('server/utils')) {
-      await fs.promises.mkdir('server/utils', { recursive: true });
-    }
-
-    const content = `export const logger = {
-  info: (message: string, data?: any) => console.log(\`[INFO] \${message}\`, data || ''),
-  warn: (message: string, data?: any) => console.warn(\`[WARN] \${message}\`, data || ''),
-  error: (message: string, data?: any) => console.error(\`[ERROR] \${message}\`, data || ''),
-  debug: (message: string, data?: any) => console.debug(\`[DEBUG] \${message}\`, data || '')
-};
-
-export default logger;
-`;
-
-    await fs.promises.writeFile('server/utils/logger.ts', content, 'utf-8');
-  }
-
-  async startServer() {
-    return new Promise((resolve, reject) => {
-      const startCommand = fs.existsSync('node_modules/.bin/tsx') ? 
-        ['npx', ['tsx', 'server/index.ts']] : 
-        ['node', ['--loader', 'tsx/esm', 'server/index.ts']];
-
-      const [command, args] = startCommand;
-
-      console.log(`Démarrage avec: ${command} ${args.join(' ')}`);
-
-      const server = spawn(command, args, {
-        stdio: 'inherit',
-        env: { 
-          ...process.env, 
-          NODE_ENV: 'development',
-          PORT: '5000'
-        }
-      });
-
-      server.on('spawn', () => {
-        console.log('✅ Serveur lancé avec succès!');
-        console.log('🌐 Application disponible sur http://0.0.0.0:5000');
-        console.log('📡 API disponible sur http://0.0.0.0:5000/api');
-        console.log('💓 Health check: http://0.0.0.0:5000/health');
-        setTimeout(() => resolve(true), 1000);
-      });
-
-      server.on('error', (error) => {
-        console.error('❌ Erreur de démarrage:', error.message);
-        reject(error);
-      });
-
-      server.on('exit', (code) => {
-        if (code !== 0) {
-          console.error(`❌ Serveur arrêté avec le code: ${code}`);
-          reject(new Error(`Exit code: ${code}`));
-        }
-      });
-    });
-  }
-
-  async emergencyFallback() {
-    console.log('🚨 === MODE DE SECOURS ===');
-    console.log('🔧 Création d\'un serveur de secours...');
-
-    const emergencyServer = `const express = require('express');
-const cors = require('cors');
-
-const app = express();
-const PORT = process.env.PORT || 5000;
-
-app.use(cors());
-app.use(express.json());
-
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'EMERGENCY MODE',
-    timestamp: new Date().toISOString()
-  });
-});
-
+// Route principale
 app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Serveur de secours actif',
-    status: 'EMERGENCY',
-    timestamp: new Date().toISOString()
-  });
+  res.send(\`
+    <html>
+      <body>
+        <h1>🚀 Serveur de Secours Actif</h1>
+        <p>L'application fonctionne en mode de récupération.</p>
+        <p>Port: \${PORT}</p>
+      </body>
+    </html>
+  \`);
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(\`🚨 Serveur de secours sur port \${PORT}\`);
+  console.log(\`✅ Serveur de secours démarré sur le port \${PORT}\`);
+  console.log(\`🌐 URL: http://0.0.0.0:\${PORT}\`);
 });
 `;
 
-    await fs.promises.writeFile('emergency-server.js', emergencyServer, 'utf-8');
-
-    console.log('🚀 Démarrage du serveur de secours...');
-    const emergency = spawn('node', ['emergency-server.js'], {
-      stdio: 'inherit',
-      env: { ...process.env, PORT: '5000' }
-    });
-
-    emergency.on('spawn', () => {
-      console.log('✅ Serveur de secours opérationnel!');
-    });
-  }
-
-  async runCommand(command, args) {
-    return new Promise((resolve, reject) => {
-      const process = spawn(command, args, { stdio: 'pipe' });
-
-      let output = '';
-      process.stdout?.on('data', (data) => output += data.toString());
-      process.stderr?.on('data', (data) => output += data.toString());
-
-      process.on('close', (code) => {
-        if (code === 0) {
-          resolve(output);
-        } else {
-          reject(new Error(`Command failed: ${command} ${args.join(' ')}`));
-        }
-      });
-    });
+    await fs.writeFile('emergency-server.mjs', emergencyServerCode);
+    console.log('📝 Serveur de secours créé');
   }
 }
 
-// Démarrage
+// Démarrage automatique
 const startup = new UniversalStartup();
-startup.start().catch(error => {
-  console.error('Échec total:', error);
-  process.exit(1);
-});
+startup.start().catch(console.error);
