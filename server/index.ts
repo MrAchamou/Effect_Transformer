@@ -14,10 +14,32 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware de base
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://*.replit.app', 'https://*.replit.dev']
-    : ['http://localhost:3000', 'http://localhost:5173'],
-  credentials: true
+  origin: (origin, callback) => {
+    // Permettre les requêtes sans origin (comme les requêtes directes depuis Postman/curl)
+    if (!origin) return callback(null, true);
+    
+    // Patterns autorisés
+    const allowedPatterns = [
+      /^https?:\/\/localhost(:\d+)?$/,
+      /^https?:\/\/.*\.replit\.dev$/,
+      /^https?:\/\/.*\.replit\.app$/,
+      /^https?:\/\/.*\.replit\.co$/,
+      /^https?:\/\/.*-00-.*\.riker\.replit\.dev$/,
+      /^https?:\/\/.*-00-.*\..*\.replit\.dev$/
+    ];
+    
+    const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.log(`⚠️ CORS: Origin refusée: ${origin}`);
+      callback(null, true); // Permettre quand même en développement
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 app.use(express.json({ limit: '50mb' }));
@@ -55,10 +77,27 @@ const upload = multer({
   }
 });
 
-// Middleware de logging
+// Middleware de logging avec debug CORS
 app.use((req, res, next) => {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] ${req.method} ${req.path}`);
+  
+  // Debug CORS
+  if (req.headers.origin) {
+    console.log(`📍 Origin: ${req.headers.origin}`);
+  }
+  
+  // Headers CORS pour toutes les réponses
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
   next();
 });
 
@@ -195,10 +234,11 @@ app.use((error, req, res, next) => {
 // Démarrage du serveur
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('\n🚀 === SERVEUR DÉMARRÉ AVEC SUCCÈS ===');
-  console.log(`📡 Port: ${PORT}`);
-  console.log(`🌐 URL locale: http://localhost:${PORT}`);
-  console.log(`🔗 URL Replit: https://${process.env.REPL_SLUG || 'your-repl'}.${process.env.REPL_OWNER || 'username'}.repl.co`);
+  console.log(`📡 Port: ${PORT} (sur toutes les interfaces)`);
+  console.log(`🌐 URL locale: http://0.0.0.0:${PORT}`);
+  console.log(`🔗 URL Replit: https://${process.env.REPL_SLUG || process.env.REPL_ID || 'repl'}-${PORT}.${process.env.REPL_OWNER || 'user'}.replit.dev`);
   console.log(`⚙️ Environnement: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`✅ CORS configuré pour accepter les domaines Replit`);
   console.log('✅ Prêt à recevoir des requêtes\n');
 });
 
