@@ -39,13 +39,28 @@ const upload = multer({
 const replitTokenManager = new ReplitTokenManager();
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  const aiTransformer = new ReplitAITransformer();
-  const fileProcessor = new FileProcessor();
-  const codeValidator = new CodeValidator();
-  const jsPreprocessor = new JSPreprocessor();
-  const advancedEnhancer = new AdvancedEnhancer();
-  const intelligentCategorizer = new IntelligentCategorizer();
-  const docPackager = new DocumentationPackager();
+  // Initialisation des services avec gestion d'erreurs
+  let aiTransformer: ReplitAITransformer;
+  let fileProcessor: FileProcessor;
+  let codeValidator: CodeValidator;
+  let jsPreprocessor: JSPreprocessor;
+  let advancedEnhancer: AdvancedEnhancer;
+  let intelligentCategorizer: IntelligentCategorizer;
+  let docPackager: DocumentationPackager;
+  
+  try {
+    aiTransformer = new ReplitAITransformer();
+    fileProcessor = new FileProcessor();
+    codeValidator = new CodeValidator();
+    jsPreprocessor = new JSPreprocessor();
+    advancedEnhancer = new AdvancedEnhancer();
+    intelligentCategorizer = new IntelligentCategorizer();
+    docPackager = new DocumentationPackager();
+    console.log('✅ Tous les services initialisés avec succès');
+  } catch (error) {
+    console.error('❌ Erreur d\'initialisation des services:', error);
+    throw error;
+  }
 
   // Middleware de sécurité pour les uploads
   const uploadSecurity = (req: any, res: any, next: any) => {

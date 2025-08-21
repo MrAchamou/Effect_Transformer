@@ -61,11 +61,44 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
+  
+  // Graceful shutdown handler
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
+  });
+
+  process.on('SIGINT', () => {
+    console.log('SIGINT received, shutting down gracefully');
+    server.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
+  });
+
   server.listen({
     port,
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`🚀 Server running on port ${port}`);
+    log(`🌐 Web interface: https://${process.env.REPL_SLUG || 'your-repl'}.${process.env.REPL_OWNER || 'username'}.repl.co`);
+  }).on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${port} is already in use. Trying port ${port + 1}...`);
+      server.listen({
+        port: port + 1,
+        host: "0.0.0.0",
+        reusePort: true,
+      }, () => {
+        log(`🚀 Server running on port ${port + 1} (fallback)`);
+      });
+    } else {
+      console.error('❌ Server startup error:', err);
+      process.exit(1);
+    }
   });
 })();

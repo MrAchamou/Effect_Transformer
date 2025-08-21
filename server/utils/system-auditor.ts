@@ -55,9 +55,8 @@ export class SystemAuditor {
 
     // Vérifier les uploads sécurisés
     try {
-      const routesContent = await import('fs').then(fs => 
-        fs.promises.readFile('server/routes.ts', 'utf-8')
-      );
+      const fs = await import('fs');
+      const routesContent = await fs.promises.readFile('server/routes.ts', 'utf-8');
       
       if (!routesContent.includes('fileFilter')) {
         this.warnings.push('Filtrage de fichiers manquant dans multer');
@@ -154,7 +153,7 @@ export class SystemAuditor {
         }
         
       } catch (error) {
-        this.issues.push(`Service non fonctionnel: ${service} - ${error.message}`);: ${service}`);
+        this.issues.push(`Service non fonctionnel: ${service} - ${(error as Error).message}`);
       }
     }
   }
