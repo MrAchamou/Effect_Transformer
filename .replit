@@ -228,3 +228,20 @@ args = "node convert-to-esm.js"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node server/universal-startup.mjs"
+
+[[workflows.workflow]]
+name = "Audit Système Complet"
+author = 46729600
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node comprehensive-audit.mjs"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node auto-repair.mjs"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
