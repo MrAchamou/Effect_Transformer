@@ -146,10 +146,15 @@ export class SystemAuditor {
       try {
         // Test d'importation
         const modulePath = `../services/${service.toLowerCase().replace(/([A-Z])/g, '-$1').substring(1)}`;
-        await import(modulePath);
+        const module = await import(modulePath);
+        
+        // Vérifier que la classe est exportée
+        if (!module[service] && !module.default) {
+          this.warnings.push(`Service ${service}: classe non trouvée dans l'export`);
+        }
         
       } catch (error) {
-        this.issues.push(`Service non fonctionnel: ${service}`);
+        this.issues.push(`Service non fonctionnel: ${service} - ${error.message}`);: ${service}`);
       }
     }
   }
