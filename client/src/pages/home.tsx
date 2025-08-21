@@ -669,20 +669,34 @@ export default function Home() {
 
       const response = await apiRequest('POST', '/api/upload', formData);
       console.log('Upload response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.status}`);
+      }
+      
       return response.json();
     },
     onSuccess: (data) => {
-      setTransformationId(data.transformationId);
-      setEffectAnalysis(data.effectAnalysis);
+      console.log('Upload success:', data);
+      if (data.transformationId) {
+        setTransformationId(data.transformationId);
+      }
+      if (data.effectAnalysis) {
+        setEffectAnalysis(data.effectAnalysis);
+      }
       toast({
         title: "Fichier uploadé avec succès",
-        description: `${data.filename} est prêt pour la transformation`,
+        description: `${data.filename || 'Fichier'} est prêt pour la transformation`,
       });
     },
     onError: (error) => {
+      console.error('Upload error:', error);
+      setSelectedFile(null);
+      setTransformationId(null);
+      setEffectAnalysis(null);
       toast({
         title: "Erreur d'upload",
-        description: error.message,
+        description: error.message || "Erreur lors de l'upload du fichier",
         variant: "destructive",
       });
     },
@@ -711,8 +725,15 @@ export default function Home() {
   });
 
   const handleFileUpload = (file: File) => {
+    if (!file) return;
+    
     console.log('Uploading file:', file.name, file.type, file.size);
     setSelectedFile(file);
+    
+    // Reset previous states
+    setTransformationId(null);
+    setEffectAnalysis(null);
+    
     uploadMutation.mutate(file);
   };
 
@@ -742,13 +763,26 @@ export default function Home() {
 
         <main className="main-content">
           <AnimatePresence mode="wait">
-            {!selectedFile && (
+            {!selectedFile && !uploadMutation.isPending && (
               <motion.div key="upload" className="upload-section">
                 <DropZone onFileSelect={handleFileUpload} file={selectedFile} />
               </motion.div>
             )}
 
-            {selectedFile && !isProcessing && !isCompleted && !hasFailed && (
+            {uploadMutation.isPending && (
+              <motion.div key="uploading" className="uploading-section">
+                <div className="upload-progress">
+                  <div className="upload-icon">📤</div>
+                  <h3>Upload en cours...</h3>
+                  <p>Traitement de votre fichier JavaScript</p>
+                  <div className="progress-bar">
+                    <div className="progress-fill"></div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {selectedFile && !uploadMutation.isPending && !isProcessing && !isCompleted && !hasFailed && (
               <motion.div key="config" className="config-section">
                 <DropZone onFileSelect={handleFileUpload} file={selectedFile} />
                 <AlchemyLevelSelector 

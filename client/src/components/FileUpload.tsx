@@ -53,6 +53,8 @@ export default function FileUpload({ onFileSelect, uploadedFile, isLoading }: Fi
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    // Reset parent state to allow new upload
+    onFileSelect(null as any);
   };
 
   if (uploadedFile) {
