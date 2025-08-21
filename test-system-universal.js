@@ -1,68 +1,52 @@
+// === TEST SYSTÈME UNIVERSEL (ES6/CommonJS Compatible) ===
 
-#!/usr/bin/env node
-
-// Détection automatique du type de module et adaptation
-const isESModule = typeof module === 'undefined';
-
-// Import universel compatible ES6 et CommonJS
-let fs, path;
-
-if (isESModule) {
-  // Mode ES6
-  const { createRequire } = await import('module');
-  const require = createRequire(import.meta.url);
-  fs = require('fs').promises;
-  path = require('path');
-} else {
-  // Mode CommonJS
-  fs = require('fs').promises;
-  path = require('path');
-}
+import fs from 'fs/promises';
+import path from 'path';
 
 async function runUniversalSystemTest() {
   console.log('🎯 === TEST SYSTÈME UNIVERSEL (ES6/CommonJS Compatible) ===\n');
-  
+
   let globalIssues = 0;
   let globalFixes = 0;
-  
+
   try {
     // 1. Architecture système
     console.log('🏗️ Création de l\'architecture système...');
     await createSystemArchitecture();
-    
+
     // 2. Test des fichiers critiques
     console.log('\n1️⃣ Vérification des fichiers critiques...');
     const fileResult = await testAndRepairCriticalFiles();
     globalIssues += fileResult.issues;
     globalFixes += fileResult.fixes;
-    
+
     // 3. Test des services
     console.log('\n2️⃣ Vérification des services...');
     const serviceResult = await testAndRepairServices();
     globalIssues += serviceResult.issues;
     globalFixes += serviceResult.fixes;
-    
+
     // 4. Configuration
     console.log('\n3️⃣ Vérification de la configuration...');
     const configResult = await testAndRepairConfiguration();
     globalIssues += configResult.issues;
     globalFixes += configResult.fixes;
-    
+
     // 5. Test final
     console.log('\n4️⃣ Test de cohérence final...');
     await testSystemCoherence();
-    
+
     console.log('\n🏆 === RÉSULTAT FINAL ===');
     console.log(`✅ Réparations effectuées: ${globalFixes}`);
     console.log(`⚠️ Problèmes résiduels: ${globalIssues}`);
-    
+
     const success = globalIssues < 3;
     console.log(`🎉 ${success ? 'SYSTÈME OPÉRATIONNEL' : 'SYSTÈME PARTIELLEMENT OPÉRATIONNEL'}`);
     return success;
-    
+
   } catch (error) {
     console.error('💥 ERREUR SYSTÈME:', error.message);
-    
+
     try {
       await emergencySystemRepair();
       return true;
@@ -78,7 +62,7 @@ async function createSystemArchitecture() {
     'server', 'server/services', 'server/config', 'server/utils',
     'uploads', 'outputs', 'outputs/temp'
   ];
-  
+
   for (const dir of dirs) {
     try {
       await fs.mkdir(dir, { recursive: true });
@@ -104,29 +88,29 @@ async function testAndRepairCriticalFiles() {
       repairContent: generateServerRoutes
     }
   ];
-  
+
   let issues = 0;
   let fixes = 0;
-  
+
   for (const file of criticalFiles) {
     try {
       const content = await fs.readFile(file.path, 'utf-8');
-      
+
       let hasIssues = false;
       if (content.length < file.minSize || !file.mustContain.every(text => content.includes(text))) {
         hasIssues = true;
       }
-      
+
       if (hasIssues) {
         issues++;
         console.log(`  ⚠️ ${file.path}: Problème détecté`);
       } else {
         console.log(`  ✅ ${file.path}: OK`);
       }
-      
+
     } catch (error) {
       console.log(`  ❌ ${file.path}: MANQUANT`);
-      
+
       try {
         const dir = path.dirname(file.path);
         await fs.mkdir(dir, { recursive: true });
@@ -138,7 +122,7 @@ async function testAndRepairCriticalFiles() {
       }
     }
   }
-  
+
   return { issues, fixes };
 }
 
@@ -146,23 +130,23 @@ async function testAndRepairServices() {
   const services = ['universal-preprocessor', 'js-preprocessor', 'documentation-packager'];
   let issues = 0;
   let fixes = 0;
-  
+
   for (const service of services) {
     const servicePath = `server/services/${service}.ts`;
-    
+
     try {
       const content = await fs.readFile(servicePath, 'utf-8');
-      
+
       if (content.length > 200 && content.includes('export')) {
         console.log(`  ✅ ${service}: OK`);
       } else {
         issues++;
         console.log(`  ⚠️ ${service}: Service incomplet`);
       }
-      
+
     } catch (error) {
       console.log(`  ❌ ${service}: MANQUANT`);
-      
+
       try {
         await fs.writeFile(servicePath, generateBasicService(service), 'utf-8');
         console.log(`  🔧 ${service}: CRÉÉ`);
@@ -172,7 +156,7 @@ async function testAndRepairServices() {
       }
     }
   }
-  
+
   return { issues, fixes };
 }
 
@@ -187,19 +171,19 @@ async function testAndRepairConfiguration() {
       }
     }
   ];
-  
+
   let issues = 0;
   let fixes = 0;
-  
+
   for (const config of configs) {
     try {
       const content = await fs.readFile(config.path, 'utf-8');
       JSON.parse(content); // Validation JSON
       console.log(`  ✅ ${path.basename(config.path)}: OK`);
-      
+
     } catch (error) {
       console.log(`  ❌ ${path.basename(config.path)}: ${error.message}`);
-      
+
       try {
         await fs.writeFile(config.path, JSON.stringify(config.content, null, 2));
         console.log(`  🔧 ${path.basename(config.path)}: CRÉÉ`);
@@ -209,7 +193,7 @@ async function testAndRepairConfiguration() {
       }
     }
   }
-  
+
   return { issues, fixes };
 }
 
@@ -220,7 +204,7 @@ async function testSystemCoherence() {
     () => fs.access('server/config'),
     () => fs.access('server/services')
   ];
-  
+
   for (let i = 0; i < checks.length; i++) {
     try {
       await checks[i]();
@@ -277,12 +261,12 @@ function generateBasicService(serviceName) {
   const className = serviceName.split('-').map(word => 
     word.charAt(0).toUpperCase() + word.slice(1)
   ).join('');
-  
+
   return `export class ${className} {
   constructor() {
     console.log('${serviceName} initialized');
   }
-  
+
   async process(input: any): Promise<any> {
     return { processed: true, service: '${serviceName}', input };
   }
@@ -292,32 +276,13 @@ export default ${className};
 `;
 }
 
-// Exécution universelle compatible ES6 et CommonJS
-if (isESModule) {
-  // Mode ES6 - utilisation de top-level await
-  runUniversalSystemTest()
-    .then(success => {
-      console.log(`\n📊 Test universel terminé: ${success ? 'SUCCÈS' : 'PARTIEL'}`);
-      process.exit(success ? 0 : 1);
-    })
-    .catch(error => {
-      console.error('❌ Erreur complète:', error);
-      process.exit(1);
-    });
-} else {
-  // Mode CommonJS - utilisation classique
-  runUniversalSystemTest()
-    .then(success => {
-      console.log(`\n📊 Test universel terminé: ${success ? 'SUCCÈS' : 'PARTIEL'}`);
-      process.exit(success ? 0 : 1);
-    })
-    .catch(error => {
-      console.error('❌ Erreur complète:', error);
-      process.exit(1);
-    });
-}
-
-// Export pour utilisation en module
-if (!isESModule) {
-  module.exports = { runUniversalSystemTest };
-}
+// Exécution directe
+runUniversalSystemTest()
+  .then(success => {
+    console.log(`\n📊 Test universel terminé: ${success ? 'SUCCÈS' : 'PARTIEL'}`);
+    process.exit(success ? 0 : 1);
+  })
+  .catch(error => {
+    console.error('❌ Erreur complète:', error);
+    process.exit(1);
+  });
