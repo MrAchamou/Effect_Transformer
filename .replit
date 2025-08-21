@@ -16,7 +16,7 @@ localPort = 5001
 externalPort = 3000
 
 [workflows]
-runButton = "Diagnostic & Repair"
+runButton = "Dev Server"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -98,6 +98,15 @@ args = "node emergency-server.mjs"
 
 [[workflows.workflow]]
 name = "Diagnostic & Repair"
+author = 46726990
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node quick-fix-server.mjs"
+
+[[workflows.workflow]]
+name = "Dev Server"
 author = 46726990
 mode = "sequential"
 
