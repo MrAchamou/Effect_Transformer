@@ -160,7 +160,7 @@ args = "npm install"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev"
+args = "node dev-server.mjs"
 
 [[workflows.workflow]]
 name = "Diagnostic Complet"

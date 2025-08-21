@@ -1,17 +1,20 @@
-
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import fs from 'fs/promises';
+import { setupAuth } from "./auth";
+import { setupVite } from "./vite";
+// import { db } from "../db/database"; // Assuming db and schema are not directly used in this file
+// import { users, type User } from "../db/schema"; // Assuming db and schema are not directly used in this file
+import { routes } from "./routes"; // Assuming 'routes' is imported from './routes.js'
 
 // Configuration ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Import des services
-import { setupRoutes } from './routes.js';
 import { UniversalPreprocessor } from './services/universal-preprocessor.js';
 import { SystemAuditor } from './utils/system-auditor.js';
 
@@ -20,7 +23,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware de base
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
+  origin: process.env.NODE_ENV === 'production'
     ? ['https://*.replit.app', 'https://*.replit.dev']
     : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true
@@ -51,7 +54,7 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/javascript' || 
+    if (file.mimetype === 'application/javascript' ||
         file.mimetype === 'text/javascript' ||
         file.originalname.endsWith('.js')) {
       cb(null, true);
@@ -85,9 +88,9 @@ app.get('/api/system-status', async (req, res) => {
     const status = await auditor.performFullAudit();
     res.json(status);
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erreur lors du diagnostic',
-      message: error.message 
+      message: error.message
     });
   }
 });
@@ -109,7 +112,7 @@ app.post('/api/transform', upload.single('file'), async (req, res) => {
 
     // Initialisation du préprocesseur
     const preprocessor = new UniversalPreprocessor();
-    
+
     // Transformation
     const result = await preprocessor.transform(content, {
       level: parseInt(level),
@@ -139,25 +142,27 @@ app.post('/api/transform', upload.single('file'), async (req, res) => {
   }
 });
 
-// Servir les fichiers statiques
-if (process.env.NODE_ENV === 'production') {
-  const distPath = path.join(__dirname, '..', 'dist');
-  app.use(express.static(distPath));
-  
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
+// Setup Vite in development
+if (process.env.NODE_ENV === "development") {
+  await setupVite(app, server); // Assuming 'server' is created later, this might need adjustment
+}
+
+// Serve static files in production
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(process.cwd(), "dist/public")));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(process.cwd(), "dist/public/index.html"));
   });
-} else {
-  app.use(express.static(path.join(__dirname, '..', 'client')));
 }
 
 // Configuration des routes additionnelles
-await setupRoutes(app);
+await setupAuth(app); // setupAuth is called here, assuming it's the intended place for other routes
+app.use("/api", routes); // Assuming 'routes' holds the API routes
 
 // Gestionnaire d'erreurs global
 app.use((error, req, res, next) => {
   console.error('❌ Erreur serveur:', error);
-  
+
   res.status(500).json({
     error: 'Erreur interne du serveur',
     message: process.env.NODE_ENV === 'development' ? error.message : 'Une erreur est survenue',
@@ -173,6 +178,9 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🔗 URL Replit: https://${process.env.REPL_SLUG || 'your-repl'}.${process.env.REPL_OWNER || 'username'}.repl.co`);
   console.log(`⚙️ Environnement: ${process.env.NODE_ENV || 'development'}`);
   console.log('✅ Prêt à recevoir des requêtes\n');
+  if (process.env.NODE_ENV === "development") {
+    console.log("🎨 Frontend Vite dev server should be available");
+  }
 });
 
 // Gestion de l'arrêt propre
