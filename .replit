@@ -16,7 +16,7 @@ localPort = 5001
 externalPort = 3000
 
 [workflows]
-runButton = "Test Universal Preprocessor"
+runButton = "Diagnostic Complet"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -157,3 +157,21 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Diagnostic Complet"
+author = 46726990
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server/test-universal-preprocessor.js"
+
+[[workflows.workflow]]
+name = "Diagnostic d'Urgence"
+author = 46726990
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node emergency-diagnostic.mjs"
