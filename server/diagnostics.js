@@ -66,10 +66,13 @@ class SystemDiagnostics {
   async checkServices() {
     const services = [
       'universal-preprocessor',
-      'js-preprocessor',
+      'js-preprocessor', 
       'documentation-packager',
       'advanced-enhancer',
-      'intelligent-categorizer'
+      'intelligent-categorizer',
+      'ai-transformer',
+      'code-validator',
+      'file-processor'
     ];
     
     const results = {};

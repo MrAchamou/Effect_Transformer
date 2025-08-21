@@ -47,7 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   let advancedEnhancer: AdvancedEnhancer;
   let intelligentCategorizer: IntelligentCategorizer;
   let docPackager: DocumentationPackager;
-  
+
   try {
     aiTransformer = new ReplitAITransformer();
     fileProcessor = new FileProcessor();
@@ -458,10 +458,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Audit système complet
   app.get("/api/audit", async (req, res) => {
     try {
-      const { SystemAuditor } = await import('./utils/system-auditor');
+      const { SystemAuditor } = await import('./utils/system-auditor.js');
       const auditor = new SystemAuditor();
       const auditResult = await auditor.performFullAudit();
-      
+
       res.json(auditResult);
     } catch (error) {
       console.error('Audit system error:', error);
