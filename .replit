@@ -16,7 +16,7 @@ localPort = 5001
 externalPort = 3000
 
 [workflows]
-runButton = "Robust Start"
+runButton = "Emergency Start"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -82,3 +82,16 @@ args = "node system-check.mjs"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node start-app.mjs"
+
+[[workflows.workflow]]
+name = "Emergency Start"
+author = 46725038
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install cors @types/cors"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node emergency-server.mjs"
