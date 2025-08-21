@@ -31,19 +31,13 @@ export class UniversalPreprocessor {
         this.effectMetadata = extracted.metadata;
       }
 
-      // 2. RECONDITIONNEMENT TOTAL - Nouvelle fonctionnalité principale
-      const reconditioned = await this.reconditionToStandardStructure(extracted.code, filename);
-      if (reconditioned.hasChanges) {
-        changes.push(...reconditioned.changes);
-      }
-
-      // 3. Nettoyage et normalisation du code
-      const cleaned = this.cleanAndNormalizeCode(reconditioned.code);
+      // 2. Nettoyage et normalisation du code
+      const cleaned = this.cleanAndNormalizeCode(extracted.code);
       if (cleaned.hasChanges) {
         changes.push(...cleaned.changes);
       }
 
-      // 4. Auto-réparation du code
+      // 3. Auto-réparation du code
       const repaired = this.autoRepairCode(cleaned.code);
       if (repaired !== cleaned.code) {
         changes.push('Code auto-réparé');
@@ -79,7 +73,7 @@ export class UniversalPreprocessor {
         changes.push(...templated.changes);
       }
 
-      // 9. Reconditionnement au format parfait
+      // 9. Reconditionnement au format standard
       const formatted = this.formatToStandardStructure(templated.code, filename);
       if (formatted.hasChanges) {
         changes.push(...formatted.changes);
@@ -471,6 +465,310 @@ ${code}
 `;
   }
 
+  /**
+   * Template générique standardisé pour les effets non spécialisés.
+   */
+  private wrapInGenericTemplate(code: string, filename: string): string {
+    const effectName = this.generateEffectName(filename);
+
+    return `
+// Effet standardisé automatiquement par Universal Preprocessor
+class ${effectName} extends BaseEffect {
+  constructor(config = {}) {
+    super({
+      id: config.id || '${effectName.toLowerCase()}-${Date.now()}',
+      name: config.name || '${effectName}',
+      category: config.category || 'visual',
+      version: '1.0.0',
+      performance: 'optimized',
+      ...config
+    });
+
+    // Configuration par défaut
+    this.settings = {
+      intensity: 1.0,
+      speed: 1.0,
+      scale: 1.0,
+      opacity: 0.8,
+      quality: 'high',
+      ...config.settings
+    };
+
+    // État de l'effet
+    this.state = {
+      isRunning: false,
+      isPaused: false,
+      startTime: 0,
+      currentTime: 0,
+      frame: 0
+    };
+
+    // Performance monitoring
+    this.performance = {
+      fps: 60,
+      frameTime: 16.67,
+      lastFrameTime: 0,
+      averageFrameTime: 16.67
+    };
+
+    // Code utilisateur intégré
+    ${code.replace(/^/gm, '    ')}
+
+    this.initialize();
+  }
+
+  initialize(canvas, element) {
+    super.initialize(canvas, element);
+
+    // Configuration du canvas
+    if (this.canvas) {
+      this.canvas.style.display = 'block';
+      this.setupCanvasContext();
+    }
+
+    // Configuration de l'élément container
+    if (this.element) {
+      this.setupContainer();
+    }
+
+    // Initialisation des utilitaires
+    this.setupUtilities();
+
+    console.log(\`[\${this.name}] Effet initialisé avec succès\`);
+    return this;
+  }
+
+  setupCanvasContext() {
+    if (!this.ctx) return;
+
+    // Configuration optimisée du contexte
+    this.ctx.imageSmoothingEnabled = this.settings.quality === 'high';
+    this.ctx.imageSmoothingQuality = 'high';
+
+    // Configuration des styles par défaut
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    this.ctx.lineWidth = 1;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+  }
+
+  setupContainer() {
+    if (!this.element) return;
+
+    // Style du container
+    Object.assign(this.element.style, {
+      position: 'relative',
+      overflow: 'hidden',
+      userSelect: 'none',
+      cursor: 'pointer'
+    });
+  }
+
+  setupUtilities() {
+    // Gestionnaire de performance
+    this.performanceMonitor = {
+      update: () => {
+        const now = performance.now();
+        this.performance.frameTime = now - this.performance.lastFrameTime;
+        this.performance.lastFrameTime = now;
+        this.performance.averageFrameTime = (this.performance.averageFrameTime * 0.9) + (this.performance.frameTime * 0.1);
+        this.performance.fps = Math.round(1000 / this.performance.averageFrameTime);
+      }
+    };
+
+    // Gestionnaire d'événements standardisé
+    this.eventManager = {
+      handlers: new Map(),
+      on: (event, callback) => {
+        if (!this.eventManager.handlers.has(event)) {
+          this.eventManager.handlers.set(event, new Set());
+        }
+        this.eventManager.handlers.get(event).add(callback);
+      },
+      emit: (event, data) => {
+        const handlers = this.eventManager.handlers.get(event);
+        if (handlers) {
+          handlers.forEach(handler => handler(data));
+        }
+      },
+      off: (event, callback) => {
+        const handlers = this.eventManager.handlers.get(event);
+        if (handlers) {
+          handlers.delete(callback);
+        }
+      }
+    };
+
+    // Utilitaires mathématiques intégrés
+    this.math = {
+      lerp: (a, b, t) => a + (b - a) * t,
+      clamp: (value, min, max) => Math.min(Math.max(value, min), max),
+      map: (value, inMin, inMax, outMin, outMax) => {
+        return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+      },
+      distance: (x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2),
+      angle: (x1, y1, x2, y2) => Math.atan2(y2 - y1, x2 - x1),
+      random: (min = 0, max = 1) => Math.random() * (max - min) + min,
+      randomInt: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
+    };
+  }
+
+  // API publique standardisée
+  start() {
+    if (this.state.isRunning) return this;
+
+    this.state.isRunning = true;
+    this.state.isPaused = false;
+    this.state.startTime = performance.now();
+
+    console.log(\`[\${this.name}] Démarrage de l'effet\`);
+    this.eventManager.emit('start', { effect: this });
+
+    this.animationLoop();
+    return this;
+  }
+
+  pause() {
+    this.state.isPaused = !this.state.isPaused;
+    console.log(\`[\${this.name}] \${this.state.isPaused ? 'Pause' : 'Reprise'}\`);
+    this.eventManager.emit(this.state.isPaused ? 'pause' : 'resume', { effect: this });
+    return this;
+  }
+
+  stop() {
+    this.state.isRunning = false;
+    this.state.isPaused = false;
+    console.log(\`[\${this.name}] Arrêt de l'effet\`);
+    this.eventManager.emit('stop', { effect: this });
+    return this;
+  }
+
+  reset() {
+    this.stop();
+    this.state.frame = 0;
+    this.state.currentTime = 0;
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    console.log(\`[\${this.name}] Reset de l'effet\`);
+    this.eventManager.emit('reset', { effect: this });
+    return this;
+  }
+
+  // Boucle d'animation standardisée
+  animationLoop = (currentTime = performance.now()) => {
+    if (!this.state.isRunning) return;
+
+    this.state.currentTime = currentTime - this.state.startTime;
+    this.performanceMonitor.update();
+
+    if (!this.state.isPaused) {
+      const deltaTime = this.performance.frameTime;
+
+      // Appel de la méthode animate (à surcharger)
+      this.animate(deltaTime, this.state.currentTime);
+
+      this.state.frame++;
+      this.eventManager.emit('frame', { 
+        frame: this.state.frame, 
+        deltaTime, 
+        currentTime: this.state.currentTime 
+      });
+    }
+
+    requestAnimationFrame(this.animationLoop);
+  }
+
+  // Méthode animate par défaut (à surcharger)
+  animate(deltaTime, totalTime) {
+    if (!this.ctx || !this.canvas) return;
+
+    // Animation par défaut - effet de pulsation
+    this.ctx.save();
+
+    const pulse = Math.sin(totalTime * 0.003) * 0.5 + 0.5;
+    const alpha = pulse * this.settings.opacity;
+
+    this.ctx.globalAlpha = alpha;
+    this.ctx.fillStyle = \`rgba(100, 150, 255, \${alpha})\`;
+
+    const centerX = this.canvas.width / 2;
+    const centerY = this.canvas.height / 2;
+    const radius = (pulse * 50 + 20) * this.settings.scale;
+
+    this.ctx.beginPath();
+    this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    this.ctx.restore();
+  }
+
+  // Gestion du redimensionnement
+  resize(width, height) {
+    if (this.canvas) {
+      this.canvas.width = width;
+      this.canvas.height = height;
+      this.setupCanvasContext();
+    }
+
+    console.log(\`[\${this.name}] Redimensionné: \${width}x\${height}\`);
+    this.eventManager.emit('resize', { width, height });
+    return this;
+  }
+
+  // Configuration dynamique
+  updateSettings(newSettings) {
+    Object.assign(this.settings, newSettings);
+    console.log(\`[\${this.name}] Paramètres mis à jour:\`, newSettings);
+    this.eventManager.emit('settingsUpdate', { settings: this.settings });
+    return this;
+  }
+
+  // Métriques de performance
+  getPerformanceStats() {
+    return {
+      fps: this.performance.fps,
+      frameTime: this.performance.frameTime,
+      averageFrameTime: this.performance.averageFrameTime,
+      frame: this.state.frame,
+      isRunning: this.state.isRunning,
+      totalTime: this.state.currentTime
+    };
+  }
+
+  // Nettoyage
+  destroy() {
+    this.stop();
+    this.eventManager.handlers.clear();
+
+    if (this.canvas) {
+      this.canvas.style.display = 'none';
+    }
+
+    console.log(\`[\${this.name}] Effet détruit\`);
+    this.eventManager.emit('destroy', { effect: this });
+
+    super.destroy?.();
+  }
+
+  // API de debug
+  debug() {
+    return {
+      name: this.name,
+      id: this.id,
+      settings: this.settings,
+      state: this.state,
+      performance: this.performance,
+      canvas: this.canvas ? {
+        width: this.canvas.width,
+        height: this.canvas.height
+      } : null
+    };
+  }
+}`;
+  }
+
 
   private generateEffectName(filename: string): string {
     const name = filename
@@ -620,7 +918,7 @@ ${code}
   }
 
   /**
-   * Formate le code au format standard du logiciel
+   * RECONDITIONNEMENT AU FORMAT PARFAIT - STANDARDISATION UNIVERSELLE
    */
   private formatToStandardStructure(code: string, filename: string): {
     code: string;
@@ -631,34 +929,122 @@ ${code}
     let formattedCode = code;
     let hasChanges = false;
 
-    // 1. Ajout de BaseEffect si nécessaire
-    if (code.includes('extends BaseEffect') && !code.includes('class BaseEffect')) {
+    console.log('🔄 Standardisation universelle en cours...');
+
+    // 1. Détection du type de code et application du template approprié
+    if (!this.hasCompleteStructure(code)) {
+      const effectType = this.detectEffectType(code);
+      formattedCode = this.applyUniversalTemplate(code, filename, effectType);
+      changes.push(`Template ${effectType} appliqué pour standardisation complète`);
+      hasChanges = true;
+    }
+
+    // 2. Ajout de BaseEffect si nécessaire
+    if (formattedCode.includes('extends BaseEffect') && !formattedCode.includes('class BaseEffect')) {
       const baseEffectTemplate = this.getBaseEffectTemplate();
       formattedCode = baseEffectTemplate + '\n\n' + formattedCode;
       changes.push('Classe BaseEffect ajoutée');
       hasChanges = true;
     }
 
-    // 2. Standardisation de la structure de classe
-    if (!formattedCode.includes('initialize(') && formattedCode.includes('class ')) {
-      formattedCode = this.addMissingMethods(formattedCode);
-      changes.push('Méthodes essentielles ajoutées');
+    // 3. Standardisation de la structure de classe
+    if (!this.hasStandardMethods(formattedCode) && formattedCode.includes('class ')) {
+      formattedCode = this.addStandardMethods(formattedCode);
+      changes.push('Méthodes standardisées ajoutées (start, pause, stop, reset)');
       hasChanges = true;
     }
 
-    // 3. Ajout des exports standardisés
-    const className = this.extractClassName(formattedCode);
-    if (className && !formattedCode.includes('module.exports')) {
-      formattedCode = this.addStandardExports(formattedCode, className);
-      changes.push('Exports standardisés ajoutés');
+    // 4. Ajout du système d'événements standardisé
+    if (!formattedCode.includes('eventManager') && formattedCode.includes('class ')) {
+      formattedCode = this.addEventSystem(formattedCode);
+      changes.push('Système d\'événements standardisé ajouté');
       hasChanges = true;
     }
+
+    // 5. Ajout des utilitaires mathématiques intégrés
+    if (!formattedCode.includes('this.math') && formattedCode.includes('class ')) {
+      formattedCode = this.addMathUtils(formattedCode);
+      changes.push('Utilitaires mathématiques intégrés ajoutés');
+      hasChanges = true;
+    }
+
+    // 6. Ajout du monitoring de performance
+    if (!formattedCode.includes('performanceMonitor') && formattedCode.includes('class ')) {
+      formattedCode = this.addPerformanceMonitoring(formattedCode);
+      changes.push('Monitoring de performance ajouté');
+      hasChanges = true;
+    }
+
+    // 7. Standardisation de la boucle d'animation
+    if (!formattedCode.includes('animationLoop') && formattedCode.includes('class ')) {
+      formattedCode = this.addStandardAnimationLoop(formattedCode);
+      changes.push('Boucle d\'animation standardisée ajoutée');
+      hasChanges = true;
+    }
+
+    // 8. Ajout des exports standardisés avec API étendue
+    const className = this.extractClassName(formattedCode);
+    if (className && !formattedCode.includes('module.exports')) {
+      formattedCode = this.addAdvancedExports(formattedCode, className);
+      changes.push('Système d\'exports avancé ajouté');
+      hasChanges = true;
+    }
+
+    // 9. Ajout de la documentation JSDoc automatique
+    if (!formattedCode.includes('/**') && formattedCode.includes('class ')) {
+      formattedCode = this.addJSDocumentation(formattedCode, className || filename);
+      changes.push('Documentation JSDoc automatique ajoutée');
+      hasChanges = true;
+    }
+
+    console.log(`✅ Standardisation terminée: ${changes.length} améliorations appliquées`);
 
     return {
       code: formattedCode,
       hasChanges,
       changes
     };
+  }
+
+  /**
+   * Vérifie si le code a une structure complète
+   */
+  private hasCompleteStructure(code: string): boolean {
+    return code.includes('class ') && 
+           code.includes('animate(') && 
+           code.includes('initialize(') &&
+           code.includes('start(') &&
+           code.includes('constructor(');
+  }
+
+  /**
+   * Vérifie si le code a les méthodes standardisées
+   */
+  private hasStandardMethods(code: string): boolean {
+    return code.includes('start()') && 
+           code.includes('pause()') && 
+           code.includes('stop()') && 
+           code.includes('reset()');
+  }
+
+  /**
+   * Applique le template universel selon le type d'effet
+   */
+  private applyUniversalTemplate(code: string, filename: string, effectType: string): string {
+    console.log(`📋 Application du template universel pour type: ${effectType}`);
+
+    switch (effectType) {
+      case 'particles':
+        return this.wrapInParticleTemplate(code);
+      case 'animation':
+        return this.wrapInAnimationTemplate(code);
+      case 'canvas':
+        return this.wrapInCanvasTemplate(code);
+      case 'webgl':
+        return this.wrapInWebGLTemplate(code);
+      default:
+        return this.wrapInGenericTemplate(code, filename);
+    }
   }
 
   /**
@@ -693,40 +1079,70 @@ class BaseEffect {
   }
 
   /**
-   * Ajoute les méthodes manquantes essentielles
+   * Ajoute les méthodes essentielles standardisées
    */
-  private addMissingMethods(code: string): string {
+  private addStandardMethods(code: string): string {
     let enhanced = code;
 
-    // Ajouter initialize si manquante
-    if (!enhanced.includes('initialize(')) {
+    // Ajouter start si manquante
+    if (!enhanced.includes('start(')) {
       const classMatch = enhanced.match(/class\s+\w+[^{]*{/);
       if (classMatch) {
         const insertPos = enhanced.indexOf(classMatch[0]) + classMatch[0].length;
-        const initializeMethod = `
-  initialize(canvas, element) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.element = element || { width: canvas.width, height: canvas.height };
-  }
-`;
-        enhanced = enhanced.slice(0, insertPos) + initializeMethod + enhanced.slice(insertPos);
+        const startMethod = `
+  start() {
+    console.log(\`[\${this.name}] Démarrage\`);
+    this.state.isRunning = true;
+    this.animationLoop();
+  }`;
+        enhanced = enhanced.slice(0, insertPos) + startMethod + enhanced.slice(insertPos);
       }
     }
 
-    // Ajouter animate si manquante
-    if (!enhanced.includes('animate(')) {
+    // Ajouter pause si manquante
+    if (!enhanced.includes('pause(')) {
       const classMatch = enhanced.match(/class\s+\w+[^{]*{/);
       if (classMatch) {
         const insertPos = enhanced.indexOf(classMatch[0]) + classMatch[0].length;
-        const animateMethod = `
-  animate(deltaTime = 16) {
-    if (!this.ctx || !this.canvas) return;
-    // Animation par défaut
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-  }
-`;
-        enhanced = enhanced.slice(0, insertPos) + animateMethod + enhanced.slice(insertPos);
+        const pauseMethod = `
+  pause() {
+    console.log(\`[\${this.name}] Pause\`);
+    this.state.isPaused = !this.state.isPaused;
+  }`;
+        enhanced = enhanced.slice(0, insertPos) + pauseMethod + enhanced.slice(insertPos);
+      }
+    }
+
+    // Ajouter stop si manquante
+    if (!enhanced.includes('stop(')) {
+      const classMatch = enhanced.match(/class\s+\w+[^{]*{/);
+      if (classMatch) {
+        const insertPos = enhanced.indexOf(classMatch[0]) + classMatch[0].length;
+        const stopMethod = `
+  stop() {
+    console.log(\`[\${this.name}] Arrêt\`);
+    this.state.isRunning = false;
+  }`;
+        enhanced = enhanced.slice(0, insertPos) + stopMethod + enhanced.slice(insertPos);
+      }
+    }
+
+    // Ajouter reset si manquante
+    if (!enhanced.includes('reset(')) {
+      const classMatch = enhanced.match(/class\s+\w+[^{]*{/);
+      if (classMatch) {
+        const insertPos = enhanced.indexOf(classMatch[0]) + classMatch[0].length;
+        const resetMethod = `
+  reset() {
+    console.log(\`[\${this.name}] Reset\`);
+    this.state.frame = 0;
+    this.state.currentTime = 0;
+    // Nettoyage du canvas si disponible
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+  }`;
+        enhanced = enhanced.slice(0, insertPos) + resetMethod + enhanced.slice(insertPos);
       }
     }
 
@@ -734,25 +1150,150 @@ class BaseEffect {
   }
 
   /**
-   * Extrait le nom de la classe principale
+   * Ajoute le système d'événements standardisé
    */
-  private extractClassName(code: string): string | null {
-    const classMatch = code.match(/class\s+(\w+)/);
-    return classMatch ? classMatch[1] : null;
+  private addEventSystem(code: string): string {
+    const eventManagerCode = `
+  // Système d'événements standardisé
+  eventManager = {
+    handlers: new Map(),
+    on: (event, callback) => {
+      if (!this.eventManager.handlers.has(event)) {
+        this.eventManager.handlers.set(event, new Set());
+      }
+      this.eventManager.handlers.get(event).add(callback);
+    },
+    emit: (event, data) => {
+      const handlers = this.eventManager.handlers.get(event);
+      if (handlers) {
+        handlers.forEach(handler => handler(data));
+      }
+    },
+    off: (event, callback) => {
+      const handlers = this.eventManager.handlers.get(event);
+      if (handlers) {
+        handlers.delete(callback);
+      }
+    }
+  };
+`;
+    const classMatch = code.match(/class\s+\w+[^{]*{/);
+    if (classMatch) {
+      const insertPos = code.indexOf(classMatch[0]) + classMatch[0].length;
+      return code.slice(0, insertPos) + eventManagerCode + code.slice(insertPos);
+    }
+    return code; // Retourne le code original si aucune classe n'est trouvée
   }
 
   /**
-   * Ajoute les exports standardisés
+   * Ajoute les utilitaires mathématiques intégrés
    */
-  private addStandardExports(code: string, className: string): string {
+  private addMathUtils(code: string): string {
+    const mathUtilsCode = `
+  // Utilitaires mathématiques intégrés
+  math = {
+    lerp: (a, b, t) => a + (b - a) * t,
+    clamp: (value, min, max) => Math.min(Math.max(value, min), max),
+    map: (value, inMin, inMax, outMin, outMax) => {
+      return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+    },
+    distance: (x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2),
+    angle: (x1, y1, x2, y2) => Math.atan2(y2 - y1, x2 - x1),
+    random: (min = 0, max = 1) => Math.random() * (max - min) + min,
+    randomInt: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
+  };
+`;
+    const classMatch = code.match(/class\s+\w+[^{]*{/);
+    if (classMatch) {
+      const insertPos = code.indexOf(classMatch[0]) + classMatch[0].length;
+      return code.slice(0, insertPos) + mathUtilsCode + code.slice(insertPos);
+    }
+    return code;
+  }
+
+  /**
+   * Ajoute le monitoring de performance
+   */
+  private addPerformanceMonitoring(code: string): string {
+    const performanceMonitorCode = `
+  // Monitoring de performance
+  performanceMonitor = {
+    fps: 60,
+    frameTime: 16.67,
+    lastFrameTime: 0,
+    averageFrameTime: 16.67,
+    update: () => {
+      const now = performance.now();
+      this.performanceMonitor.frameTime = now - this.performanceMonitor.lastFrameTime;
+      this.performanceMonitor.lastFrameTime = now;
+      this.performanceMonitor.averageFrameTime = (this.performanceMonitor.averageFrameTime * 0.9) + (this.performanceMonitor.frameTime * 0.1);
+      this.performanceMonitor.fps = Math.round(1000 / this.performanceMonitor.averageFrameTime);
+    }
+  };
+`;
+    const classMatch = code.match(/class\s+\w+[^{]*{/);
+    if (classMatch) {
+      const insertPos = code.indexOf(classMatch[0]) + classMatch[0].length;
+      return code.slice(0, insertPos) + performanceMonitorCode + code.slice(insertPos);
+    }
+    return code;
+  }
+
+  /**
+   * Ajoute la boucle d'animation standardisée
+   */
+  private addStandardAnimationLoop(code: string): string {
+    const animationLoopCode = `
+  // Boucle d'animation standardisée
+  animationLoop = (currentTime = performance.now()) => {
+    if (!this.state.isRunning) return;
+
+    this.state.currentTime = currentTime - this.state.startTime;
+    this.performanceMonitor.update();
+
+    if (!this.state.isPaused) {
+      const deltaTime = this.performance.frameTime; // Utilise la valeur de performanceMonitor
+
+      // Appel de la méthode animate (à surcharger)
+      this.animate(deltaTime, this.state.currentTime);
+
+      this.state.frame++;
+      // Émission d'un événement pour chaque frame (optionnel)
+      this.eventManager?.emit('frame', { 
+        frame: this.state.frame, 
+        deltaTime, 
+        currentTime: this.state.currentTime 
+      });
+    }
+
+    requestAnimationFrame(this.animationLoop);
+  }
+`;
+    // Insérer avant la méthode destroy ou à la fin du corps de la classe
+    const classBodyEndMatch = code.match(/class\s+\w+[^}]*{[^}]*}/s);
+    if (classBodyEndMatch) {
+      const insertPos = classBodyEndMatch[0].lastIndexOf('}') + code.indexOf('class'); // Approximatif
+      return code.slice(0, insertPos) + animationLoopCode + code.slice(insertPos);
+    }
+    return code;
+  }
+
+
+  /**
+   * Ajoute les exports standardisés avec API étendue
+   */
+  private addAdvancedExports(code: string, className: string): string {
     const exportCode = `
 
-// Export pour utilisation
+// Export pour utilisation dans d'autres modules
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = ${className};
+  module.exports = {
+    [className]: ${className},
+    BaseEffect: BaseEffect // Export également BaseEffect si utilisé
+  };
 }
 
-// Usage autonome si chargé directement  
+// Configuration globale pour démarrage rapide
 if (typeof window !== 'undefined') {
   window.${className} = ${className};
 
@@ -760,32 +1301,58 @@ if (typeof window !== 'undefined') {
   window.start${className} = function(canvasId, config = {}) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
-      console.error('Canvas non trouvé:', canvasId);
+      console.error('Canvas element not found:', canvasId);
       return null;
     }
 
     const effect = new ${className}(config);
-    effect.initialize(canvas, { 
-      width: canvas.width, 
-      height: canvas.height 
+    const container = canvas.parentElement; // Supposons que le canvas est dans un conteneur
+
+    effect.initialize(canvas, container);
+
+    // Gestionnaire de redimensionnement simple
+    const resizeListener = () => {
+      effect.resize(canvas.offsetWidth, canvas.offsetHeight);
+    };
+    window.addEventListener('resize', resizeListener);
+    resizeListener(); // Appel initial
+
+    // Démarrage de l'animation
+    effect.start();
+
+    // Nettoyage lors du rechargement de la page ou du changement de module
+    window.addEventListener('beforeunload', () => {
+      window.removeEventListener('resize', resizeListener);
+      effect.destroy();
     });
 
-    let lastTime = 0;
-    const animationLoop = (currentTime) => {
-      const deltaTime = currentTime - lastTime;
-      lastTime = currentTime;
-
-      effect.animate(deltaTime);
-      requestAnimationFrame(animationLoop);
-    };
-
-    requestAnimationFrame(animationLoop);
     return effect;
   };
 }`;
 
     return code + exportCode;
   }
+
+  /**
+   * Ajoute la documentation JSDoc automatique
+   */
+  private addJSDocumentation(code: string, name: string): string {
+    const jsDoc = `
+/**
+ * @class ${name}
+ * @extends BaseEffect
+ * @description Effet visuel généré et standardisé par le Universal Preprocessor.
+ *              Contient une API publique standardisée pour le contrôle et la configuration.
+ */
+`;
+    const classMatch = code.match(/class\s+\w+/);
+    if (classMatch) {
+      const insertPos = code.indexOf(classMatch[0]);
+      return code.slice(0, insertPos) + jsDoc + code.slice(insertPos);
+    }
+    return code;
+  }
+
 
   /**
    * Validation finale du code nettoyé
@@ -1464,488 +2031,6 @@ ${code}`;
   }
 
   /**
-   * RECONDITIONNEMENT TOTAL - Transforme n'importe quel code en structure parfaite
-   */
-  private async reconditionToStandardStructure(code: string, filename: string): Promise<{
-    code: string;
-    hasChanges: boolean;
-    changes: string[];
-  }> {
-    const changes: string[] = [];
-    let hasChanges = false;
-    
-    // 1. Analyse du code existant
-    const analysis = this.analyzeExistingCode(code);
-    
-    // 2. Si le code est déjà parfait, ne pas toucher
-    if (analysis.isPerfectStructure) {
-      return { code, hasChanges: false, changes: [] };
-    }
-    
-    // 3. RECONDITIONNEMENT COMPLET
-    let reconditionedCode;
-    
-    if (analysis.needsCompleteRebuild) {
-      // Reconstruction totale
-      reconditionedCode = this.buildPerfectEffectStructure(code, filename, analysis);
-      changes.push('🔄 Structure complètement reconstruite selon le standard parfait');
-      changes.push('✨ Classe BaseEffect intégrée avec paramètres configurables');
-      changes.push('🎯 Méthodes essentielles ajoutées (initialize, update, render)');
-      changes.push('🧠 Système physique avancé implémenté');
-      changes.push('⚡ Optimisations de performance intégrées');
-      changes.push('📊 Système de monitoring et statistiques ajouté');
-      hasChanges = true;
-    } else {
-      // Amélioration progressive
-      reconditionedCode = this.upgradeExistingStructure(code, analysis);
-      changes.push('🔧 Structure existante améliorée et standardisée');
-      hasChanges = analysis.improvements.length > 0;
-      changes.push(...analysis.improvements);
-    }
-    
-    return { code: reconditionedCode, hasChanges, changes };
-  }
-
-  /**
-   * Analyse approfondie du code existant
-   */
-  private analyzeExistingCode(code: string): {
-    isPerfectStructure: boolean;
-    needsCompleteRebuild: boolean;
-    hasBaseEffect: boolean;
-    hasProperConstructor: boolean;
-    hasEssentialMethods: boolean;
-    hasPhysicsSystem: boolean;
-    hasPerformanceOptimizations: boolean;
-    hasPublicControls: boolean;
-    codeQualityScore: number;
-    improvements: string[];
-    detectedEffectType: string;
-    extractedFunctionality: any;
-  } {
-    const improvements: string[] = [];
-    let score = 0;
-    
-    // Vérifications structurelles
-    const hasBaseEffect = /class\s+\w+\s+extends\s+BaseEffect/.test(code);
-    const hasProperConstructor = /constructor\s*\([^)]*\)\s*{[\s\S]*super\s*\(/.test(code);
-    const hasInitialize = /initialize\s*\([^)]*canvas[^)]*\)/.test(code);
-    const hasUpdate = /update\s*\([^)]*deltaTime[^)]*\)/.test(code);
-    const hasRender = /render\s*\([^)]*ctx[^)]*\)/.test(code);
-    const hasPhysics = /température|densité|vitesse|viscosité|turbulence|particule/i.test(code);
-    const hasPerformance = /performance|optimization|efficacité|fps/i.test(code);
-    const hasControls = /démarrer|arrêter|configurer|obtenir/i.test(code);
-    const hasStatistics = /statistiques|obtenirStatistiques|monitoring/i.test(code);
-    
-    // Calcul du score de qualité
-    if (hasBaseEffect) score += 20;
-    if (hasProperConstructor) score += 15;
-    if (hasInitialize) score += 15;
-    if (hasUpdate) score += 15;
-    if (hasRender) score += 15;
-    if (hasPhysics) score += 10;
-    if (hasPerformance) score += 5;
-    if (hasControls) score += 3;
-    if (hasStatistics) score += 2;
-    
-    // Détection du type d'effet
-    const effectType = this.detectEffectTypeFromCode(code);
-    
-    // Extraction de la fonctionnalité existante
-    const extractedFunctionality = this.extractExistingFunctionality(code);
-    
-    // Détermination des améliorations nécessaires
-    if (!hasBaseEffect) improvements.push('Classe BaseEffect manquante - sera ajoutée');
-    if (!hasProperConstructor) improvements.push('Constructor standard manquant - sera créé');
-    if (!hasInitialize) improvements.push('Méthode initialize() manquante - sera ajoutée');
-    if (!hasUpdate) improvements.push('Méthode update() manquante - sera ajoutée');
-    if (!hasRender) improvements.push('Méthode render() manquante - sera ajoutée');
-    if (!hasPhysics) improvements.push('Système physique manquant - sera implémenté');
-    if (!hasPerformance) improvements.push('Optimisations de performance - seront ajoutées');
-    if (!hasControls) improvements.push('Méthodes de contrôle public - seront créées');
-    if (!hasStatistics) improvements.push('Système de statistiques - sera intégré');
-    
-    return {
-      isPerfectStructure: score >= 95,
-      needsCompleteRebuild: score < 50,
-      hasBaseEffect,
-      hasProperConstructor,
-      hasEssentialMethods: hasInitialize && hasUpdate && hasRender,
-      hasPhysicsSystem: hasPhysics,
-      hasPerformanceOptimizations: hasPerformance,
-      hasPublicControls: hasControls,
-      codeQualityScore: score,
-      improvements,
-      detectedEffectType: effectType,
-      extractedFunctionality
-    };
-  }
-
-  /**
-   * Construit une structure parfaite à partir de n'importe quel code
-   */
-  private buildPerfectEffectStructure(originalCode: string, filename: string, analysis: any): string {
-    const effectName = this.generateEffectName(filename);
-    const effectId = this.generateEffectId(effectName, analysis.detectedEffectType);
-    const functionality = analysis.extractedFunctionality;
-    
-    return `// ${effectName} - Reconditionné par Universal Preprocessor
-// Structure parfaite générée automatiquement
-
-// Export des métadonnées (séparé du code)
-export const ${effectName.toLowerCase()}Effect = {
-  id: "${effectId}",
-  name: "${effectName}",
-  description: \`Effet ${analysis.detectedEffectType} optimisé et reconditionné selon les standards avancés du logiciel.\`,
-  category: "${this.getCategoryFromEffectType(analysis.detectedEffectType)}",
-  version: "2.0",
-  performance: "high"
-};
-
-// Classe de base (si non définie)
-class BaseEffect {
-  constructor(config = {}) {
-    this.id = config.id || 'effect-' + Date.now();
-    this.name = config.name || 'Effect';
-    this.category = config.category || 'general';
-    this.version = config.version || '2.0';
-    this.performance = config.performance || 'high';
-    this.parameters = config.parameters || {};
-  }
-
-  initialize(canvas, element) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.element = element;
-  }
-
-  animate(deltaTime) {
-    // Méthode à surcharger
-  }
-
-  destroy() {
-    // Nettoyage automatique
-  }
-}
-
-// CLASSE PRINCIPALE RECONDITIONÉE
-class ${effectName} extends BaseEffect {
-  constructor(config = {}) {
-    super({
-      id: '${effectId}',
-      name: '${effectName}',
-      category: '${this.getCategoryFromEffectType(analysis.detectedEffectType)}',
-      version: '2.0',
-      performance: 'high',
-      parameters: ${this.generateStandardParameters(analysis.detectedEffectType)}
-    });
-
-    // SYSTÈME PRINCIPAL DE L'EFFET
-    this.temps = 0;
-    this.isActive = false;
-    this.animationId = null;
-    
-    // PARAMÈTRES CONFIGURABLES EXTRAITS
-    ${this.generateParameterProperties(functionality)}
-    
-    // SYSTÈME PHYSIQUE AVANCÉ
-    ${this.generatePhysicsSystem(analysis.detectedEffectType)}
-    
-    // OPTIMISATIONS PERFORMANCE
-    this.performanceMonitor = {
-      fps: 60,
-      frameTime: 16.67,
-      memoryUsage: 0,
-      optimizationLevel: 1.0
-    };
-    
-    // HISTORIQUE ET ADAPTATION
-    this.historique = [];
-    this.statistiques = {
-      frameCount: 0,
-      averageRenderTime: 0,
-      effectivenesScore: 100
-    };
-
-    // FONCTIONNALITÉ ORIGINALE PRÉSERVÉE ET AMÉLIORÉE
-    ${this.integrateOriginalFunctionality(originalCode, functionality)}
-  }
-
-  // MÉTHODE D'INITIALISATION STANDARD
-  initialize(canvas, element) {
-    super.initialize(canvas, element);
-    
-    // Initialisation spécifique à l'effet
-    this.setupEffectSystem(element);
-    
-    // Configuration canvas optimisée
-    this.optimizeCanvasSettings();
-    
-    // Initialisation du monitoring
-    this.initPerformanceMonitoring();
-    
-    console.log(\`✅ \${this.name} initialisé avec succès\`);
-  }
-
-  setupEffectSystem(element) {
-    // Configuration système selon le type d'effet
-    ${this.generateEffectSpecificSetup(analysis.detectedEffectType)}
-    
-    // Adaptation aux dimensions
-    this.adaptToDimensions(element.width || element.offsetWidth, element.height || element.offsetHeight);
-  }
-
-  optimizeCanvasSettings() {
-    if (this.ctx) {
-      // Optimisations standard
-      this.ctx.imageSmoothingEnabled = true;
-      this.ctx.imageSmoothingQuality = 'high';
-      
-      // Configuration selon le type d'effet
-      ${this.generateCanvasOptimizations(analysis.detectedEffectType)}
-    }
-  }
-
-  initPerformanceMonitoring() {
-    this.performanceMonitor.startTime = performance.now();
-    this.performanceMonitor.lastFrameTime = this.performanceMonitor.startTime;
-  }
-
-  // MÉTHODE DE MISE À JOUR STANDARD
-  update(deltaTime = 16) {
-    if (!this.isActive) return;
-    
-    // Monitoring performance
-    this.updatePerformanceMetrics(deltaTime);
-    
-    // Mise à jour du temps
-    this.temps += deltaTime;
-    
-    // Mise à jour logique de l'effet
-    this.updateEffectLogic(deltaTime);
-    
-    // Optimisation adaptative
-    this.adaptiveOptimization(deltaTime);
-    
-    // Mise à jour statistiques
-    this.updateStatistics();
-  }
-
-  updateEffectLogic(deltaTime) {
-    // Logique spécifique à l'effet (préservée de l'original)
-    ${this.generateUpdateLogic(functionality, analysis.detectedEffectType)}
-  }
-
-  updatePerformanceMetrics(deltaTime) {
-    const now = performance.now();
-    this.performanceMonitor.frameTime = now - this.performanceMonitor.lastFrameTime;
-    this.performanceMonitor.fps = 1000 / this.performanceMonitor.frameTime;
-    this.performanceMonitor.lastFrameTime = now;
-    
-    // Adaptation qualité selon les performances
-    if (this.performanceMonitor.fps < 30) {
-      this.performanceMonitor.optimizationLevel = Math.max(0.5, this.performanceMonitor.optimizationLevel - 0.1);
-    } else if (this.performanceMonitor.fps > 55) {
-      this.performanceMonitor.optimizationLevel = Math.min(1.0, this.performanceMonitor.optimizationLevel + 0.05);
-    }
-  }
-
-  adaptiveOptimization(deltaTime) {
-    // Optimisation automatique selon les performances
-    const level = this.performanceMonitor.optimizationLevel;
-    
-    if (level < 0.8) {
-      // Réduction qualité pour maintenir performance
-      ${this.generatePerformanceOptimizations(analysis.detectedEffectType)}
-    }
-  }
-
-  updateStatistics() {
-    this.statistiques.frameCount++;
-    
-    if (this.statistiques.frameCount % 60 === 0) {
-      // Mise à jour toutes les secondes
-      this.statistiques.averageRenderTime = this.performanceMonitor.frameTime;
-      this.statistiques.effectivenesScore = Math.min(100, this.performanceMonitor.fps / 60 * 100);
-      
-      // Ajout à l'historique
-      this.historique.push({
-        temps: this.temps,
-        fps: this.performanceMonitor.fps,
-        optimizationLevel: this.performanceMonitor.optimizationLevel
-      });
-      
-      // Limitation historique
-      if (this.historique.length > 100) {
-        this.historique.shift();
-      }
-    }
-  }
-
-  // MÉTHODE DE RENDU STANDARD
-  render(ctx = this.ctx, canvas = this.canvas) {
-    if (!ctx || !this.isActive) return;
-    
-    // Sauvegarde contexte
-    ctx.save();
-    
-    // Rendu de l'effet
-    this.renderEffect(ctx, canvas);
-    
-    // Rendu debug si activé
-    if (this.debugMode) {
-      this.renderDebugInfo(ctx, canvas);
-    }
-    
-    // Restauration contexte
-    ctx.restore();
-  }
-
-  renderEffect(ctx, canvas) {
-    // Rendu spécifique à l'effet (logique préservée)
-    ${this.generateRenderLogic(functionality, analysis.detectedEffectType)}
-  }
-
-  renderDebugInfo(ctx, canvas) {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(10, 10, 200, 100);
-    
-    ctx.fillStyle = 'white';
-    ctx.font = '12px monospace';
-    ctx.fillText(\`FPS: \${this.performanceMonitor.fps.toFixed(1)}\`, 20, 30);
-    ctx.fillText(\`Frame: \${this.performanceMonitor.frameTime.toFixed(1)}ms\`, 20, 45);
-    ctx.fillText(\`Optimization: \${(this.performanceMonitor.optimizationLevel * 100).toFixed(0)}%\`, 20, 60);
-    ctx.fillText(\`Score: \${this.statistiques.effectivenesScore.toFixed(0)}%\`, 20, 75);
-  }
-
-  // MÉTHODES DE CONTRÔLE PUBLIC STANDARD
-  démarrer() {
-    this.isActive = true;
-    this.temps = 0;
-    console.log(\`🚀 \${this.name} démarré\`);
-    return this;
-  }
-
-  arrêter() {
-    this.isActive = false;
-    console.log(\`⏹️ \${this.name} arrêté\`);
-    return this;
-  }
-
-  redémarrer() {
-    this.arrêter();
-    setTimeout(() => this.démarrer(), 100);
-    console.log(\`🔄 \${this.name} redémarré\`);
-    return this;
-  }
-
-  // MÉTHODES DE CONFIGURATION DYNAMIQUE
-  ${this.generateConfigurationMethods(analysis.detectedEffectType)}
-
-  // MÉTHODE DE STATISTIQUES STANDARD
-  obtenirStatistiques() {
-    return {
-      name: this.name,
-      id: this.id,
-      category: this.category,
-      isActive: this.isActive,
-      temps: this.temps,
-      fps: this.performanceMonitor.fps,
-      frameTime: this.performanceMonitor.frameTime,
-      optimizationLevel: this.performanceMonitor.optimizationLevel,
-      frameCount: this.statistiques.frameCount,
-      averageRenderTime: this.statistiques.averageRenderTime,
-      effectivenessScore: this.statistiques.effectivenesScore,
-      memoryUsage: this.performanceMonitor.memoryUsage,
-      historique: this.historique.slice(-10) // Dernières 10 mesures
-    };
-  }
-
-  // MÉTHODE DE DIAGNOSTIC SYSTEM
-  diagnostic() {
-    const stats = this.obtenirStatistiques();
-    
-    console.group(\`🔍 Diagnostic \${this.name}\`);
-    console.log('📊 Performances:', stats.fps, 'FPS');
-    console.log('⚡ Optimisation:', \`\${(stats.optimizationLevel * 100).toFixed(0)}%\`);
-    console.log('🎯 Efficacité:', \`\${stats.effectivenessScore.toFixed(0)}%\`);
-    console.log('📈 Frames:', stats.frameCount);
-    console.groupEnd();
-    
-    return stats;
-  }
-
-  // MÉTHODE DE DESTRUCTION PROPRE
-  destroy() {
-    this.arrêter();
-    
-    // Nettoyage mémoire
-    this.historique = [];
-    this.statistiques = null;
-    this.performanceMonitor = null;
-    
-    // Nettoyage DOM
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
-      this.animationId = null;
-    }
-    
-    super.destroy();
-    console.log(\`🧹 \${this.name} détruit proprement\`);
-  }
-}
-
-// EXPORTS STANDARDS
-export default ${effectName};
-
-// Export pour utilisation directe
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = ${effectName};
-}
-
-// Usage autonome si chargé directement  
-if (typeof window !== 'undefined') {
-  window.${effectName} = ${effectName};
-
-  // Fonction utilitaire pour démarrage rapide
-  window.start${effectName} = function(canvasId, config = {}) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) {
-      console.error('Canvas non trouvé:', canvasId);
-      return null;
-    }
-
-    const effect = new ${effectName}(config);
-    effect.initialize(canvas, { 
-      width: canvas.width || canvas.offsetWidth, 
-      height: canvas.height || canvas.offsetHeight 
-    });
-
-    effect.démarrer();
-
-    // Boucle d'animation automatique
-    let lastTime = 0;
-    const animationLoop = (currentTime) => {
-      const deltaTime = currentTime - lastTime;
-      lastTime = currentTime;
-
-      effect.update(deltaTime);
-      effect.render();
-      
-      if (effect.isActive) {
-        effect.animationId = requestAnimationFrame(animationLoop);
-      }
-    };
-
-    requestAnimationFrame(animationLoop);
-    
-    console.log(\`✨ \${effect.name} démarré automatiquement sur \${canvasId}\`);
-    return effect;
-  };
-}`;
-  }
-
-  /**
    * Réinitialise le preprocessor
    */
   reset(): void {
@@ -2044,9 +2129,6 @@ Cette documentation détaillée permet au VariationEngine 2.0 de :
     }
   }
 
-  /**
-   * Analyse le code JavaScript pour extraire des informations pertinentes
-   */
   private analyzeEffectCode(code: string): any {
     // Détection du nom et de l'emoji
     const nameMatch = code.match(/name:\s*['"](.*?)['"]/) ||
@@ -2241,7 +2323,7 @@ Cette documentation détaillée permet au VariationEngine 2.0 de :
     if (category === 'Simulation') {
       phenomena.push(
         { name: 'Convection', description: 'Mouvements fluides par différences de température' },
-        { name: 'Diffusion', description: 'Propagation moléculaire dans l\'espace' },
+        { name: 'Diffusion', description: 'Propagation moléculaire dans l'espace' },
         { name: 'Turbulence', description: 'Écoulements chaotiques multi-échelles' }
       );
     } else if (category === 'Particules') {
@@ -2312,398 +2394,5 @@ effect.start();
 ---
 
 *Généré automatiquement pour VariationEngine 2.0*`;
-  }
-
-  // === MÉTHODES UTILITAIRES POUR LE RECONDITIONNEMENT ===
-
-  private detectEffectTypeFromCode(code: string): string {
-    if (/smoke|fumée|vapeur/i.test(code)) return 'smoke';
-    if (/particle|particule/i.test(code)) return 'particles';
-    if (/fire|feu|flame/i.test(code)) return 'fire';
-    if (/water|eau|fluid/i.test(code)) return 'fluid';
-    if (/explosion|boom/i.test(code)) return 'explosion';
-    if (/glow|lueur|éclat/i.test(code)) return 'glow';
-    if (/spin|rotation|rotate/i.test(code)) return 'rotation';
-    if (/dance|danse|mouvement/i.test(code)) return 'animation';
-    if (/logo|text|texte/i.test(code)) return 'text';
-    if (/3d|three|webgl/i.test(code)) return '3d';
-    return 'visual';
-  }
-
-  private getCategoryFromEffectType(effectType: string): string {
-    const categories = {
-      smoke: 'simulation',
-      particles: 'particules',
-      fire: 'combustion',
-      fluid: 'simulation',
-      explosion: 'pyrotechnie',
-      glow: 'lumineux',
-      rotation: 'mouvement',
-      animation: 'mouvement',
-      text: 'interface',
-      '3d': 'tridimensionnel',
-      visual: 'visuel'
-    };
-    return categories[effectType] || 'général';
-  }
-
-  private generateEffectName(filename: string): string {
-    const name = filename
-      .replace(/\.[^/.]+$/, '')
-      .replace(/[^a-zA-Z0-9]/g, ' ')
-      .replace(/\b\w/g, l => l.toUpperCase())
-      .replace(/\s/g, '');
-    
-    return name.endsWith('Effect') ? name : name + 'Effect';
-  }
-
-  private generateEffectId(effectName: string, effectType: string): string {
-    const timestamp = Date.now().toString().slice(-4);
-    return `${effectType}-${effectName.toLowerCase()}-${timestamp}`;
-  }
-
-  private generateStandardParameters(effectType: string): string {
-    const baseParams = `{
-        intensité: { type: 'range', min: 0.1, max: 10.0, default: 1.0, description: 'Force de l\\'effet' },
-        vitesse: { type: 'range', min: 0.1, max: 5.0, default: 1.0, description: 'Vitesse d\\'animation' },
-        taille: { type: 'range', min: 0.5, max: 3.0, default: 1.0, description: 'Échelle de l\\'effet' },
-        opacité: { type: 'range', min: 0.0, max: 1.0, default: 0.8, description: 'Transparence générale' },
-        couleur: { type: 'color', default: '#ffffff', description: 'Couleur principale' }`;
-    
-    const specificParams = {
-      smoke: `,
-        densité: { type: 'range', min: 0.1, max: 5.0, default: 1.5, description: 'Densité fumée' },
-        température: { type: 'range', min: 300, max: 1500, default: 600, description: 'Température' },
-        turbulence: { type: 'range', min: 0, max: 1, default: 0.4, description: 'Niveau turbulence' }`,
-      
-      particles: `,
-        nombre: { type: 'range', min: 10, max: 1000, default: 200, description: 'Nombre particules' },
-        gravité: { type: 'range', min: -10, max: 10, default: 0.1, description: 'Force gravitationnelle' }`,
-      
-      fire: `,
-        température: { type: 'range', min: 500, max: 2000, default: 1200, description: 'Température flamme' },
-        combustion: { type: 'range', min: 0.1, max: 2.0, default: 1.0, description: 'Intensité combustion' }`,
-      
-      rotation: `,
-        vitesseRotation: { type: 'range', min: 0.1, max: 10, default: 2, description: 'Vitesse rotation' },
-        axe: { type: 'select', options: ['x', 'y', 'z'], default: 'z', description: 'Axe de rotation' }`
-    };
-    
-    return baseParams + (specificParams[effectType] || '') + '\n      }';
-  }
-
-  private generateParameterProperties(functionality: any): string {
-    return `// Paramètres configurables
-    this.intensité = 1.0;
-    this.vitesse = 1.0;
-    this.taille = 1.0;
-    this.opacité = 0.8;
-    this.couleur = '#ffffff';
-    
-    // État interne
-    this.éléments = [];
-    this.cache = new Map();`;
-  }
-
-  private generatePhysicsSystem(effectType: string): string {
-    const systems = {
-      smoke: `// Système thermodynamique
-    this.densité = 1.5;
-    this.température = 600;
-    this.viscosité = 0.1;
-    this.turbulence = 0.4;
-    this.convection = { x: 0, y: -2, z: 0 };`,
-      
-      particles: `// Système particules
-    this.particules = [];
-    this.émetteur = { x: 0, y: 0, rate: 10 };
-    this.forces = { gravité: 0.1, vent: { x: 0, y: 0 } };`,
-      
-      fire: `// Système combustion
-    this.flammes = [];
-    this.combustion = 1.0;
-    this.chaleur = 1200;
-    this.oxygène = 0.21;`,
-      
-      default: `// Système physique générique
-    this.position = { x: 0, y: 0, z: 0 };
-    this.vélocité = { x: 0, y: 0, z: 0 };
-    this.accélération = { x: 0, y: 0, z: 0 };`
-    };
-    
-    return systems[effectType] || systems.default;
-  }
-
-  private extractExistingFunctionality(code: string): any {
-    return {
-      hasAnimation: /requestAnimationFrame|setInterval/.test(code),
-      hasCanvas: /canvas|ctx|getContext/.test(code),
-      hasWebGL: /webgl|gl\./i.test(code),
-      hasPhysics: /physics|force|velocity|acceleration/i.test(code),
-      variables: this.extractVariables(code),
-      functions: this.extractFunctions(code),
-      classes: this.extractClasses(code)
-    };
-  }
-
-  private extractVariables(code: string): string[] {
-    const matches = code.match(/(?:var|let|const)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g) || [];
-    return matches.map(match => match.split(/\s+/)[1]);
-  }
-
-  private extractFunctions(code: string): string[] {
-    const matches = code.match(/function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g) || [];
-    return matches.map(match => match.split(/\s+/)[1]);
-  }
-
-  private extractClasses(code: string): string[] {
-    const matches = code.match(/class\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g) || [];
-    return matches.map(match => match.split(/\s+/)[1]);
-  }
-
-  private integrateOriginalFunctionality(originalCode: string, functionality: any): string {
-    // Préservation de la logique originale avec amélioration
-    let preserved = '';
-    
-    // Extraction des parties importantes
-    if (functionality.variables.length > 0) {
-      preserved += '// Variables originales préservées\n';
-      functionality.variables.forEach(varName => {
-        if (!['i', 'j', 'k', 'x', 'y', 'z'].includes(varName)) {
-          preserved += `    this.${varName} = this.${varName} || 0;\n`;
-        }
-      });
-    }
-    
-    if (functionality.functions.length > 0) {
-      preserved += '\n    // Fonctions originales intégrées\n';
-      preserved += '    this.originalLogic = {\n';
-      functionality.functions.forEach(funcName => {
-        preserved += `      ${funcName}: null, // À implémenter\n`;
-      });
-      preserved += '    };\n';
-    }
-    
-    return preserved;
-  }
-
-  private generateEffectSpecificSetup(effectType: string): string {
-    const setups = {
-      smoke: `// Configuration fumée
-    this.initSmokeSystem();
-    this.setupThermalProperties();`,
-      
-      particles: `// Configuration particules
-    this.initParticleSystem();
-    this.setupEmitters();`,
-      
-      fire: `// Configuration feu
-    this.initFlameSystem();
-    this.setupCombustion();`,
-      
-      default: `// Configuration générique
-    this.initGenericSystem();
-    this.setupBasicProperties();`
-    };
-    
-    return setups[effectType] || setups.default;
-  }
-
-  private generateCanvasOptimizations(effectType: string): string {
-    return `// Optimisations Canvas
-      this.ctx.globalCompositeOperation = 'source-over';
-      
-      // Optimisations spécifiques
-      if (this.performanceMonitor.optimizationLevel < 0.8) {
-        this.ctx.imageSmoothingEnabled = false;
-      }`;
-  }
-
-  private generateUpdateLogic(functionality: any, effectType: string): string {
-    const logics = {
-      smoke: `// Logique fumée
-    this.updateSmokeParticles(deltaTime);
-    this.updateThermalConvection(deltaTime);`,
-      
-      particles: `// Logique particules
-    this.updateParticles(deltaTime);
-    this.updateEmitters(deltaTime);`,
-      
-      fire: `// Logique feu
-    this.updateFlames(deltaTime);
-    this.updateCombustion(deltaTime);`,
-      
-      default: `// Logique générique
-    this.updateElements(deltaTime);
-    this.updateAnimation(deltaTime);`
-    };
-    
-    return logics[effectType] || logics.default;
-  }
-
-  private generateRenderLogic(functionality: any, effectType: string): string {
-    const logics = {
-      smoke: `// Rendu fumée
-    this.renderSmokeParticles(ctx);
-    this.renderThermalEffects(ctx);`,
-      
-      particles: `// Rendu particules
-    this.renderParticles(ctx);
-    this.renderTrails(ctx);`,
-      
-      fire: `// Rendu feu
-    this.renderFlames(ctx);
-    this.renderHeat(ctx);`,
-      
-      default: `// Rendu générique
-    this.renderElements(ctx);
-    this.renderEffects(ctx);`
-    };
-    
-    return logics[effectType] || logics.default;
-  }
-
-  private generatePerformanceOptimizations(effectType: string): string {
-    return `// Réductions qualité adaptatives
-      this.réduireQualité(level);
-      
-      // Optimisations spécifiques
-      if (level < 0.6) {
-        this.désactiverEffetsSecondaires();
-      }`;
-  }
-
-  private generateConfigurationMethods(effectType: string): string {
-    return `configurerIntensité(valeur) {
-    this.intensité = Math.max(0.1, Math.min(10, valeur));
-    this.parameters.intensité.value = this.intensité;
-    return this;
-  }
-
-  configurerVitesse(valeur) {
-    this.vitesse = Math.max(0.1, Math.min(5, valeur));
-    this.parameters.vitesse.value = this.vitesse;
-    return this;
-  }
-
-  configurerTaille(valeur) {
-    this.taille = Math.max(0.5, Math.min(3, valeur));
-    this.parameters.taille.value = this.taille;
-    return this;
-  }
-
-  configurerOpacité(valeur) {
-    this.opacité = Math.max(0, Math.min(1, valeur));
-    this.parameters.opacité.value = this.opacité;
-    return this;
-  }`;
-  }
-
-  private upgradeExistingStructure(code: string, analysis: any): string {
-    // Amélioration progressive du code existant
-    let upgradedCode = code;
-    
-    // Ajouts nécessaires
-    if (!analysis.hasBaseEffect) {
-      upgradedCode = this.addBaseEffectClass(upgradedCode);
-    }
-    
-    if (!analysis.hasEssentialMethods) {
-      upgradedCode = this.addEssentialMethods(upgradedCode);
-    }
-    
-    if (!analysis.hasPerformanceOptimizations) {
-      upgradedCode = this.addPerformanceOptimizations(upgradedCode);
-    }
-    
-    return upgradedCode;
-  }
-
-  private addBaseEffectClass(code: string): string {
-    const baseEffect = `// Classe BaseEffect ajoutée automatiquement
-class BaseEffect {
-  constructor(config = {}) {
-    this.id = config.id || 'effect-' + Date.now();
-    this.name = config.name || 'Effect';
-    this.category = config.category || 'general';
-    this.version = config.version || '2.0';
-    this.performance = config.performance || 'high';
-    this.parameters = config.parameters || {};
-  }
-
-  initialize(canvas, element) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.element = element;
-  }
-
-  animate(deltaTime) {
-    // Méthode à surcharger
-  }
-
-  destroy() {
-    // Nettoyage automatique
-  }
-}
-
-`;
-    
-    return baseEffect + code;
-  }
-
-  private addEssentialMethods(code: string): string {
-    // Ajout des méthodes essentielles si manquantes
-    let enhanced = code;
-    
-    if (!enhanced.includes('initialize(')) {
-      enhanced += `\n
-  initialize(canvas, element) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.element = element;
-    console.log('Effect initialized');
-  }`;
-    }
-    
-    if (!enhanced.includes('update(')) {
-      enhanced += `\n
-  update(deltaTime = 16) {
-    // Mise à jour logique
-    this.temps = (this.temps || 0) + deltaTime;
-  }`;
-    }
-    
-    if (!enhanced.includes('render(')) {
-      enhanced += `\n
-  render(ctx = this.ctx) {
-    if (!ctx) return;
-    // Rendu de l'effet
-  }`;
-    }
-    
-    return enhanced;
-  }
-
-  private addPerformanceOptimizations(code: string): string {
-    const optimizations = `
-  
-  // === OPTIMISATIONS PERFORMANCE AJOUTÉES ===
-  initPerformanceMonitoring() {
-    this.performanceMonitor = {
-      fps: 60,
-      frameTime: 16.67,
-      optimizationLevel: 1.0,
-      lastFrameTime: performance.now()
-    };
-  }
-  
-  updatePerformanceMetrics(deltaTime) {
-    const now = performance.now();
-    this.performanceMonitor.frameTime = now - this.performanceMonitor.lastFrameTime;
-    this.performanceMonitor.fps = 1000 / this.performanceMonitor.frameTime;
-    this.performanceMonitor.lastFrameTime = now;
-  }`;
-    
-    return code + optimizations;
   }
 }

@@ -1,160 +1,118 @@
+/**
+ * Test du système de reconditionnement universel
+ * Teste la transformation d'un effet basique vers une structure parfaite
+ */
 
-const { UniversalPreprocessor } = require('./services/universal-preprocessor.ts');
+const fs = require('fs');
+const path = require('path');
 
-async function testUniversalPreprocessor() {
-  console.log('🔄 Test du Universal Preprocessor...\n');
-  
-  const processor = new UniversalPreprocessor();
-  
-  // Test avec code d'effet de fumée
-  const testCode = `
-// smoke-simulation.js
+// Import du preprocessor universel
+const { UniversalPreprocessor } = require('./services/universal-preprocessor');
 
-export const smokeSimulationEffect = {
-  id: "video-smoke-simulation-particles-055",
-  name: "Simulation Fumée Particules Réaliste",
-  
-  description: \`## 💨 EFFET 55 : SMOKE_SIMULATION
-
-**CATÉGORIE :** VIDÉO
-**EFFET DEMANDÉ :** Smoke_Simulation
-**ID UNIQUE :** video-smoke-simulation-particles-055
-**NOM AFFICHAGE :** Simulation Fumée Particules Réaliste
-
-**DESCRIPTION :** Une simulation réaliste de fumée est ajoutée à la vidéo.
-\`,
-
-  // Code JavaScript de l'effet
-  initialize: function(canvas, options = {}) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.particles = [];
-    this.options = { ...this.defaultOptions, ...options };
-    this.setupSimulation();
-  },
-  
-  defaultOptions: {
-    particleCount: 500,
-    temperature: 300,
-    density: 1.0,
-    windSpeed: 0.5
-  },
-  
-  setupSimulation: function() {
-    console.log('Configuration de la simulation de fumée');
-    this.initializeParticles();
-  },
-  
-  initializeParticles: function() {
-    for (let i = 0; i < this.options.particleCount; i++) {
-      this.particles.push({
-        x: Math.random() * this.canvas.width,
-        y: this.canvas.height,
-        vx: (Math.random() - 0.5) * 2,
-        vy: -Math.random() * 3,
-        size: Math.random() * 3 + 1,
-        opacity: Math.random() * 0.5 + 0.2,
-        life: 1.0
-      });
-    }
-  },
-  
-  start: function() {
-    this.animate();
-  },
-  
-  animate: function() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.updateParticles();
-    this.renderParticles();
-    requestAnimationFrame(() => this.animate());
-  },
-  
-  updateParticles: function() {
-    this.particles.forEach(particle => {
-      particle.x += particle.vx;
-      particle.y += particle.vy;
-      particle.life -= 0.01;
-      particle.opacity *= 0.99;
-    });
-  },
-  
-  renderParticles: function() {
-    this.particles.forEach(particle => {
-      if (particle.life > 0) {
-        this.ctx.save();
-        this.ctx.globalAlpha = particle.opacity;
-        this.ctx.fillStyle = '#666';
-        this.ctx.beginPath();
-        this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.restore();
-      }
-    });
-  }
-};
-`;
+async function testUniversalReconditioning() {
+  console.log('🔄 === TEST DU RECONDITIONNEMENT UNIVERSEL ===\n');
 
   try {
-    console.log('📝 Code original:');
-    console.log(testCode.substring(0, 200) + '...\n');
-    
-    const result = await processor.preprocessScript(testCode, {
-      removeComments: true,
-      extractJavaScript: true,
-      standardizeFormat: true,
-      validateSyntax: true
+    // 1. Charger l'effet de simulation de fumée
+    const smokeEffectPath = path.join(__dirname, '..', 'attached_assets', 'smoke-simulation_1755795417492.js');
+
+    if (!fs.existsSync(smokeEffectPath)) {
+      console.log('❌ Fichier effet fumée non trouvé');
+      return;
+    }
+
+    const originalCode = fs.readFileSync(smokeEffectPath, 'utf8');
+    console.log('📄 Code original chargé:', originalCode.length, 'caractères');
+
+    // 2. Initialiser le preprocessor
+    const preprocessor = new UniversalPreprocessor();
+
+    // 3. Lancer le reconditionnement universel
+    console.log('\n🔄 Démarrage du reconditionnement universel...');
+    const result = await preprocessor.preprocessEffect(originalCode, 'smoke-simulation.js');
+
+    // 4. Afficher les résultats
+    console.log('\n📊 === RÉSULTATS DU RECONDITIONNEMENT ===');
+    console.log('✅ Valide:', result.isValid);
+    console.log('📝 Changements:', result.changes.length);
+
+    if (result.changes.length > 0) {
+      console.log('\n🔧 Liste des changements:');
+      result.changes.forEach((change, index) => {
+        console.log(`   ${index + 1}. ${change}`);
+      });
+    }
+
+    // 5. Sauvegarder le code reconditionné
+    if (result.isValid && result.cleanCode) {
+      const outputPath = path.join(__dirname, 'output-reconditioned-effect.js');
+      fs.writeFileSync(outputPath, result.cleanCode);
+      console.log('\n💾 Code reconditionné sauvegardé:', outputPath);
+
+      // 6. Afficher un aperçu du code transformé
+      const preview = result.cleanCode.substring(0, 500);
+      console.log('\n👀 Aperçu du code reconditionné:');
+      console.log('─'.repeat(50));
+      console.log(preview + '...');
+      console.log('─'.repeat(50));
+    }
+
+    // 7. Afficher les métadonnées extraites
+    if (result.metadata) {
+      console.log('\n📋 Métadonnées extraites:');
+      console.log('   Nom:', result.metadata.effectName);
+      console.log('   ID:', result.metadata.effectId);
+      console.log('   Catégorie:', result.metadata.category);
+    }
+
+    // 8. README généré automatiquement
+    if (result.autoGeneratedReadme) {
+      const readmePath = path.join(__dirname, 'generated-README.md');
+      fs.writeFileSync(readmePath, result.autoGeneratedReadme);
+      console.log('\n📖 README auto-généré sauvegardé:', readmePath);
+    }
+
+    // 9. Test avec un code plus simple pour comparaison
+    console.log('\n\n🔄 === TEST AVEC CODE SIMPLE ===');
+    const simpleCode = `
+function createParticleEffect() {
+  const particles = [];
+  for (let i = 0; i < 100; i++) {
+    particles.push({
+      x: Math.random() * 800,
+      y: Math.random() * 600,
+      vx: Math.random() * 2 - 1,
+      vy: Math.random() * 2 - 1
     });
-    
-    console.log('✅ Résultat du préprocessing:');
-    console.log('- Code nettoyé:', result.cleanedCode ? '✓' : '✗');
-    console.log('- JavaScript extrait:', result.extractedJavaScript ? '✓' : '✗');
-    console.log('- Format standardisé:', result.standardizedCode ? '✓' : '✗');
-    console.log('- Syntaxe validée:', result.isValidSyntax ? '✓' : '✗');
-    console.log('- Modifications appliquées:', result.modifications.length);
-    
-    if (result.modifications.length > 0) {
-      console.log('\n🔧 Modifications appliquées:');
-      result.modifications.forEach((mod, index) => {
-        console.log(`  ${index + 1}. ${mod}`);
+  }
+  return particles;
+}
+`;
+
+    const simpleResult = await preprocessor.preprocessEffect(simpleCode, 'simple-particles.js');
+    console.log('📝 Changements pour code simple:', simpleResult.changes.length);
+
+    if (simpleResult.changes.length > 0) {
+      console.log('🔧 Transformations appliquées:');
+      simpleResult.changes.forEach((change, index) => {
+        console.log(`   ${index + 1}. ${change}`);
       });
     }
-    
-    if (result.warnings.length > 0) {
-      console.log('\n⚠️  Avertissements:');
-      result.warnings.forEach((warning, index) => {
-        console.log(`  ${index + 1}. ${warning}`);
-      });
+
+    // 10. Sauvegarde du code simple transformé
+    if (simpleResult.isValid && simpleResult.cleanCode) {
+      const simpleOutputPath = path.join(__dirname, 'output-simple-reconditioned.js');
+      fs.writeFileSync(simpleOutputPath, simpleResult.cleanCode);
+      console.log('💾 Code simple reconditionné sauvegardé:', simpleOutputPath);
     }
-    
-    if (result.errors.length > 0) {
-      console.log('\n❌ Erreurs:');
-      result.errors.forEach((error, index) => {
-        console.log(`  ${index + 1}. ${error}`);
-      });
-    }
-    
-    console.log('\n📊 Statistiques:');
-    console.log(`- Lignes originales: ${testCode.split('\n').length}`);
-    console.log(`- Lignes finales: ${result.finalCode.split('\n').length}`);
-    console.log(`- Taille originale: ${testCode.length} chars`);
-    console.log(`- Taille finale: ${result.finalCode.length} chars`);
-    console.log(`- Réduction: ${((testCode.length - result.finalCode.length) / testCode.length * 100).toFixed(1)}%`);
-    
-    console.log('\n🎯 Code final (aperçu):');
-    console.log(result.finalCode.substring(0, 300) + '...');
-    
-    console.log('\n✅ Test terminé avec succès!');
-    
+
+    console.log('\n✅ === TEST TERMINÉ AVEC SUCCÈS ===');
+
   } catch (error) {
-    console.error('❌ Erreur lors du test:', error);
-    process.exit(1);
+    console.error('❌ Erreur lors du test:', error.message);
+    console.error('Stack:', error.stack);
   }
 }
 
-// Exécuter le test
-if (require.main === module) {
-  testUniversalPreprocessor().catch(console.error);
-}
-
-module.exports = { testUniversalPreprocessor };
+// Lancer le test
+testUniversalReconditioning();
