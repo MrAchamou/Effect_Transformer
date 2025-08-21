@@ -245,3 +245,20 @@ args = "node auto-repair.mjs"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Conversion ES Modules Complète"
+author = 46574079
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node convert-to-esm.js"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node verify-esm-conversion.mjs"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node dev-server.mjs"

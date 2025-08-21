@@ -1,47 +1,35 @@
-
-#!/usr/bin/env node
-
 import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import path from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+console.log('🚀 Démarrage du serveur de développement ES...\n');
 
-console.log('🚀 Démarrage du serveur de développement...\n');
-
-// Démarrer le serveur avec tsx
-const serverProcess = spawn('npx', [
-  'tsx',
-  'server/index.ts'
-], {
-  cwd: __dirname,
-  env: {
-    ...process.env,
-    NODE_ENV: 'development',
-    PORT: '5000'
-  },
-  stdio: 'inherit'
+// Démarrer le serveur backend avec tsx pour TypeScript ES modules
+const backendProcess = spawn('npx', ['tsx', 'server/index.ts'], {
+  stdio: 'inherit',
+  cwd: process.cwd(),
+  shell: true
 });
 
-serverProcess.on('error', (error) => {
-  console.error('❌ Erreur serveur:', error);
+backendProcess.on('error', (error) => {
+  console.error('❌ Erreur backend:', error.message);
   process.exit(1);
 });
 
-serverProcess.on('close', (code) => {
-  console.log(`🔚 Serveur fermé avec le code: ${code}`);
-});
+// Attendre un peu avant de démarrer le frontend
+setTimeout(() => {
+  console.log('🎨 Démarrage du frontend Vite...');
 
-// Gestion propre de l'arrêt
-process.on('SIGINT', () => {
-  console.log('\n🛑 Arrêt du serveur...');
-  serverProcess.kill('SIGINT');
-  process.exit(0);
-});
+  const frontendProcess = spawn('npx', ['vite'], {
+    stdio: 'inherit',
+    cwd: process.cwd(),
+    shell: true
+  });
 
-process.on('SIGTERM', () => {
-  console.log('\n🛑 Arrêt du serveur...');
-  serverProcess.kill('SIGTERM');
-  process.exit(0);
-});
+  frontendProcess.on('error', (error) => {
+    console.error('❌ Erreur frontend:', error.message);
+  });
+}, 2000);
+
+console.log('✅ Serveurs en cours de démarrage !');
+console.log('🌐 Frontend: http://localhost:5173');
+console.log('🔧 Backend: http://localhost:5000');
