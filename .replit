@@ -16,7 +16,7 @@ localPort = 5001
 externalPort = 3000
 
 [workflows]
-runButton = "Dev Server"
+runButton = "Full Stack Dev"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -109,6 +109,23 @@ args = "node quick-fix-server.mjs"
 name = "Dev Server"
 author = 46726990
 mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node quick-fix-server.mjs"
+
+[[workflows.workflow]]
+name = "Full Stack Dev"
+author = 46726990
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run build"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"

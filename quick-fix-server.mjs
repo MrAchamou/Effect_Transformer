@@ -18,6 +18,9 @@ const PORT = 5000;
 // Configuration CORS et middleware
 app.use(cors());
 app.use(express.json());
+
+// Servir les fichiers buildés en priorité, puis les fichiers de dev
+app.use(express.static(join(__dirname, 'dist/public')));
 app.use(express.static(join(__dirname, 'client')));
 
 // Routes API pour l'application Visual Effects Transformer
@@ -50,6 +53,36 @@ app.post('/api/upload', (req, res) => {
   });
 });
 
+// Force build du frontend
+app.get('/api/build', async (req, res) => {
+  try {
+    const { spawn } = await import('child_process');
+    
+    const buildProcess = spawn('npm', ['run', 'build'], {
+      stdio: 'pipe'
+    });
+    
+    let output = '';
+    buildProcess.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+    
+    buildProcess.on('close', (code) => {
+      res.json({
+        success: code === 0,
+        output: output,
+        message: code === 0 ? 'Build réussi' : 'Erreur de build'
+      });
+    });
+    
+  } catch (error) {
+    res.json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Diagnostic système
 app.get('/api/diagnostic', (req, res) => {
   const clientPath = join(__dirname, 'client');
@@ -77,18 +110,23 @@ app.get('/api/diagnostic', (req, res) => {
   res.json(diagnostic);
 });
 
-// Servir le frontend React
+// Servir les fichiers React buildés
+app.use(express.static(join(__dirname, 'dist/public')));
+
 app.get('*', (req, res) => {
-  const indexPath = join(__dirname, 'client', 'index.html');
+  const builtIndexPath = join(__dirname, 'dist/public', 'index.html');
+  const devIndexPath = join(__dirname, 'client', 'index.html');
   
-  if (fs.existsSync(indexPath)) {
-    let html = fs.readFileSync(indexPath, 'utf-8');
+  // Essayer d'abord les fichiers buildés
+  if (fs.existsSync(builtIndexPath)) {
+    res.sendFile(builtIndexPath);
+  } else if (fs.existsSync(devIndexPath)) {
+    let html = fs.readFileSync(devIndexPath, 'utf-8');
     
-    // Injecter les scripts nécessaires
+    // Injecter les scripts nécessaires pour le dev
     html = html.replace(
       '</head>',
       `  <script type="module">
-        // Configuration pour le développement
         window.__DEV__ = true;
         window.__API_URL__ = 'http://0.0.0.0:${PORT}';
       </script>
