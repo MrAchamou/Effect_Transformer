@@ -79,7 +79,7 @@ class SystemDiagnostics {
     
     for (const service of services) {
       try {
-        const servicePath = `./services/${service}.ts`;
+        const servicePath = `./server/services/${service}.ts`;
         
         // Vérifier que le fichier existe avant d'essayer de l'importer
         await fs.access(servicePath);
