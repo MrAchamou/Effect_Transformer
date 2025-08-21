@@ -7,6 +7,7 @@ import { ReplitAITransformer } from "./services/replit-ai-transformer";
 import { FileProcessor } from "./services/file-processor";
 import { CodeValidator } from "./services/code-validator";
 import { JSPreprocessor } from "./services/js-preprocessor";
+import { UniversalPreprocessor } from "./services/universal-preprocessor";
 import { AdvancedEnhancer } from "./services/advanced-enhancer";
 import { IntelligentCategorizer } from "./services/intelligent-categorizer";
 import { DocumentationPackager } from "./services/documentation-packager";
@@ -436,6 +437,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: error.message,
         timestamp: new Date().toISOString()
       });
+    }
+  });
+
+  // Audit système complet
+  app.get("/api/audit", async (req, res) => {
+    try {
+      const { SystemAuditor } = await import('./utils/system-auditor');
+      const auditor = new SystemAuditor();
+      const auditResult = await auditor.performFullAudit();
+      
+      res.json(auditResult);
+    } catch (error) {
+      console.error('Audit system error:', error);
+      res.status(500).json({ error: 'Audit system failed' });
     }
   });
 
