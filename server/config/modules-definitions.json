@@ -1,27 +1,31 @@
 
 {
+  "structure": {
+    "name": "Standardisation Structure",
+    "description": "Applique une structure standardisée conforme"
+  },
   "performance": {
-    "name": "Optimisation Performance",
-    "description": "Optimise les performances du code JavaScript avec minification et optimisations avancées"
+    "name": "Optimisation Performance", 
+    "description": "Optimise les performances du code JavaScript"
   },
   "security": {
     "name": "Sécurité Renforcée",
-    "description": "Ajoute des protections de sécurité et validation des entrées"
+    "description": "Ajoute des protections de sécurité"
   },
-  "animations": {
-    "name": "Animations Améliorées",
-    "description": "Optimise et améliore les animations CSS et JavaScript"
+  "formatting": {
+    "name": "Formatage Automatique",
+    "description": "Formate le code selon nos standards"
   },
-  "responsive": {
-    "name": "Design Responsive",
-    "description": "Adaptation automatique pour différentes tailles d'écran"
+  "validation": {
+    "name": "Validation Paramètres",
+    "description": "Valide et sécurise les paramètres d'entrée"  
   },
-  "accessibility": {
-    "name": "Accessibilité",
-    "description": "Améliorations pour l'accessibilité et les standards WCAG"
+  "error-handling": {
+    "name": "Gestion Erreurs",
+    "description": "Ajoute une gestion d'erreur robuste"
   },
-  "documentation": {
-    "name": "Documentation Auto",
-    "description": "Génération automatique de documentation technique"
+  "caching": {
+    "name": "Cache Intelligent", 
+    "description": "Système de cache pour optimiser les performances"
   }
 }

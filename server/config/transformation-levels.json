@@ -2,23 +2,34 @@
 {
   "1": {
     "name": "Standard",
-    "description": "Optimisations de base avec améliorations essentielles",
-    "modules": ["performance", "security", "documentation"],
-    "complexity": "low",
-    "transformations": 3
+    "description": "Reconditionnement de base avec structure standard",
+    "modules": 7,
+    "features": [
+      "Structure standardisée",
+      "Validation de base",
+      "Formatage automatique"
+    ]
   },
   "2": {
-    "name": "Avancé",
-    "description": "Transformations intermédiaires avec intelligence contextuelle",
-    "modules": ["performance", "security", "animations", "responsive", "accessibility", "documentation"],
-    "complexity": "medium",
-    "transformations": 6
+    "name": "Professional", 
+    "description": "Optimisations avancées et sécurité renforcée",
+    "modules": 15,
+    "features": [
+      "Optimisations de performance",
+      "Sécurité renforcée", 
+      "Gestion d'erreur avancée",
+      "Cache intelligent"
+    ]
   },
   "3": {
-    "name": "Premium",
-    "description": "Transformation complète avec technologies révolutionnaires",
-    "modules": ["performance", "security", "animations", "responsive", "accessibility", "documentation", "ai-learning", "predictive", "optimization"],
-    "complexity": "high",
-    "transformations": 12
+    "name": "Enterprise",
+    "description": "Reconditionnement complet avec IA",
+    "modules": 23,
+    "features": [
+      "Analyse IA complète",
+      "Optimisations ultra-avancées",
+      "Monitoring en temps réel",
+      "Documentation automatique"
+    ]
   }
 }

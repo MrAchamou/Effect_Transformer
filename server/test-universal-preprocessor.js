@@ -1,3 +1,4 @@
+
 /**
  * Test du système de reconditionnement universel
  * Teste la transformation d'un effet basique vers une structure parfaite
@@ -6,35 +7,81 @@
 const fs = require('fs');
 const path = require('path');
 
-// Import du preprocessor universel
-const { UniversalPreprocessor } = require('./services/universal-preprocessor');
-
 async function testUniversalReconditioning() {
   console.log('🔄 === TEST DU RECONDITIONNEMENT UNIVERSEL ===\n');
 
   try {
-    // 1. Charger l'effet de simulation de fumée
+    // 1. Import dynamique du preprocessor
+    const { UniversalPreprocessor } = await import('./services/universal-preprocessor.js');
+
+    // 2. Charger l'effet de simulation de fumée
     const smokeEffectPath = path.join(__dirname, '..', 'attached_assets', 'smoke-simulation_1755795417492.js');
 
     if (!fs.existsSync(smokeEffectPath)) {
-      console.log('❌ Fichier effet fumée non trouvé');
+      console.log('❌ Fichier effet fumée non trouvé, utilisation d\'un code de test');
+      
+      // Code de test simple pour démonstration
+      const testCode = `
+// Effet simple pour test
+const simpleEffect = {
+  id: "test-effect-001",
+  name: "Effet de Test Simple",
+  
+  init: function() {
+    this.particles = [];
+    for (let i = 0; i < 50; i++) {
+      this.particles.push({
+        x: Math.random() * 800,
+        y: Math.random() * 600,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.5) * 4,
+        life: 1.0
+      });
+    }
+  },
+  
+  update: function(deltaTime) {
+    for (let particle of this.particles) {
+      particle.x += particle.vx * deltaTime;
+      particle.y += particle.vy * deltaTime;
+      particle.life -= deltaTime * 0.01;
+    }
+  }
+};
+`;
+
+      await testEffectReconditioning(testCode, 'simple-test-effect.js');
       return;
     }
 
     const originalCode = fs.readFileSync(smokeEffectPath, 'utf8');
     console.log('📄 Code original chargé:', originalCode.length, 'caractères');
 
-    // 2. Initialiser le preprocessor
+    await testEffectReconditioning(originalCode, 'smoke-simulation.js');
+
+  } catch (error) {
+    console.error('❌ Erreur lors du test:', error.message);
+    console.error('Stack:', error.stack);
+  }
+}
+
+async function testEffectReconditioning(originalCode, filename) {
+  try {
+    // Import dynamique du preprocessor
+    const { UniversalPreprocessor } = await import('./services/universal-preprocessor.js');
+    
+    // Initialiser le preprocessor
     const preprocessor = new UniversalPreprocessor();
 
-    // 3. Lancer le reconditionnement universel
+    // Lancer le reconditionnement universel
     console.log('\n🔄 Démarrage du reconditionnement universel...');
-    const result = await preprocessor.preprocessEffect(originalCode, 'smoke-simulation.js');
+    const result = await preprocessor.preprocessEffect(originalCode, filename);
 
-    // 4. Afficher les résultats
+    // Afficher les résultats
     console.log('\n📊 === RÉSULTATS DU RECONDITIONNEMENT ===');
     console.log('✅ Valide:', result.isValid);
     console.log('📝 Changements:', result.changes.length);
+    console.log('⚠️ Avertissements:', result.warnings.length);
 
     if (result.changes.length > 0) {
       console.log('\n🔧 Liste des changements:');
@@ -43,76 +90,50 @@ async function testUniversalReconditioning() {
       });
     }
 
-    // 5. Sauvegarder le code reconditionné
+    if (result.warnings.length > 0) {
+      console.log('\n⚠️ Avertissements:');
+      result.warnings.forEach((warning, index) => {
+        console.log(`   ${index + 1}. ${warning}`);
+      });
+    }
+
+    // Sauvegarder le code reconditionné
     if (result.isValid && result.cleanCode) {
       const outputPath = path.join(__dirname, 'output-reconditioned-effect.js');
       fs.writeFileSync(outputPath, result.cleanCode);
       console.log('\n💾 Code reconditionné sauvegardé:', outputPath);
 
-      // 6. Afficher un aperçu du code transformé
-      const preview = result.cleanCode.substring(0, 500);
+      // Afficher un aperçu du code transformé
+      const preview = result.cleanCode.substring(0, 800);
       console.log('\n👀 Aperçu du code reconditionné:');
       console.log('─'.repeat(50));
-      console.log(preview + '...');
+      console.log(preview + (result.cleanCode.length > 800 ? '\n...' : ''));
       console.log('─'.repeat(50));
     }
 
-    // 7. Afficher les métadonnées extraites
+    // Afficher les métadonnées extraites
     if (result.metadata) {
       console.log('\n📋 Métadonnées extraites:');
       console.log('   Nom:', result.metadata.effectName);
       console.log('   ID:', result.metadata.effectId);
       console.log('   Catégorie:', result.metadata.category);
+      console.log('   Version:', result.metadata.version);
     }
 
-    // 8. README généré automatiquement
+    // README généré automatiquement
     if (result.autoGeneratedReadme) {
       const readmePath = path.join(__dirname, 'generated-README.md');
       fs.writeFileSync(readmePath, result.autoGeneratedReadme);
       console.log('\n📖 README auto-généré sauvegardé:', readmePath);
     }
 
-    // 9. Test avec un code plus simple pour comparaison
-    console.log('\n\n🔄 === TEST AVEC CODE SIMPLE ===');
-    const simpleCode = `
-function createParticleEffect() {
-  const particles = [];
-  for (let i = 0; i < 100; i++) {
-    particles.push({
-      x: Math.random() * 800,
-      y: Math.random() * 600,
-      vx: Math.random() * 2 - 1,
-      vy: Math.random() * 2 - 1
-    });
-  }
-  return particles;
-}
-`;
-
-    const simpleResult = await preprocessor.preprocessEffect(simpleCode, 'simple-particles.js');
-    console.log('📝 Changements pour code simple:', simpleResult.changes.length);
-
-    if (simpleResult.changes.length > 0) {
-      console.log('🔧 Transformations appliquées:');
-      simpleResult.changes.forEach((change, index) => {
-        console.log(`   ${index + 1}. ${change}`);
-      });
-    }
-
-    // 10. Sauvegarde du code simple transformé
-    if (simpleResult.isValid && simpleResult.cleanCode) {
-      const simpleOutputPath = path.join(__dirname, 'output-simple-reconditioned.js');
-      fs.writeFileSync(simpleOutputPath, simpleResult.cleanCode);
-      console.log('💾 Code simple reconditionné sauvegardé:', simpleOutputPath);
-    }
-
     console.log('\n✅ === TEST TERMINÉ AVEC SUCCÈS ===');
-
+    
   } catch (error) {
-    console.error('❌ Erreur lors du test:', error.message);
-    console.error('Stack:', error.stack);
+    console.error('❌ Erreur lors du reconditionnement:', error.message);
+    throw error;
   }
 }
 
 // Lancer le test
-testUniversalReconditioning();
+testUniversalReconditioning().catch(console.error);
