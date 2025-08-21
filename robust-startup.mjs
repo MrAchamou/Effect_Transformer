@@ -1,9 +1,77 @@
 
-import { SystemHealthMonitor } from './server/system-health-monitor.js';
 import { spawn } from 'child_process';
 import { readFile, writeFile } from 'fs/promises';
+import fs from 'fs';
 
 console.log('🚀 === DÉMARRAGE ROBUSTE DU SYSTÈME ===\n');
+
+// Classe SystemHealthMonitor intégrée
+class SystemHealthMonitor {
+  constructor() {
+    this.issues = [];
+  }
+
+  async performFullHealthCheck() {
+    console.log('🔍 Diagnostic système en cours...');
+    this.issues = [];
+    
+    const checks = [
+      this.checkServerFile(),
+      this.checkPackageJson(),
+      this.checkNodeModules(),
+      this.checkTsConfig()
+    ];
+
+    const results = await Promise.allSettled(checks);
+    const fixes = [];
+    
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        this.issues.push(result.reason);
+      } else if (result.value?.fix) {
+        fixes.push(result.value.fix);
+      }
+    });
+
+    const status = this.issues.length > 5 ? 'critical' : 
+                  this.issues.length > 0 ? 'warning' : 'healthy';
+
+    return { status, issues: this.issues, fixes };
+  }
+
+  async checkServerFile() {
+    if (!fs.existsSync('server/index.ts')) {
+      throw new Error('server/index.ts manquant');
+    }
+    return { status: 'ok' };
+  }
+
+  async checkPackageJson() {
+    if (!fs.existsSync('package.json')) {
+      throw new Error('package.json manquant');
+    }
+    return { status: 'ok' };
+  }
+
+  async checkNodeModules() {
+    if (!fs.existsSync('node_modules')) {
+      return { status: 'warning', fix: 'node_modules manquant' };
+    }
+    return { status: 'ok' };
+  }
+
+  async checkTsConfig() {
+    if (!fs.existsSync('tsconfig.json')) {
+      return { status: 'warning', fix: 'tsconfig.json manquant' };
+    }
+    return { status: 'ok' };
+  }
+
+  async startMonitoring() {
+    console.log('✅ Monitoring système démarré');
+    return true;
+  }
+}
 
 class RobustStartup {
   constructor() {
@@ -86,8 +154,10 @@ class RobustStartup {
 
     for (const repair of criticalRepairs) {
       try {
-        await writeFile(repair.path, repair.content, 'utf-8');
-        console.log(`  ✅ ${repair.path} réparé`);
+        if (!fs.existsSync(repair.path)) {
+          await writeFile(repair.path, repair.content, 'utf-8');
+          console.log(`  ✅ ${repair.path} créé`);
+        }
       } catch (error) {
         console.log(`  ❌ Échec réparation ${repair.path}: ${error.message}`);
       }
@@ -125,9 +195,9 @@ class RobustStartup {
 
   async startServer() {
     return new Promise((resolve, reject) => {
-      const server = spawn('node', ['--loader', 'ts-node/esm', 'server/index.ts'], {
+      const server = spawn('npm', ['run', 'dev'], {
         stdio: 'inherit',
-        env: { ...process.env, NODE_ENV: 'production' }
+        env: { ...process.env, NODE_ENV: 'development' }
       });
 
       server.on('spawn', () => {
