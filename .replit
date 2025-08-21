@@ -16,7 +16,7 @@ localPort = 5001
 externalPort = 3000
 
 [workflows]
-runButton = "Clean Start"
+runButton = "Quick Start"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -43,3 +43,16 @@ args = "node test-system-fixed.js"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node start-server.js"
+
+[[workflows.workflow]]
+name = "Quick Start"
+author = 46725038
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node test-system-simplified.js"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node simple-start.js"
