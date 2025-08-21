@@ -16,7 +16,7 @@ localPort = 5001
 externalPort = 3000
 
 [workflows]
-runButton = "Universal Start"
+runButton = "Robust Start"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -69,3 +69,16 @@ args = "node test-system-universal.js"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node simple-start-universal.js"
+
+[[workflows.workflow]]
+name = "Robust Start"
+author = 46725038
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node system-check.mjs"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node start-app.mjs"
