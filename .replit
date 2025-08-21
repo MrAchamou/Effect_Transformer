@@ -16,7 +16,7 @@ localPort = 5001
 externalPort = 3000
 
 [workflows]
-runButton = "Diagnostic Complet"
+runButton = "Système Robuste"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -175,3 +175,12 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node emergency-diagnostic.mjs"
+
+[[workflows.workflow]]
+name = "Système Robuste"
+author = 46729600
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node robust-startup.mjs"
