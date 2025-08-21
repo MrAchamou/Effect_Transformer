@@ -1,10 +1,8 @@
-import { fileURLToPath } from 'url';
-import path from 'path';
 
 #!/usr/bin/env node
 
-import fs from 'fs';.promises;
-import path from 'path';;
+const fs = require('fs').promises;
+const path = require('path');
 
 class StartupChecker {
   constructor() {
@@ -115,7 +113,7 @@ class StartupChecker {
   }
 
   async checkPorts() {
-    import {  exec  } from 'child_process';;
+    const { exec } = require('child_process');
     
     return new Promise((resolve) => {
       exec('netstat -tlnp 2>/dev/null | grep :5000 || echo "libre"', (error, stdout) => {
@@ -173,4 +171,4 @@ if (require.main === module) {
     });
 }
 
-export default StartupChecker;;
+module.exports = StartupChecker;

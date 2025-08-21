@@ -1,0 +1,22 @@
+{
+  "code-formatting": {
+    "name": "Formatage de code",
+    "description": "Formate automatiquement le code selon les standards modernes"
+  },
+  "error-detection": {
+    "name": "Détection d'erreurs",
+    "description": "Analyse le code pour trouver des erreurs potentielles"
+  },
+  "optimization": {
+    "name": "Optimisation avancée",
+    "description": "Optimisations de performance de niveau expert"
+  },
+  "minification": {
+    "name": "Minification",
+    "description": "Compression et minification du code pour la production"
+  },
+  "bundling": {
+    "name": "Bundling intelligent",
+    "description": "Regroupement et organisation optimale des fichiers"
+  }
+}

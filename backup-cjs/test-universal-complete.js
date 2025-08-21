@@ -1,7 +1,5 @@
-import { fileURLToPath } from 'url';
-import path from 'path';
 
-import {  UniversalPreprocessor  } from './services/universal-preprocessor.ts';;
+const { UniversalPreprocessor } = require('./services/universal-preprocessor.ts');
 
 async function testUniversalPreprocessorComplete() {
   console.log('🧪 TEST COMPLET DU MODULE UNIVERSEL\n');
@@ -178,4 +176,4 @@ if (require.main === module) {
     });
 }
 
-export {  testUniversalPreprocessorComplete  };;
+module.exports = { testUniversalPreprocessorComplete };

@@ -1,5 +1,3 @@
-import { fileURLToPath } from 'url';
-import path from 'path';
 
 /**
  * Système de diagnostic complet en ES modules
@@ -10,8 +8,8 @@ import path from 'path';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 
-const fileURLToPath(import.meta.url) = fileURLToPath(import.meta.url);
-const path.dirname(fileURLToPath(import.meta.url)) = path.dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export class SystemDiagnostics {
   constructor() {

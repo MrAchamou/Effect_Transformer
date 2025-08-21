@@ -1,0 +1,31 @@
+
+{
+  "structure": {
+    "name": "Standardisation Structure",
+    "description": "Applique une structure standardisée conforme"
+  },
+  "performance": {
+    "name": "Optimisation Performance", 
+    "description": "Optimise les performances du code JavaScript"
+  },
+  "security": {
+    "name": "Sécurité Renforcée",
+    "description": "Ajoute des protections de sécurité"
+  },
+  "formatting": {
+    "name": "Formatage Automatique",
+    "description": "Formate le code selon nos standards"
+  },
+  "validation": {
+    "name": "Validation Paramètres",
+    "description": "Valide et sécurise les paramètres d'entrée"  
+  },
+  "error-handling": {
+    "name": "Gestion Erreurs",
+    "description": "Ajoute une gestion d'erreur robuste"
+  },
+  "caching": {
+    "name": "Cache Intelligent", 
+    "description": "Système de cache pour optimiser les performances"
+  }
+}
