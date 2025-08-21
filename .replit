@@ -34,4 +34,12 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
+args = "npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node test-system-fixed.js"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
 args = "node start-server.js"

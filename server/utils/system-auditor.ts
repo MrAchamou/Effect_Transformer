@@ -5,7 +5,7 @@ import path from 'path';
 /**
  * Auditeur système pour vérifier l'intégrité et les performances
  */
-export export class SystemAuditor {
+export class SystemAuditor {
   private issues: string[] = [];
   private warnings: string[] = [];
 
