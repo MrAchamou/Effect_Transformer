@@ -1,8 +1,3 @@
-
-/**
- * Système de diagnostic complet en ES modules
- */
-
 import fs from 'fs/promises';
 import path from 'path';
 import { spawn } from 'child_process';
@@ -11,138 +6,99 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export class SystemDiagnostics {
+/**
+ * Système de diagnostic complet en ES modules
+ */
+class SystemDiagnostics {
   constructor() {
     this.results = [];
-    this.errors = [];
     this.warnings = [];
+    this.errors = [];
+    this.startTime = Date.now();
   }
 
   async runFullDiagnostic() {
-    console.log('🔍 === DIAGNOSTIC ES SYSTÈME COMPLET ===\n');
+    console.log('🔍 === DIAGNOSTIC SYSTÈME COMPLET ES ===\n');
 
-    try {
-      await this.checkPackageConfiguration();
-      await this.checkESModules();
-      await this.checkServerFiles();
-      await this.checkServicesES();
-      await this.testESCompilation();
-      await this.performESRepairs();
+    await this.checkESModuleCompatibility();
+    await this.checkFileStructure();
+    await this.checkPackageConfiguration();
+    await this.checkTypeScriptCompilation();
+    await this.performESRepairs();
 
-      return this.generateReport();
-    } catch (error) {
-      this.errors.push(`Erreur critique diagnostic: ${error.message}`);
-      return this.generateReport();
-    }
+    this.displayResults();
   }
 
-  async checkPackageConfiguration() {
-    console.log('1️⃣ Vérification configuration ES Node.js...');
-    
+  async checkESModuleCompatibility() {
+    console.log('1️⃣ Vérification compatibilité ES modules...');
+
     try {
       const packagePath = path.join(process.cwd(), 'package.json');
       const packageContent = await fs.readFile(packagePath, 'utf-8');
       const packageJson = JSON.parse(packageContent);
 
       if (packageJson.type === 'module') {
-        console.log('✅ Type de module: ES module');
-        this.results.push('Configuration ES module correcte');
+        console.log('✅ Package configuré pour ES modules');
+        this.results.push('Package.json configuré ES modules');
       } else {
-        this.warnings.push('Type de module non défini ou CommonJS');
+        console.log('⚠️ Package non configuré pour ES modules');
+        this.warnings.push('Package.json manque "type": "module"');
       }
-
-      if (packageJson.scripts) {
-        console.log('✅ Scripts disponibles:', Object.keys(packageJson.scripts).join(', '));
-      }
-
     } catch (error) {
-      this.errors.push(`Erreur package.json: ${error.message}`);
+      this.errors.push(`Erreur lecture package.json: ${error.message}`);
     }
   }
 
-  async checkESModules() {
-    console.log('2️⃣ Vérification fichiers ES TypeScript...');
-    
-    const filesToCheck = [
+  async checkFileStructure() {
+    console.log('2️⃣ Vérification structure fichiers...');
+
+    const criticalFiles = [
       'server/index.ts',
       'server/routes.ts',
-      'server/storage.ts',
-      'tsconfig.json'
+      'client/src/main.tsx',
+      'vite.config.ts'
     ];
 
-    for (const file of filesToCheck) {
+    for (const file of criticalFiles) {
       try {
         await fs.access(file);
-        console.log(`✅ ${file} - OK`);
-        this.results.push(`${file} vérifié`);
+        console.log(`✅ ${file} existe`);
+        this.results.push(`${file} présent`);
       } catch (error) {
-        console.log(`❌ ${file} - MANQUANT`);
-        this.errors.push(`${file} manquant`);
+        console.log(`❌ ${file} manquant`);
+        this.warnings.push(`${file} manquant`);
       }
     }
   }
 
-  async checkServerFiles() {
-    console.log('3️⃣ Vérification fichiers serveur ES...');
-    
-    try {
-      const serverDir = path.join(process.cwd(), 'server');
-      const files = await fs.readdir(serverDir);
-      
-      const tsFiles = files.filter(f => f.endsWith('.ts'));
-      const jsFiles = files.filter(f => f.endsWith('.js') || f.endsWith('.mjs'));
-      
-      console.log(`✅ ${tsFiles.length} fichiers TypeScript ES trouvés`);
-      console.log(`✅ ${jsFiles.length} fichiers JavaScript ES trouvés`);
-      
-      this.results.push(`${tsFiles.length + jsFiles.length} fichiers serveur ES vérifiés`);
-      
-    } catch (error) {
-      this.errors.push(`Erreur vérification serveur: ${error.message}`);
-    }
-  }
+  async checkPackageConfiguration() {
+    console.log('3️⃣ Vérification configuration packages...');
 
-  async checkServicesES() {
-    console.log('4️⃣ Vérification services ES...');
-    
     try {
-      const servicesDir = path.join(process.cwd(), 'server/services');
-      const files = await fs.readdir(servicesDir);
-      
-      const serviceFiles = files.filter(f => f.endsWith('.ts'));
-      console.log(`✅ ${serviceFiles.length} services ES TypeScript trouvés`);
-      
-      // Vérifier quelques services clés
-      const keyServices = ['universal-preprocessor.ts', 'js-preprocessor.ts'];
-      for (const service of keyServices) {
-        if (files.includes(service)) {
-          console.log(`✅ ${service} - Structure ES correcte`);
-          this.results.push(`${service} ES vérifié`);
-        } else {
-          this.warnings.push(`${service} manquant`);
-        }
+      const tsConfigPath = path.join(process.cwd(), 'tsconfig.json');
+      const tsConfig = JSON.parse(await fs.readFile(tsConfigPath, 'utf-8'));
+
+      if (tsConfig.compilerOptions?.module === 'ESNext' || tsConfig.compilerOptions?.module === 'ES2022') {
+        console.log('✅ TypeScript configuré pour ES modules');
+        this.results.push('TypeScript ES modules OK');
+      } else {
+        this.warnings.push('TypeScript non optimisé pour ES modules');
       }
-      
     } catch (error) {
-      this.errors.push(`Erreur vérification services ES: ${error.message}`);
+      this.warnings.push(`Erreur tsconfig: ${error.message}`);
     }
   }
 
-  async testESCompilation() {
-    console.log('5️⃣ Test compilation ES TypeScript...');
-    
+  async checkTypeScriptCompilation() {
+    console.log('4️⃣ Test compilation TypeScript ES...');
+
     return new Promise((resolve) => {
-      const tscProcess = spawn('npx', ['tsc', '--noEmit', '--skipLibCheck'], {
-        stdio: 'pipe'
+      const tscProcess = spawn('npx', ['tsc', '--noEmit'], {
+        stdio: 'pipe',
+        shell: true
       });
 
-      let output = '';
       let errorOutput = '';
-
-      tscProcess.stdout.on('data', (data) => {
-        output += data.toString();
-      });
-
       tscProcess.stderr.on('data', (data) => {
         errorOutput += data.toString();
       });
@@ -161,8 +117,8 @@ export class SystemDiagnostics {
   }
 
   async performESRepairs() {
-    console.log('6️⃣ Réparations automatiques ES...');
-    
+    console.log('5️⃣ Réparations automatiques ES...');
+
     const dirsToEnsure = [
       'uploads',
       'outputs',
@@ -189,71 +145,41 @@ export class SystemDiagnostics {
       const packagePath = path.join(process.cwd(), 'package.json');
       const packageContent = await fs.readFile(packagePath, 'utf-8');
       const packageJson = JSON.parse(packageContent);
-      
+
       if (!packageJson.devDependencies?.tsx && !packageJson.dependencies?.tsx) {
         this.warnings.push('tsx manquant - requis pour ES modules TypeScript');
       }
     } catch (error) {
-      // Ignore
+      this.warnings.push(`Erreur vérification tsx: ${error.message}`);
     }
-
-    console.log(`🔧 ${repairCount} réparations ES effectuées`);
   }
 
-  generateReport() {
-    const totalIssues = this.errors.length + this.warnings.length;
-    const totalRepairs = this.results.length;
+  displayResults() {
+    const duration = ((Date.now() - this.startTime) / 1000).toFixed(2);
 
-    console.log('\n📋 === RAPPORT DIAGNOSTIC ES ===');
-    
-    if (this.errors.length > 0) {
-      console.log(`🚨 Problèmes critiques: ${this.errors.length}`);
-      this.errors.forEach((error, i) => {
-        console.log(`  ${i + 1}. ${error}`);
-      });
-    }
+    console.log('\n📊 === RÉSULTATS DIAGNOSTIC ES ===');
+    console.log(`⏱️ Durée: ${duration}s`);
+    console.log(`✅ Succès: ${this.results.length}`);
+    console.log(`⚠️ Avertissements: ${this.warnings.length}`);
+    console.log(`❌ Erreurs: ${this.errors.length}`);
 
     if (this.warnings.length > 0) {
-      console.log(`⚠️ Avertissements: ${this.warnings.length}`);
-      this.warnings.forEach((warning, i) => {
-        console.log(`  ${i + 1}. ${warning}`);
-      });
+      console.log('\n⚠️ AVERTISSEMENTS:');
+      this.warnings.forEach(warning => console.log(`  - ${warning}`));
     }
 
-    console.log(`🔧 Réparations ES effectuées: ${totalRepairs}`);
-    this.results.forEach((result, i) => {
-      console.log(`  ${i + 1}. ${result}`);
-    });
-
-    let status;
-    if (this.errors.length === 0 && this.warnings.length === 0) {
-      status = 'PARFAIT ES';
-    } else if (this.errors.length === 0) {
-      status = 'BON ES';
-    } else if (this.errors.length <= 2) {
-      status = 'ACCEPTABLE ES';
-    } else {
-      status = 'PROBLÉMATIQUE ES';
+    if (this.errors.length > 0) {
+      console.log('\n❌ ERREURS:');
+      this.errors.forEach(error => console.log(`  - ${error}`));
     }
 
-    console.log(`\n🎯 STATUT SYSTÈME ES: ${status}`);
-    console.log('\n🏁 Diagnostic ES terminé: SUCCÈS\n');
-
-    return {
-      status,
-      errors: this.errors,
-      warnings: this.warnings,
-      results: this.results,
-      totalIssues,
-      totalRepairs
-    };
+    console.log('\n🎯 Diagnostic terminé !');
   }
 }
 
-// Point d'entrée principal
-export async function runDiagnostic() {
-  const diagnostic = new SystemDiagnostics();
-  return await diagnostic.runFullDiagnostic();
+async function runDiagnostic() {
+  const diagnostics = new SystemDiagnostics();
+  await diagnostics.runFullDiagnostic();
 }
 
 // Export par défaut
@@ -262,9 +188,6 @@ export default SystemDiagnostics;
 // Auto-exécution si appelé directement
 if (import.meta.url === `file://${process.argv[1]}`) {
   runDiagnostic().then(() => {
-    console.log('Diagnostic ES terminé');
-  }).catch((error) => {
-    console.error('Erreur diagnostic ES:', error);
-    process.exit(1);
-  });
+    console.log('Diagnostic terminé avec succès');
+  }).catch(console.error);
 }

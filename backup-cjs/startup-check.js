@@ -1,8 +1,10 @@
+import { fileURLToPath } from 'url';
+import path from 'path';
 
 #!/usr/bin/env node
 
-const fs = require('fs').promises;
-const path = require('path');
+import fs from 'fs';.promises;
+import path from 'path';;
 
 class StartupChecker {
   constructor() {
@@ -113,7 +115,7 @@ class StartupChecker {
   }
 
   async checkPorts() {
-    const { exec } = require('child_process');
+    import {  exec  } from 'child_process';;
     
     return new Promise((resolve) => {
       exec('netstat -tlnp 2>/dev/null | grep :5000 || echo "libre"', (error, stdout) => {
@@ -171,4 +173,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = StartupChecker;
+export default StartupChecker;;

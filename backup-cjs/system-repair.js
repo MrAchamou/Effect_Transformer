@@ -1,7 +1,10 @@
-const fs = require('fs').promises;
-const fsSync = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+import fs from 'fs';.promises;
+import fsSync from 'fs';;
+import path from 'path';;
+import {  execSync  } from 'child_process';;
 
 class SystemRepair {
   constructor() {
@@ -262,7 +265,6 @@ class SystemRepair {
         // Assurer que les imports TS sont corrects (simplifié)
         content = content.replace(/import (.*) from '\.\/(.*)';/g, 'import $1 from \'./$2\';');
 
-
         await fs.writeFile(file, content, 'utf-8');
         this.fixes.push(`Imports vérifiés/corrigés dans: ${file}`);
 
@@ -286,4 +288,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = SystemRepair;
+export default SystemRepair;;
