@@ -1286,6 +1286,94 @@ class PointerManager {
   }
 
   /**
+   * Analyse un README associé pour enrichir les métadonnées
+   */
+  analyzeAssociatedReadme(readmeContent: string): any {
+    if (!readmeContent) return null;
+
+    try {
+      // Import dynamique pour éviter les dépendances circulaires
+      const { ReadmeAnalyzer } = require('./readme-analyzer');
+      const analyzer = new ReadmeAnalyzer();
+      
+      const readmeAnalysis = analyzer.analyzeReadme(readmeContent);
+      const variationSuggestions = analyzer.generateVariationSuggestions(readmeAnalysis);
+
+      return {
+        readmeAnalysis,
+        variationSuggestions,
+        enhancementPotential: this.calculateEnhancementPotential(readmeAnalysis),
+        intelligentAdaptations: this.generateIntelligentAdaptations(readmeAnalysis)
+      };
+    } catch (error) {
+      console.warn('Erreur lors de l\'analyse du README:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Calcule le potentiel d'amélioration basé sur l'analyse README
+   */
+  private calculateEnhancementPotential(analysis: any): any {
+    const potential = {
+      parameterOptimization: analysis.parameters.length * 0.15, // 15% par paramètre
+      typeVariations: analysis.effectTypes.length * 0.10, // 10% par type
+      applicationOptimizations: analysis.applications.length * 0.08, // 8% par application
+      scientificAccuracy: analysis.scientificBasis ? 0.25 : 0, // 25% si base scientifique
+      total: 0
+    };
+
+    potential.total = Math.min(
+      potential.parameterOptimization + 
+      potential.typeVariations + 
+      potential.applicationOptimizations + 
+      potential.scientificAccuracy, 
+      1.0
+    );
+
+    return potential;
+  }
+
+  /**
+   * Génère des adaptations intelligentes
+   */
+  private generateIntelligentAdaptations(analysis: any): any[] {
+    const adaptations = [];
+
+    // Adaptations basées sur les contraintes physiques
+    if (analysis.physicalConstraints && analysis.physicalConstraints.equations) {
+      adaptations.push({
+        type: 'physics_optimization',
+        description: 'Optimisation des calculs physiques',
+        impact: 'Amélioration performance + réalisme',
+        equations: analysis.physicalConstraints.equations.length
+      });
+    }
+
+    // Adaptations basées sur les paramètres
+    if (analysis.parameters.length > 0) {
+      adaptations.push({
+        type: 'parameter_intelligence',
+        description: `Gestion intelligente de ${analysis.parameters.length} paramètres`,
+        impact: 'Contrôle précis et variations automatiques',
+        parameters: analysis.parameters.map(p => p.name)
+      });
+    }
+
+    // Adaptations basées sur les applications
+    if (analysis.applications.length > 0) {
+      adaptations.push({
+        type: 'application_specific',
+        description: `Optimisations spécifiques pour ${analysis.applications.length} applications`,
+        impact: 'Performance adaptée au contexte d\'usage',
+        applications: analysis.applications
+      });
+    }
+
+    return adaptations;
+  }
+
+  /**
    * Injection automatique du système de debug
    */
   private injectDebugSystem(code: string): string {
