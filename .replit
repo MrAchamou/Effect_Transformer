@@ -16,7 +16,7 @@ localPort = 5001
 externalPort = 3000
 
 [workflows]
-runButton = "Start Development Server"
+runButton = "Full Stack Development"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -258,6 +258,19 @@ args = "node convert-to-esm.js"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node verify-esm-conversion.mjs"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node dev-server.mjs"
+
+[[workflows.workflow]]
+name = "Full Stack Development"
+author = 46574079
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
