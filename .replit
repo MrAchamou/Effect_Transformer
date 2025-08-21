@@ -16,7 +16,7 @@ localPort = 5001
 externalPort = 3000
 
 [workflows]
-runButton = "Démarrage Universel"
+runButton = "Démarrage ES Simple"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -202,3 +202,12 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node server/universal-startup.mjs"
+
+[[workflows.workflow]]
+name = "Démarrage ES Simple"
+author = 46729600
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node start-system.mjs"
