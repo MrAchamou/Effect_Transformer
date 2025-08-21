@@ -16,7 +16,7 @@ localPort = 5001
 externalPort = 3000
 
 [workflows]
-runButton = "Full Stack Dev"
+runButton = "Test Universal Preprocessor"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -130,3 +130,21 @@ args = "npm run build"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node quick-fix-server.mjs"
+
+[[workflows.workflow]]
+name = "Test Universal Preprocessor"
+author = 46726990
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server/test-universal-preprocessor.js"
+
+[[workflows.workflow]]
+name = "Start Server"
+author = 46726990
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
