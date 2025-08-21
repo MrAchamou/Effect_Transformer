@@ -3,7 +3,14 @@
  * Convertit automatiquement les effets en format compatible avec le système
  */
 
+import { UniversalPreprocessor } from './universal-preprocessor';
+
 export class JSPreprocessor {
+  private universalPreprocessor: UniversalPreprocessor;
+  constructor() {
+    this.universalPreprocessor = new UniversalPreprocessor();
+  }
+
   private baseEffectTemplate = `
 // Classe de base générée automatiquement
 class BaseEffect {
@@ -40,11 +47,30 @@ class BaseEffect {
     changes: string[];
     isValid: boolean;
     error?: string;
+    metadata?: any;
   }> {
     const changes: string[] = [];
     let processedCode = originalCode;
 
     try {
+      // 0. PREPROCESSING UNIVERSEL - Point d'entrée obligatoire
+      console.log('🔄 Démarrage du preprocessing universel...');
+      const universalResult = await this.universalPreprocessor.preprocessEffect(originalCode, filename);
+      
+      if (!universalResult.isValid) {
+        return {
+          processedCode: originalCode,
+          changes: [],
+          isValid: false,
+          error: universalResult.error,
+          metadata: universalResult.metadata
+        };
+      }
+      
+      processedCode = universalResult.cleanCode;
+      changes.push(...universalResult.changes);
+      console.log(`✅ Preprocessing universel terminé: ${universalResult.changes.length} changements`);
+
       // 1. Détection de fichiers incomplets ou de métadonnées seulement
       const metadataConversion = this.convertMetadataToEffect(processedCode, filename);
       if (metadataConversion.converted) {
@@ -99,7 +125,8 @@ class BaseEffect {
             processedCode: originalCode,
             changes: [],
             isValid: false,
-            error: validationResult.error
+            error: validationResult.error,
+            metadata: this.universalPreprocessor.getExtractedMetadata()
           };
         }
       }
@@ -111,7 +138,8 @@ class BaseEffect {
       return {
         processedCode,
         changes,
-        isValid: true
+        isValid: true,
+        metadata: this.universalPreprocessor.getExtractedMetadata()
       };
 
     } catch (error) {
@@ -119,7 +147,8 @@ class BaseEffect {
         processedCode: originalCode,
         changes: [],
         isValid: false,
-        error: `Erreur de preprocessing: ${error instanceof Error ? error.message : String(error)}`
+        error: `Erreur de preprocessing: ${error instanceof Error ? error.message : String(error)}`,
+        metadata: this.universalPreprocessor.getExtractedMetadata()
       };
     }
   }

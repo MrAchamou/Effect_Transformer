@@ -21,7 +21,7 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     const allowedMimes = [
       'application/javascript',
-      'text/javascript', 
+      'text/javascript',
       'application/x-javascript',
       'text/plain'
     ];
@@ -53,18 +53,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const now = Date.now();
     const windowMs = 60 * 1000; // 1 minute
     const maxRequests = 10;
-    
+
     if (!req.app.locals.rateLimits) {
       req.app.locals.rateLimits = new Map();
     }
-    
+
     const clientRequests = req.app.locals.rateLimits.get(clientId) || [];
     const recentRequests = clientRequests.filter((time: number) => now - time < windowMs);
-    
+
     if (recentRequests.length >= maxRequests) {
       return res.status(429).json({ message: "Trop de requêtes, veuillez patienter" });
     }
-    
+
     recentRequests.push(now);
     req.app.locals.rateLimits.set(clientId, recentRequests);
     next();
@@ -74,7 +74,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/upload", uploadSecurity, upload.single('file'), async (req, res) => {
     const startTime = Date.now();
     let uploadedFilePath: string | null = null;
-    
+
     try {
       console.log('Upload request received:', {
         filename: req.file?.originalname,
@@ -83,18 +83,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (!req.file) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: "Aucun fichier uploadé",
           error: "FILE_MISSING"
         });
       }
-      
+
       uploadedFilePath = req.file.path;
 
       // Validation de la taille du fichier
       if (req.file.size > 2 * 1024 * 1024) { // 2MB max
         await fs.unlink(uploadedFilePath);
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: "Fichier trop volumineux (max 2MB)",
           error: "FILE_TOO_LARGE"
         });
@@ -104,10 +104,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let content: string;
       try {
         const readPromise = fs.readFile(uploadedFilePath, 'utf-8');
-        const timeoutPromise = new Promise<never>((_, reject) => 
+        const timeoutPromise = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Timeout lecture fichier')), 10000)
         );
-        
+
         content = await Promise.race([readPromise, timeoutPromise]);
       } catch (readError) {
         await fs.unlink(uploadedFilePath);
@@ -125,8 +125,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!validation.success) {
         await fs.unlink(uploadedFilePath);
-        return res.status(400).json({ 
-          message: "Fichier invalide", 
+        return res.status(400).json({
+          message: "Fichier invalide",
           errors: validation.error.errors.map(err => ({
             field: err.path.join('.'),
             message: err.message
@@ -135,29 +135,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Préprocesser le JavaScript pour le standardiser
-      const preprocessResult = await jsPreprocessor.preprocessJS(content, req.file.originalname);
-
-      let finalContent = content;
-      let preprocessingChanges: string[] = [];
-
-      if (preprocessResult.isValid) {
-        finalContent = preprocessResult.processedCode;
-        preprocessingChanges = preprocessResult.changes;
-        console.log('Preprocessing réussi:', preprocessingChanges);
-      } else {
-        console.log('Preprocessing échoué, tentative avec code original:', preprocessResult.error);
-        // Continuer avec le code original si le preprocessing échoue
-      }
+      // Preprocessing automatique du JavaScript avec module universel
+      console.log('🔧 Démarrage du preprocessing universel...');
+      const preprocessingResult = await jsPreprocessor.preprocessJS(content, req.file.originalname);
+      const finalContent = preprocessingResult.processedCode;
+      const preprocessingChanges = preprocessingResult.changes;
+      const extractedMetadata = preprocessingResult.metadata;
 
       // Valider le JavaScript final
       const codeValidation = await codeValidator.validateCode(finalContent);
       if (!codeValidation.valid) {
-        await fs.unlink(filePath); // Clean up
-        return res.status(400).json({ 
-          message: "Code JavaScript invalide", 
+        await fs.unlink(uploadedFilePath); // Clean up
+        return res.status(400).json({
+          message: "Code JavaScript invalide",
           error: codeValidation.error,
-          preprocessingChanges 
+          preprocessingChanges
         });
       }
 
@@ -170,28 +162,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         originalFilename: req.file.originalname,
         originalCode: finalContent, // Utiliser le code préprocessé
         level: 1, // Default level
-        effectAnalysis: effectAnalysis // Stocker l'analyse
+        effectAnalysis: effectAnalysis, // Stocker l'analyse
+        metadata: extractedMetadata // Stocker les métadonnées extraites
       });
 
       // Clean up uploaded file
       await fs.unlink(uploadedFilePath);
-      
+
       const processingTime = Date.now() - startTime;
       console.log(`Upload terminé en ${processingTime}ms pour ${transformation.originalFilename}`);
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         transformationId: transformation.id,
         filename: transformation.originalFilename,
         fileSize: req.file.size,
         processingTime,
         preprocessingChanges,
-        effectAnalysis
+        effectAnalysis,
+        metadata: extractedMetadata // Retourner les métadonnées
       });
-      
+
     } catch (error) {
       console.error('Upload error:', error);
-      
+
       // Nettoyage en cas d'erreur
       if (uploadedFilePath) {
         try {
@@ -200,8 +194,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('Erreur nettoyage fichier:', unlinkError);
         }
       }
-      
-      res.status(500).json({ 
+
+      res.status(500).json({
         message: "Échec de l'upload",
         error: error instanceof Error ? error.message : "Erreur inconnue"
       });
@@ -213,9 +207,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validation = transformRequestSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ 
-          message: "Invalid request", 
-          errors: validation.error.errors 
+        return res.status(400).json({
+          message: "Invalid request",
+          errors: validation.error.errors
         });
       }
 
@@ -358,7 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/levels", async (req, res) => {
     try {
       const levels = await fs.readFile(
-        path.join(process.cwd(), 'server/config/transformation-levels.json'), 
+        path.join(process.cwd(), 'server/config/transformation-levels.json'),
         'utf-8'
       );
       res.json(JSON.parse(levels));
@@ -401,7 +395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stats = storage.getStats();
       const memoryUsage = process.memoryUsage();
       const uptime = process.uptime();
-      
+
       // Test des services critiques
       let tokenStatus = 'unknown';
       try {
@@ -449,7 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/diagnostics", async (req, res) => {
     try {
       const { includeDetails } = req.query;
-      
+
       const diagnostics = {
         storage: {
           stats: storage.getStats(),
