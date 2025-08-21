@@ -1,6 +1,4 @@
 
-#!/usr/bin/env node
-
 import { SystemHealthMonitor } from './server/system-health-monitor.js';
 import { spawn } from 'child_process';
 import { readFile, writeFile } from 'fs/promises';

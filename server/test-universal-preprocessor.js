@@ -1,6 +1,4 @@
 
-#!/usr/bin/env node
-
 /**
  * Test complet du système Universal Preprocessor
  * Teste la transformation d'un effet basique vers une structure parfaite
