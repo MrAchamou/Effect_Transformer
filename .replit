@@ -16,7 +16,7 @@ localPort = 5001
 externalPort = 3000
 
 [workflows]
-runButton = "Emergency Start"
+runButton = "Diagnostic & Repair"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -95,3 +95,12 @@ args = "npm install cors @types/cors"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node emergency-server.mjs"
+
+[[workflows.workflow]]
+name = "Diagnostic & Repair"
+author = 46726990
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node quick-fix-server.mjs"
