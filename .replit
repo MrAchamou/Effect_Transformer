@@ -288,3 +288,12 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node ultimate-server.mjs"
+
+[[workflows.workflow]]
+name = "Test Reconditionnement"
+author = 46768796
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server/test-reconditioning.js"
