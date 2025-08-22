@@ -20,7 +20,7 @@ localPort = 5173
 externalPort = 5173
 
 [workflows]
-runButton = "Audit & Serveur Autonome"
+runButton = "Serveur Autonome"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -300,6 +300,19 @@ args = "node server/test-reconditioning.js"
 
 [[workflows.workflow]]
 name = "Audit & Serveur Autonome"
+author = 46768796
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node audit-and-fix.mjs"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node standalone-server.mjs"
+
+[[workflows.workflow]]
+name = "Serveur Autonome"
 author = 46768796
 mode = "sequential"
 
