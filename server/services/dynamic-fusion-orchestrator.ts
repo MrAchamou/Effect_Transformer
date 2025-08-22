@@ -116,6 +116,15 @@ export class DynamicFusionOrchestrator {
     // Charger tous les modules disponibles avec leurs capacités de fusion
     const moduleDefinitions = {
       // NIVEAU 1 - 7 modules
+      'code-optimizer-engine': {
+        level: 1,
+        fusion_capability: 'universal_optimization',
+        creative_weight: 0.1,
+        technical_weight: 0.9,
+        specialization: 'compression',
+        universal: true, // UNIVERSEL À TOUS LES NIVEAUX
+        priority: 1000 // PRIORITÉ MAXIMALE
+      },
       'base-structure-standardizer': {
         level: 1,
         fusion_capability: 'structural',
@@ -393,9 +402,9 @@ export class DynamicFusionOrchestrator {
   private selectModulesForLevel(level: number): any[] {
     const selectedModules: any[] = [];
     
-    // Sélectionner tous les modules jusqu'au niveau demandé
+    // Sélectionner tous les modules jusqu'au niveau demandé + modules universels
     this.moduleRegistry.forEach((moduleConfig, moduleId) => {
-      if (moduleConfig.level <= level) {
+      if (moduleConfig.level <= level || moduleConfig.universal === true) {
         selectedModules.push({
           id: moduleId,
           ...moduleConfig
@@ -403,14 +412,20 @@ export class DynamicFusionOrchestrator {
       }
     });
 
-    // Trier par priorité de fusion
+    // Trier par priorité de fusion (modules universels en premier)
     return selectedModules.sort((a, b) => {
-      // Prioriser par niveau (plus élevé = plus important)
-      // puis par poids créatif pour les niveaux supérieurs
-      if (a.level !== b.level) {
-        return b.level - a.level;
-      }
-      return b.creative_weight - a.creative_weight;
+      // 1. Prioriser les modules universels
+      if (a.universal && !b.universal) return -1;
+      if (!a.universal && b.universal) return 1;
+      
+      // 2. Prioriser par priorité spécifique
+      if (a.priority && b.priority) return b.priority - a.priority;
+      
+      // 3. Prioriser par niveau (plus élevé = plus important)
+      if (a.level !== b.level) return b.level - a.level;
+      
+      // 4. Prioriser par poids technique pour l'optimisation
+      return b.technical_weight - a.technical_weight;
     });
   }
 
@@ -1023,23 +1038,79 @@ class EffectReconstructor {
     console.log('🏗️ Reconstruction complète de l\'effet...');
     
     // Générer le nouveau code basé sur l'essence fusionnée
-    const reconstructedCode = this.generateReconstructedCode(fusedEssence);
+    let reconstructedCode = this.generateReconstructedCode(fusedEssence);
+    
+    // COMPRESSION ET OPTIMISATION UNIVERSELLE
+    reconstructedCode = await this.applyUniversalOptimization(reconstructedCode);
     
     return reconstructedCode;
   }
 
+  private async applyUniversalOptimization(code: string): Promise<string> {
+    console.log('⚡ Application optimisation universelle...');
+    
+    // 1. SUPPRESSION ESPACES ET COMMENTAIRES INUTILES
+    let optimized = code
+      .replace(/\/\*[\s\S]*?\*\//g, '') // Supprimer commentaires multi-lignes
+      .replace(/\/\/.*$/gm, '') // Supprimer commentaires une ligne
+      .replace(/\s+/g, ' ') // Réduire espaces multiples
+      .replace(/\s*{\s*/g, '{') // Optimiser accolades
+      .replace(/\s*}\s*/g, '}')
+      .replace(/\s*;\s*/g, ';') // Optimiser point-virgules
+      .replace(/\s*,\s*/g, ',') // Optimiser virgules
+      .replace(/\s*=\s*/g, '=') // Optimiser assignations
+      .trim();
+
+    // 2. COMPACTAGE AVANCÉ
+    optimized = this.advancedCompression(optimized);
+    
+    // 3. REFORMULATION INTELLIGENTE
+    optimized = this.intelligentReformulation(optimized);
+    
+    console.log(`✅ Code réduit de ${code.length} à ${optimized.length} caractères (-${Math.round((1 - optimized.length/code.length) * 100)}%)`);
+    
+    return optimized;
+  }
+
+  private advancedCompression(code: string): string {
+    // Compression avancée du code
+    return code
+      // Raccourcir les noms de variables communes
+      .replace(/\bthis\./g, 't.')
+      .replace(/\bfunction\s+/g, 'f ')
+      .replace(/\breturn\s+/g, 'r ')
+      .replace(/\bconsole\.log/g, 'c.l')
+      // Optimiser les structures communes
+      .replace(/if\s*\(/g, 'if(')
+      .replace(/for\s*\(/g, 'for(')
+      .replace(/while\s*\(/g, 'while(')
+      // Supprimer les retours à la ligne inutiles
+      .replace(/\n\s*\n/g, '\n')
+      .replace(/\n\s*/g, '');
+  }
+
+  private intelligentReformulation(code: string): string {
+    // Reformulation intelligente pour plus d'efficacité
+    return code
+      // Convertir en arrow functions quand possible
+      .replace(/function\s*\(([^)]*)\)\s*{/g, '($1)=>{')
+      // Simplifier les expressions
+      .replace(/===\s*true/g, '')
+      .replace(/===\s*false/g, '!')
+      .replace(/!==\s*null/g, '')
+      // Optimiser les boucles
+      .replace(/\.length/g, '.l')
+      .replace(/\.push\(/g, '.p(');
+  }
+
   private generateReconstructedCode(essence: any): string {
     // Génération de code révolutionnaire basé sur la fusion
-    const codeTemplate = `
-/**
+    let codeTemplate = `/**
  * 🌟 EFFET RÉVOLUTIONNAIRE FUSIONNÉ 2.0 🌟
- * 
- * Effet complètement reconstruit par fusion intelligente des modules
- * Génération automatique basée sur l'essence créative originale
- * Intégration révolutionnaire des améliorations de niveau supérieur
+ * Reconstruction complète par fusion intelligente des modules
+ * Code ultra-optimisé, compacté et performant
  */
-
-export class FusedEffect {
+export class FusedEffect{
   constructor(options = {}) {
     // Initialisation basée sur l'essence créative fusionnée
     this.initializeFusedCore(options);
