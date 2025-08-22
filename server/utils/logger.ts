@@ -1,88 +1,35 @@
+export class Logger {
+  private formatMessage(level: string, message: string, ...args: any[]): string {
+    const timestamp = new Date().toISOString();
+    const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
+    const argsStr = args.length > 0 ? ' ' + args.map(arg => 
+      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+    ).join(' ') : '';
+    return `${prefix} ${message}${argsStr}`;
+  }
 
-export interface LogEntry {
-  level: 'info' | 'warn' | 'error' | 'debug';
-  message: string;
-  timestamp: Date;
-  service?: string;
-  transformationId?: string;
-  userId?: string;
-  metadata?: any;
-}
+  info(message: string, ...args: any[]): void {
+    console.log(this.formatMessage('info', message, ...args));
+  }
 
-class Logger {
-  private logs: LogEntry[] = [];
-  private maxLogs = 1000;
-  private isDevelopment = process.env.NODE_ENV === 'development';
+  error(message: string, ...args: any[]): void {
+    console.error(this.formatMessage('error', message, ...args));
+  }
 
-  log(level: LogEntry['level'], message: string, metadata?: any): void {
-    const entry: LogEntry = {
-      level,
-      message,
-      timestamp: new Date(),
-      metadata
-    };
+  warn(message: string, ...args: any[]): void {
+    console.warn(this.formatMessage('warn', message, ...args));
+  }
 
-    // Ajouter au cache
-    this.logs.push(entry);
-    
-    // Nettoyage automatique
-    if (this.logs.length > this.maxLogs) {
-      this.logs = this.logs.slice(-this.maxLogs * 0.8);
-    }
-
-    // Console output avec formatage
-    const timestamp = entry.timestamp.toISOString();
-    const prefix = `[${timestamp}][${level.toUpperCase()}]`;
-    
-    switch (level) {
-      case 'error':
-        console.error(`${prefix} ${message}`, metadata);
-        break;
-      case 'warn':
-        console.warn(`${prefix} ${message}`, metadata);
-        break;
-      case 'debug':
-        if (this.isDevelopment) {
-          console.debug(`${prefix} ${message}`, metadata);
-        }
-        break;
-      default:
-        console.log(`${prefix} ${message}`, metadata);
+  debug(message: string, ...args: any[]): void {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(this.formatMessage('debug', message, ...args));
     }
   }
 
-  info(message: string, metadata?: any): void {
-    this.log('info', message, metadata);
-  }
-
-  warn(message: string, metadata?: any): void {
-    this.log('warn', message, metadata);
-  }
-
-  error(message: string, metadata?: any): void {
-    this.log('error', message, metadata);
-  }
-
-  debug(message: string, metadata?: any): void {
-    this.log('debug', message, metadata);
-  }
-
-  getLogs(level?: LogEntry['level'], limit?: number): LogEntry[] {
-    let filtered = level ? this.logs.filter(log => log.level === level) : this.logs;
-    return limit ? filtered.slice(-limit) : filtered;
-  }
-
-  getStats(): { total: number; errors: number; warnings: number } {
-    return {
-      total: this.logs.length,
-      errors: this.logs.filter(log => log.level === 'error').length,
-      warnings: this.logs.filter(log => log.level === 'warn').length
-    };
-  }
-
-  clearLogs(): void {
-    this.logs = [];
+  success(message: string, ...args: any[]): void {
+    console.log(this.formatMessage('success', message, ...args));
   }
 }
 
 export const logger = new Logger();
+export default logger;
