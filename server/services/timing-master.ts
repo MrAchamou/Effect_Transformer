@@ -68,6 +68,9 @@ export class TimingMaster {
   private deviceCapabilities: any = {};
   private synchronizedModules: string[] = [];
   private isActive: boolean = false;
+  private cache: Map<string, any> = new Map();
+  private cacheSize: number = 500;
+  private errorHandlers: Map<string, (error: Error) => void> = new Map();
 
   // Constantes mathématiques naturelles
   private readonly GOLDEN_RATIO = 1.618033988749;
@@ -103,12 +106,25 @@ export class TimingMaster {
   }
 
   private calculateOptimalBPM(circadianRhythm: CircadianRhythm): number {
-    // BPM basé sur le rythme cardiaque au repos avec variations circadiennes
-    const baseHeartRate = 72; // BPM moyen au repos
-    const circadianModifier = circadianRhythm.energyLevel;
-    const tempoModifier = this.tempoProfile.baseMultiplier;
-    
-    return Math.round(baseHeartRate * circadianModifier * tempoModifier);
+    try {
+      const cacheKey = `optimal_bpm_${circadianRhythm.hour}_${this.tempoProfile.type}`;
+      const cached = this.getCachedResult<number>(cacheKey);
+      if (cached) return cached;
+
+      // BPM basé sur le rythme cardiaque au repos avec variations circadiennes
+      const baseHeartRate = 72; // BPM moyen au repos
+      const circadianModifier = circadianRhythm.energyLevel;
+      const tempoModifier = this.tempoProfile.baseMultiplier;
+      
+      const calculatedBPM = Math.round(baseHeartRate * circadianModifier * tempoModifier);
+      const validatedBPM = this.validateBPM(calculatedBPM);
+      
+      this.setCachedResult(cacheKey, validatedBPM);
+      return validatedBPM;
+    } catch (error) {
+      this.handleError('timing_calculation', error as Error);
+      return 72; // Fallback sûr
+    }
   }
 
   private generateSubRhythms(): number[] {
@@ -158,15 +174,29 @@ export class TimingMaster {
   }
 
   private generateMicroVariations(baseTiming: number): number {
-    // Variations naturelles de +/- 3-7% pour éviter la monotonie
-    const variationRange = this.tempoProfile.variationRange;
-    const randomVariation = (Math.random() - 0.5) * 2 * variationRange;
-    
-    // Utilisation d'une fonction sinusoïdale pour des variations plus naturelles
-    const timeBasedVariation = Math.sin(Date.now() * 0.001) * (variationRange * 0.5);
-    
-    const totalVariation = (randomVariation + timeBasedVariation) / 2;
-    return Math.round(baseTiming * (1 + totalVariation));
+    try {
+      const cacheKey = `micro_var_${Math.floor(baseTiming)}_${Math.floor(Date.now() / 1000)}`;
+      const cached = this.getCachedResult<number>(cacheKey);
+      if (cached) return cached;
+
+      const validatedTiming = this.validateTimingInput(baseTiming);
+      
+      // Variations naturelles de +/- 3-7% pour éviter la monotonie
+      const variationRange = this.tempoProfile.variationRange;
+      const randomVariation = (Math.random() - 0.5) * 2 * variationRange;
+      
+      // Utilisation d'une fonction sinusoïdale pour des variations plus naturelles
+      const timeBasedVariation = Math.sin(Date.now() * 0.001) * (variationRange * 0.5);
+      
+      const totalVariation = (randomVariation + timeBasedVariation) / 2;
+      const result = Math.round(validatedTiming * (1 + totalVariation));
+      
+      this.setCachedResult(cacheKey, result);
+      return result;
+    } catch (error) {
+      this.handleError('micro_variations', error as Error);
+      return baseTiming; // Fallback sûr
+    }
   }
 
   /**
@@ -556,31 +586,67 @@ export class TimingMaster {
   }
 
   private createHighPrecisionTimer(callback: () => void, interval: number): NodeJS.Timeout {
-    if (this.performanceLevel === 'low') {
-      // Timer standard pour les appareils faibles
-      return setInterval(callback, interval);
-    }
-    
-    // Timer haute précision pour les appareils performants
-    let lastTime = this.getHighPrecisionTime();
-    const precision = this.masterMetronome.precision;
-    
-    const preciseTimer = setInterval(() => {
-      const currentTime = this.getHighPrecisionTime();
-      const deltaTime = currentTime - lastTime;
+    try {
+      const validatedInterval = this.validateTimingInput(interval);
       
-      // Compensation de dérive temporelle
-      if (Math.abs(deltaTime - interval) > precision) {
-        const correction = interval - deltaTime;
-        setTimeout(callback, Math.max(0, correction));
-      } else {
-        callback();
+      if (this.performanceLevel === 'low') {
+        // Timer standard pour les appareils faibles
+        return setInterval(() => {
+          try {
+            callback();
+          } catch (error) {
+            this.handleError('timer_callback', error as Error);
+          }
+        }, validatedInterval);
       }
       
-      lastTime = currentTime;
-    }, interval);
-    
-    return preciseTimer;
+      // Timer haute précision pour les appareils performants
+      let lastTime = this.getHighPrecisionTime();
+      const precision = this.masterMetronome.precision;
+      
+      const preciseTimer = setInterval(() => {
+        try {
+          const currentTime = this.getHighPrecisionTime();
+          const deltaTime = currentTime - lastTime;
+          
+          // Compensation de dérive temporelle
+          if (Math.abs(deltaTime - validatedInterval) > precision) {
+            const correction = validatedInterval - deltaTime;
+            setTimeout(() => {
+              try {
+                callback();
+              } catch (error) {
+                this.handleError('timer_callback', error as Error);
+              }
+            }, Math.max(0, correction));
+          } else {
+            callback();
+          }
+          
+          lastTime = currentTime;
+        } catch (error) {
+          this.handleError('timer_precision', error as Error);
+          // Fallback vers callback simple
+          try {
+            callback();
+          } catch (callbackError) {
+            this.handleError('timer_callback', callbackError as Error);
+          }
+        }
+      }, validatedInterval);
+      
+      return preciseTimer;
+    } catch (error) {
+      this.handleError('timer_creation', error as Error);
+      // Fallback vers timer standard
+      return setInterval(() => {
+        try {
+          callback();
+        } catch (callbackError) {
+          this.handleError('timer_callback', callbackError as Error);
+        }
+      }, interval);
+    }
   }
 
   private getHighPrecisionTime(): number {
@@ -611,6 +677,126 @@ export class TimingMaster {
       default:
         return originalTiming;
     }
+  }
+
+  /**
+   * SYSTÈME DE CACHE INTELLIGENT
+   */
+  private getCachedResult<T>(key: string): T | null {
+    try {
+      const cached = this.cache.get(key);
+      if (cached && Date.now() - cached.timestamp < 180000) { // 3 minutes
+        return cached.data;
+      }
+      return null;
+    } catch (error) {
+      this.handleError('cache_get', error as Error);
+      return null;
+    }
+  }
+
+  private setCachedResult<T>(key: string, data: T): void {
+    try {
+      if (this.cache.size >= this.cacheSize) {
+        // Supprimer les entrées les plus anciennes
+        const oldestKey = this.cache.keys().next().value;
+        this.cache.delete(oldestKey);
+      }
+      
+      this.cache.set(key, {
+        data,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      this.handleError('cache_set', error as Error);
+    }
+  }
+
+  /**
+   * GESTION D'ERREURS ROBUSTE
+   */
+  private handleError(context: string, error: Error): void {
+    const errorKey = `error_${context}_${Date.now()}`;
+    
+    // Log de l'erreur
+    console.warn(`[TimingMaster] Erreur dans ${context}:`, error.message);
+    
+    // Exécuter handler personnalisé si défini
+    const handler = this.errorHandlers.get(context);
+    if (handler) {
+      try {
+        handler(error);
+      } catch (handlerError) {
+        console.error(`[TimingMaster] Erreur dans le handler ${context}:`, handlerError);
+      }
+    }
+    
+    // Fallback gracieux selon le contexte
+    this.applyErrorFallback(context);
+  }
+
+  private applyErrorFallback(context: string): void {
+    switch (context) {
+      case 'timing_calculation':
+        // Utiliser des valeurs par défaut sûres
+        this.masterMetronome.currentTempo = 1.0;
+        break;
+      case 'sequence_execution':
+        // Nettoyer les séquences actives
+        this.activeSequences.clear();
+        break;
+      case 'timer_creation':
+        // Revenir aux timers standards
+        this.performanceLevel = 'low';
+        break;
+      case 'cache_operation':
+        // Vider le cache corrompu
+        this.cache.clear();
+        break;
+      default:
+        // Redémarrage sécurisé du métronome
+        this.safeMasterMetronomeRestart();
+    }
+  }
+
+  private safeMasterMetronomeRestart(): void {
+    try {
+      this.stopTimingEngine();
+      setTimeout(() => {
+        this.startTimingEngine();
+      }, 1000);
+    } catch (error) {
+      console.error('[TimingMaster] Impossible de redémarrer le métronome:', error);
+    }
+  }
+
+  public setErrorHandler(context: string, handler: (error: Error) => void): void {
+    this.errorHandlers.set(context, handler);
+  }
+
+  /**
+   * VALIDATIONS ET SÉCURITÉ
+   */
+  private validateTimingInput(value: number): number {
+    if (typeof value !== 'number' || isNaN(value) || value <= 0) {
+      this.handleError('invalid_timing', new Error(`Timing invalide: ${value}`));
+      return 1000; // Valeur par défaut sûre
+    }
+    
+    // Limites de sécurité
+    if (value < 1) return 1;
+    if (value > 300000) return 300000; // Max 5 minutes
+    
+    return Math.round(value);
+  }
+
+  private validateBPM(bpm: number): number {
+    if (typeof bpm !== 'number' || isNaN(bpm)) {
+      this.handleError('invalid_bpm', new Error(`BPM invalide: ${bpm}`));
+      return 72; // BPM par défaut
+    }
+    
+    return Math.max(30, Math.min(200, Math.round(bpm)));
   }
 
   /**

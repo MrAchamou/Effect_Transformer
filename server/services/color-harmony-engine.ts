@@ -65,6 +65,13 @@ interface AccessibilityCompliance {
   recommendations: string[];
 }
 
+interface PredictiveHarmony {
+  predictNextColors(currentColors: string[], context: string): string[];
+  learnFromUsage(colors: string[], effectiveness: number): void;
+  generateFutureHarmonies(baseColor: string): ColorHarmony[];
+  adaptToTrends(seasonalData: any): void;
+}
+
 export class ColorHarmonyEngine {
   private container: Element;
   private colorProperties: ColorProperty[] = [];
@@ -76,6 +83,9 @@ export class ColorHarmonyEngine {
   private seasonalMode: boolean = true;
   private adaptiveMode: boolean = true;
   private isActive: boolean = false;
+  private cache: Map<string, any> = new Map();
+  private cacheSize: number = 1000;
+  private predictiveEngine: PredictiveHarmony;
 
   // Constantes de théorie des couleurs
   private readonly COLOR_HARMONIES = {
@@ -99,6 +109,7 @@ export class ColorHarmonyEngine {
   constructor(container: Element = document.documentElement, options: any = {}) {
     this.container = container;
     this.detectPerformanceLevel();
+    this.initializePredictiveHarmony();
     this.initializeEmotionalContext(options);
     this.analyzeExistingColors();
     this.generateOptimalHarmony();
@@ -298,6 +309,13 @@ export class ColorHarmonyEngine {
    * 2. GÉNÉRATEUR D'HARMONIES CHROMATIQUES AVANCÉ
    */
   private generateOptimalHarmony(): void {
+    const cacheKey = `optimal_harmony_${this.container.tagName}_${Date.now().toString().slice(-6)}`;
+    const cached = this.getCachedResult<ColorHarmony>(cacheKey);
+    if (cached) {
+      this.currentHarmony = cached;
+      return;
+    }
+
     const analysis = this.calculateColorStatistics();
     const dominantColor = this.findDominantColor();
     
@@ -311,6 +329,10 @@ export class ColorHarmonyEngine {
     
     // Sélection de la meilleure harmonie selon le contexte
     this.currentHarmony = this.selectOptimalHarmony(harmonies, analysis);
+    
+    // Cache du résultat
+    const cacheKey = `optimal_harmony_${this.container.tagName}_${Date.now().toString().slice(-6)}`;
+    this.setCachedResult(cacheKey, this.currentHarmony);
     
     // Génération des variations pour adaptation contextuelle
     this.generateHarmonyVariations();
@@ -1081,6 +1103,223 @@ export class ColorHarmonyEngine {
   public stopColorEngine(): void {
     this.isActive = false;
     // Nettoyage des timers et événements
+  }
+
+  /**
+   * SYSTÈME DE CACHE INTELLIGENT
+   */
+  private getCachedResult<T>(key: string): T | null {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < 300000) { // 5 minutes
+      return cached.data;
+    }
+    return null;
+  }
+
+  private setCachedResult<T>(key: string, data: T): void {
+    if (this.cache.size >= this.cacheSize) {
+      // Supprimer les entrées les plus anciennes
+      const oldestKey = this.cache.keys().next().value;
+      this.cache.delete(oldestKey);
+    }
+    
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now()
+    });
+  }
+
+  private clearCache(): void {
+    this.cache.clear();
+  }
+
+  /**
+   * MOTEUR PRÉDICTIF D'HARMONIES
+   */
+  private initializePredictiveHarmony(): void {
+    this.predictiveEngine = {
+      predictNextColors: (currentColors: string[], context: string): string[] => {
+        const cacheKey = `predict_${currentColors.join('_')}_${context}`;
+        const cached = this.getCachedResult<string[]>(cacheKey);
+        if (cached) return cached;
+
+        const predictions: string[] = [];
+        
+        // Analyse des tendances actuelles
+        const colorAnalysis = this.analyzeColorTrends(currentColors);
+        
+        // Prédiction basée sur les patterns historiques
+        const futureHues = this.predictHueEvolution(colorAnalysis);
+        
+        // Génération des couleurs prédites
+        futureHues.forEach(hue => {
+          const predictedColor = this.hslToRgb({
+            h: hue,
+            s: colorAnalysis.averageSaturation,
+            l: colorAnalysis.averageLightness
+          });
+          predictions.push(predictedColor);
+        });
+
+        this.setCachedResult(cacheKey, predictions);
+        return predictions;
+      },
+
+      learnFromUsage: (colors: string[], effectiveness: number): void => {
+        // Apprentissage des préférences utilisateur
+        const learningKey = `learning_${colors.join('_')}`;
+        const existingData = this.getCachedResult<any>(learningKey) || { usage: 0, totalEffectiveness: 0 };
+        
+        existingData.usage += 1;
+        existingData.totalEffectiveness += effectiveness;
+        existingData.averageEffectiveness = existingData.totalEffectiveness / existingData.usage;
+        
+        this.setCachedResult(learningKey, existingData);
+      },
+
+      generateFutureHarmonies: (baseColor: string): ColorHarmony[] => {
+        const cacheKey = `future_harmonies_${baseColor}`;
+        const cached = this.getCachedResult<ColorHarmony[]>(cacheKey);
+        if (cached) return cached;
+
+        const futureHarmonies: ColorHarmony[] = [];
+        
+        // Projection basée sur les tendances saisonnières
+        const seasonalProjections = this.projectSeasonalChanges(baseColor);
+        
+        seasonalProjections.forEach(projection => {
+          const harmony = this.generateHarmony(projection.color, 'analogous');
+          harmony.emotion = projection.emotion;
+          futureHarmonies.push(harmony);
+        });
+
+        this.setCachedResult(cacheKey, futureHarmonies);
+        return futureHarmonies;
+      },
+
+      adaptToTrends: (seasonalData: any): void => {
+        // Adaptation aux tendances actuelles
+        this.clearCache(); // Reset pour nouvelles tendances
+        
+        if (seasonalData.dominant_hues) {
+          this.updateEmotionalColors(seasonalData.dominant_hues);
+        }
+      }
+    };
+  }
+
+  private analyzeColorTrends(colors: string[]): any {
+    let totalSaturation = 0;
+    let totalLightness = 0;
+    const hues: number[] = [];
+
+    colors.forEach(color => {
+      const hsl = this.rgbToHsl(color);
+      hues.push(hsl.h);
+      totalSaturation += hsl.s;
+      totalLightness += hsl.l;
+    });
+
+    return {
+      averageSaturation: totalSaturation / colors.length,
+      averageLightness: totalLightness / colors.length,
+      dominantHues: hues,
+      trendDirection: this.calculateTrendDirection(hues)
+    };
+  }
+
+  private calculateTrendDirection(hues: number[]): 'warm' | 'cool' | 'neutral' {
+    const warmHues = hues.filter(h => (h >= 0 && h <= 60) || (h >= 300 && h <= 360));
+    const coolHues = hues.filter(h => h >= 180 && h <= 240);
+    
+    if (warmHues.length > coolHues.length * 1.5) return 'warm';
+    if (coolHues.length > warmHues.length * 1.5) return 'cool';
+    return 'neutral';
+  }
+
+  private predictHueEvolution(analysis: any): number[] {
+    const baseHues = analysis.dominantHues;
+    const predictions: number[] = [];
+    
+    baseHues.forEach(hue => {
+      // Évolution naturelle selon la direction de tendance
+      let evolution = 0;
+      
+      switch (analysis.trendDirection) {
+        case 'warm':
+          evolution = 15; // Vers les rouges/oranges
+          break;
+        case 'cool':
+          evolution = -15; // Vers les bleus/verts
+          break;
+        default:
+          evolution = Math.sin(Date.now() * 0.001) * 10; // Variation naturelle
+      }
+      
+      predictions.push((hue + evolution + 360) % 360);
+    });
+    
+    return predictions;
+  }
+
+  private projectSeasonalChanges(baseColor: string): any[] {
+    const currentSeason = this.getCurrentSeason();
+    const nextSeason = this.getNextSeason(currentSeason);
+    
+    return [
+      {
+        color: this.adaptColorToSeason(baseColor, nextSeason),
+        emotion: this.getSeasonalEmotion(nextSeason),
+        confidence: 0.8
+      }
+    ];
+  }
+
+  private getNextSeason(current: string): string {
+    const seasons = ['spring', 'summer', 'autumn', 'winter'];
+    const currentIndex = seasons.indexOf(current);
+    return seasons[(currentIndex + 1) % seasons.length];
+  }
+
+  private adaptColorToSeason(color: string, season: string): string {
+    const hsl = this.rgbToHsl(color);
+    
+    switch (season) {
+      case 'spring':
+        return this.hslToRgb({ ...hsl, s: Math.min(hsl.s + 0.2, 1), l: Math.min(hsl.l + 0.1, 0.9) });
+      case 'summer':
+        return this.hslToRgb({ ...hsl, s: Math.min(hsl.s + 0.3, 1), l: Math.max(hsl.l - 0.1, 0.1) });
+      case 'autumn':
+        return this.hslToRgb({ ...hsl, h: (hsl.h + 20) % 360, s: Math.max(hsl.s - 0.1, 0.1) });
+      case 'winter':
+        return this.hslToRgb({ ...hsl, s: Math.max(hsl.s - 0.2, 0.1), l: Math.max(hsl.l - 0.2, 0.1) });
+      default:
+        return color;
+    }
+  }
+
+  private getSeasonalEmotion(season: string): string {
+    const seasonalEmotions = {
+      'spring': 'energetic',
+      'summer': 'calming',
+      'autumn': 'luxurious',
+      'winter': 'professional'
+    };
+    return seasonalEmotions[season] || 'balanced';
+  }
+
+  private updateEmotionalColors(trendHues: number[]): void {
+    // Mise à jour des couleurs émotionnelles basée sur les tendances
+    trendHues.forEach(hue => {
+      Object.keys(this.EMOTIONAL_COLORS).forEach(emotion => {
+        const emotionConfig = this.EMOTIONAL_COLORS[emotion as keyof typeof this.EMOTIONAL_COLORS];
+        if (hue >= emotionConfig.hue[0] && hue <= emotionConfig.hue[1]) {
+          // Ajuster légèrement les plages pour suivre les tendances
+          emotionConfig.hue[0] = Math.max(0, emotionConfig.hue[0] - 5);
+          emotionConfig.hue[1] = Math.min(360, emotionConfig.hue[1] + 5);
+        }
+      });
+    });
   }
 
   /**
