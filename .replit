@@ -20,7 +20,7 @@ localPort = 5173
 externalPort = 5173
 
 [workflows]
-runButton = "Frontend React"
+runButton = "Interface React"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -332,3 +332,12 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node frontend-server.mjs"
+
+[[workflows.workflow]]
+name = "Interface React"
+author = 46768796
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node react-dev-server.mjs"
