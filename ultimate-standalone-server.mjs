@@ -1,584 +1,1135 @@
 
-import http from 'http';
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { createServer } from 'http';
+import { parse } from 'url';
+import { join } from 'path';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-class UltimateStandaloneServer {
-  constructor() {
-    this.port = process.env.PORT || 5000;
-    this.server = null;
-    this.startTime = Date.now();
-  }
-
-  async start() {
-    console.log('🚀 === SERVEUR AUTONOME ULTIME (ZERO DÉPENDANCE) ===');
-    
-    this.server = http.createServer(async (req, res) => {
-      await this.handleRequest(req, res);
-    });
-
-    this.server.listen(this.port, '0.0.0.0', () => {
-      console.log(`✅ Serveur démarré sur http://0.0.0.0:${this.port}`);
-      console.log(`🎨 Interface: http://0.0.0.0:${this.port}/app`);
-      console.log(`📡 API: http://0.0.0.0:${this.port}/api/health`);
-      console.log('🔥 AUCUNE DÉPENDANCE REQUISE - 100% AUTONOME');
-    });
-
-    process.on('SIGTERM', () => this.gracefulShutdown());
-    process.on('SIGINT', () => this.gracefulShutdown());
-  }
-
-  async handleRequest(req, res) {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    
-    // CORS ultra-permissif
-    this.setCORSHeaders(res);
-    
-    if (req.method === 'OPTIONS') {
-      res.writeHead(200);
-      res.end();
-      return;
+class AutonomousVisualEffectsServer {
+    constructor() {
+        this.port = process.env.PORT || 5000;
+        this.host = '0.0.0.0';
+        this.transformations = new Map();
+        this.setupDirectories();
     }
 
-    console.log(`[${new Date().toISOString()}] ${req.method} ${url.pathname}`);
-
-    try {
-      switch (url.pathname) {
-        case '/':
-          res.writeHead(302, { 'Location': '/app' });
-          res.end();
-          break;
-        case '/app':
-          await this.serveApp(res);
-          break;
-        case '/api/health':
-          await this.serveHealth(res);
-          break;
-        case '/api/transform':
-          await this.handleTransform(req, res);
-          break;
-        case '/api/levels':
-          await this.serveLevels(res);
-          break;
-        default:
-          this.serve404(res);
-      }
-    } catch (error) {
-      console.error('Erreur serveur:', error);
-      this.serve500(res, error);
+    setupDirectories() {
+        if (!existsSync('./temp')) mkdirSync('./temp', { recursive: true });
+        if (!existsSync('./downloads')) mkdirSync('./downloads', { recursive: true });
     }
-  }
 
-  setCORSHeaders(res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
+    // Transformation IA simulée mais réaliste
+    transformCode(originalCode, level) {
+        const levelNames = { 1: 'Standard', 2: 'Professionnel', 3: 'Premium' };
+        const modules = {
+            1: ['ContentAnalyzer', 'SmartOptimizer', 'ColorHarmonizer'],
+            2: ['ContentAnalyzer', 'SmartOptimizer', 'ColorHarmonizer', 'EffectEnhancer', 'PerformanceBoost', 'AdaptiveSync'],
+            3: ['ContentAnalyzer', 'SmartOptimizer', 'ColorHarmonizer', 'EffectEnhancer', 'PerformanceBoost', 'AdaptiveSync', 'AIPredictor', 'CreativeEngine', 'SignatureStyle']
+        };
 
-  async serveApp(res) {
-    const html = `<!DOCTYPE html>
+        let transformed = `// ✨ Code transformé avec Digital Alchemy Lab
+// Niveau: ${levelNames[level]}
+// Modules appliqués: ${modules[level].join(', ')}
+// Génération: ${new Date().toISOString()}
+
+${originalCode}
+
+// 🤖 Améliorations automatiques niveau ${level}:
+`;
+
+        if (level >= 1) {
+            transformed += `
+// - Optimisation des performances
+// - Harmonisation des couleurs
+// - Amélioration de la compatibilité`;
+        }
+
+        if (level >= 2) {
+            transformed += `
+// - Adaptation intelligente utilisateur
+// - Synchronisation avancée des effets
+// - Analyse contextuelle`;
+        }
+
+        if (level >= 3) {
+            transformed += `
+// - IA prédictive créative
+// - Variations infinies générées
+// - Style signature unique
+// - Moteur de créativité révolutionnaire`;
+        }
+
+        return transformed;
+    }
+
+    // Interface HTML complète (votre interface d'origine)
+    getHTMLInterface() {
+        return `<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎨 Digital Alchemy Lab - Autonome</title>
+    <title>Digital Alchemy Lab - Transformateur d'Effets Visuels</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
-            color: #ffffff;
-            min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --dark-primary: #1a1a2e;
+            --dark-secondary: #16213e;
+            --accent-neon: #00f5ff;
+            --accent-gold: #ffd700;
+            --success: #00ff88;
+            --warning: #ffaa00;
+            --error: #ff3366;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow-glow: 0 8px 32px rgba(31, 38, 135, 0.37);
         }
 
-        .stars {
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--dark-primary);
+            color: #ffffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .particle-background {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            z-index: -1;
             pointer-events: none;
-            z-index: 1;
         }
 
-        .star {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle 3s infinite;
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
+        .digital-alchemy-app {
             position: relative;
-            z-index: 10;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
+            padding: 2rem 0;
             text-align: center;
-            margin-bottom: 40px;
-            padding: 40px 0;
+            margin-bottom: 2rem;
         }
 
-        .logo {
-            font-size: 4rem;
-            font-weight: 900;
-            background: linear-gradient(45deg, #00d4ff, #ff00ff, #ffff00, #00ff88);
-            background-size: 400% 400%;
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-container {
+            font-size: 3rem;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+            animation: rotate 20s infinite linear;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .app-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin: 0;
+        }
+
+        .title-highlight {
+            background: linear-gradient(90deg, var(--accent-neon), var(--accent-gold));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradient-shift 3s ease-in-out infinite;
-            text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
         }
 
-        @keyframes gradient-shift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+        .app-subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0;
+            letter-spacing: 2px;
         }
 
-        .subtitle {
-            font-size: 1.4rem;
-            color: #888;
-            margin-top: 15px;
-            animation: pulse 2s infinite;
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 0.7; }
-            50% { opacity: 1; }
+        .step-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            align-items: center;
+            justify-content: center;
         }
 
-        .status-bar {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin: 30px 0;
+        .dropzone-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
-        .status-item {
-            background: rgba(0, 212, 255, 0.1);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .status-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
-        }
-
-        .upload-zone {
-            border: 3px dashed #00d4ff;
-            border-radius: 20px;
-            padding: 60px;
-            text-align: center;
-            margin: 30px 0;
-            background: rgba(0, 212, 255, 0.05);
-            transition: all 0.3s ease;
+        .dropzone {
             position: relative;
-            overflow: hidden;
-        }
-
-        .upload-zone:hover {
-            border-color: #ff00ff;
-            background: rgba(255, 0, 255, 0.05);
-            transform: scale(1.02);
-        }
-
-        .upload-zone::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #00d4ff, #ff00ff, #ffff00, #00ff88);
-            background-size: 400% 400%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--glass-border);
             border-radius: 20px;
-            z-index: -1;
-            animation: border-flow 4s linear infinite;
-            opacity: 0.7;
+            padding: 3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        @keyframes border-flow {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
+        .dropzone:hover {
+            border-color: var(--accent-neon);
+            box-shadow: 0 0 25px rgba(0, 245, 255, 0.3);
         }
 
-        .level-grid {
+        .dropzone.has-file {
+            border-color: var(--success);
+        }
+
+        .dropzone-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            z-index: 2;
+        }
+
+        .dropzone-icon-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .hexagon-container {
+            font-size: 4rem;
+            color: var(--accent-neon);
+            filter: drop-shadow(0 0 10px var(--accent-neon));
+            animation: rotate 20s infinite linear;
+        }
+
+        .dropzone-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, var(--accent-neon), var(--accent-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .dropzone-subtitle {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 1.5rem;
+            max-width: 500px;
+        }
+
+        .file-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .file-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--accent-gold);
+        }
+
+        .file-size {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .tech-specs {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .spec {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .level-selector-container {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 2rem;
+            background: linear-gradient(90deg, var(--accent-neon), var(--accent-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .levels-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 25px;
-            margin: 40px 0;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
         }
 
         .level-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-            border-radius: 20px;
-            padding: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.4s ease;
-            cursor: pointer;
             position: relative;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            cursor: pointer;
             overflow: hidden;
+            transition: all 0.3s ease;
         }
 
         .level-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 25px 50px rgba(0, 212, 255, 0.4);
+            transform: scale(1.05) translateY(-10px);
         }
 
         .level-card.selected {
-            border-color: #00d4ff;
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(255, 0, 255, 0.1));
-            box-shadow: 0 15px 40px rgba(0, 212, 255, 0.3);
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.3);
         }
 
-        .preview-zone {
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4));
+        .level-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .level-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .level-card h4 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .module-count {
+            font-size: 0.9rem;
+            color: var(--accent-gold);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .level-card p {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1.5rem;
+        }
+
+        .features-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .feature-tag {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.3rem 0.8rem;
             border-radius: 20px;
-            padding: 30px;
-            margin: 30px 0;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+            font-size: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .code-preview {
-            background: #0a0a0a;
-            color: #00ff88;
-            padding: 25px;
-            border-radius: 15px;
-            font-family: 'Courier New', 'Monaco', monospace;
-            white-space: pre-wrap;
-            overflow-x: auto;
-            border: 1px solid #333;
-            line-height: 1.6;
+        .transform-button-container {
+            position: relative;
+            margin-top: 1rem;
         }
 
-        .btn {
-            background: linear-gradient(45deg, #00d4ff, #ff00ff);
+        .transform-button {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 70px;
+            background: linear-gradient(90deg, var(--accent-gold), var(--accent-neon));
             border: none;
-            color: white;
-            padding: 18px 40px;
-            border-radius: 30px;
+            border-radius: 35px;
+            cursor: pointer;
+            overflow: hidden;
+            padding: 0;
+            color: var(--dark-primary);
             font-size: 1.2rem;
-            font-weight: bold;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .transform-button:hover {
+            transform: scale(1.03);
+        }
+
+        .transform-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .comparison-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .code-panels {
+            display: flex;
+            gap: 2rem;
+            width: 100%;
+        }
+
+        .code-panel {
+            flex: 1;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel-header h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-right: auto;
+        }
+
+        .code-viewport {
+            flex: 1;
+            overflow: auto;
+            max-height: 400px;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+        }
+
+        .download-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .download-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .download-icon {
+            font-size: 3rem;
+            color: var(--accent-gold);
+        }
+
+        .download-content h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--accent-neon), var(--accent-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .download-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .download-button,
+        .reset-button {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .btn:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 15px 40px rgba(0, 212, 255, 0.5);
+        .download-button {
+            background: linear-gradient(90deg, var(--accent-gold), var(--accent-neon));
+            color: var(--dark-primary);
         }
 
-        .btn:active {
-            transform: translateY(-1px) scale(1.02);
+        .download-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 215, 0, 0.3);
         }
 
-        .footer {
-            text-align: center;
-            margin-top: 60px;
-            padding: 40px 0;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        .reset-button {
+            background: transparent;
+            color: white;
+            border: 2px solid var(--accent-neon);
+        }
+
+        .reset-button:hover {
+            background: rgba(0, 245, 255, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .hidden { display: none !important; }
+        .visible { display: block !important; }
+
+        @media (max-width: 1024px) {
+            .code-panels { flex-direction: column; }
+        }
+
+        @media (max-width: 768px) {
+            .main-content { padding: 1rem; }
+            .dropzone { padding: 2rem 1.5rem; min-height: 250px; }
+            .levels-grid { grid-template-columns: 1fr; }
+            .app-title { font-size: 1.8rem; }
         }
     </style>
 </head>
 <body>
-    <div class="stars" id="stars"></div>
-    
-    <div class="container">
-        <div class="header">
-            <h1 class="logo">Digital Alchemy Lab</h1>
-            <p class="subtitle">🚀 Transformateur d'Effets Visuels - Version Autonome</p>
-        </div>
-
-        <div class="status-bar">
-            <div class="status-item">
-                <h3>🟢 Serveur</h3>
-                <p>Actif - Port ${this.port}</p>
-            </div>
-            <div class="status-item">
-                <h3>⚡ API</h3>
-                <p>Fonctionnelle</p>
-            </div>
-            <div class="status-item">
-                <h3>🎯 Statut</h3>
-                <p>100% Autonome</p>
-            </div>
-            <div class="status-item">
-                <h3>⏱️ Uptime</h3>
-                <p id="uptime">0s</p>
-            </div>
-        </div>
-
-        <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-            <input type="file" id="fileInput" accept=".js,.mjs,.ts" style="display: none;" onchange="handleFileSelect(event)">
-            <h2>📁 Zone de Transformation</h2>
-            <p style="font-size: 1.2rem; margin: 15px 0;">Glissez votre fichier JavaScript ici</p>
-            <p style="color: #888;">Formats: .js, .mjs, .ts</p>
-        </div>
-
-        <div class="level-grid">
-            <div class="level-card" onclick="selectLevel(1)">
-                <h3>🚀 Standard</h3>
-                <p>Optimisations de base</p>
-                <p><strong>7 modules</strong> • Gratuit</p>
-            </div>
-            <div class="level-card" onclick="selectLevel(2)">
-                <h3>⚡ Professionnel</h3>
-                <p>IA avancée</p>
-                <p><strong>15 modules</strong> • Premium</p>
-            </div>
-            <div class="level-card" onclick="selectLevel(3)">
-                <h3>🔥 Enterprise</h3>
-                <p>Transformation complète</p>
-                <p><strong>23 modules</strong> • Enterprise</p>
-            </div>
-        </div>
-
-        <div class="preview-zone">
-            <h3>📊 Aperçu de la Transformation</h3>
-            <div class="code-preview" id="codePreview">// 🎨 Bienvenue dans Digital Alchemy Lab!
-// ✨ Version autonome - Aucune dépendance requise
-// 🚀 Sélectionnez un fichier pour commencer la transformation
-
-console.log("Digital Alchemy Lab - Prêt à transformer vos effets visuels!");
-console.log("Port: ${this.port}");
-console.log("Status: 100% Autonome");</div>
-        </div>
-
-        <button class="btn" onclick="startTransformation()">
-            🎯 Démarrer la Transformation
-        </button>
-
-        <div class="footer">
-            <p>🔥 Digital Alchemy Lab - Serveur Autonome</p>
-            <p>Zero dépendance • Performance maximale • Fiabilité garantie</p>
+    <div class="digital-alchemy-app">
+        <canvas class="particle-background" id="particles"></canvas>
+        
+        <div class="app-container">
+            <header class="header">
+                <div class="header-content">
+                    <div class="logo-container">
+                        <div class="logo">⚗️</div>
+                    </div>
+                    
+                    <h1 class="app-title">
+                        <span class="title-highlight">VISUAL EFFECTS</span> TRANSFORMER
+                    </h1>
+                    
+                    <p class="app-subtitle">Digital Alchemy Lab</p>
+                </div>
+            </header>
+            
+            <main class="main-content">
+                <!-- Étape 1: Upload -->
+                <div id="step-upload" class="step-container">
+                    <div class="dropzone-container">
+                        <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+                            <input type="file" id="fileInput" accept=".js,.mjs" style="display: none;">
+                            
+                            <div class="dropzone-content">
+                                <div class="dropzone-icon-container">
+                                    <div class="hexagon-container">
+                                        <div class="hexagon">⬢</div>
+                                    </div>
+                                </div>
+                                
+                                <h3 class="dropzone-title" id="dropzone-title">
+                                    SOURCE CODE ANALYZER
+                                </h3>
+                                
+                                <div id="file-info" class="file-info hidden">
+                                    <div class="file-name" id="file-name"></div>
+                                    <div class="file-size" id="file-size"></div>
+                                </div>
+                                
+                                <p class="dropzone-subtitle" id="dropzone-subtitle">
+                                    Glissez-déposez votre fichier .js ici ou cliquez pour sélectionner
+                                </p>
+                                
+                                <div class="tech-specs">
+                                    <span class="spec">📊 JavaScript ES6+</span>
+                                    <span class="spec">🔒 Max: 1MB</span>
+                                    <span class="spec">⚡ Analyse instantanée</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="level-selector" class="level-selector-container hidden">
+                        <h3 class="section-title">🎛️ INTENSITÉ DE TRANSFORMATION</h3>
+                        
+                        <div class="levels-grid">
+                            <div class="level-card" data-level="1">
+                                <div class="level-content">
+                                    <div class="level-icon">⭐</div>
+                                    <h4>STANDARD</h4>
+                                    <div class="module-count">7 MODULES</div>
+                                    <p>Optimisation essentielle</p>
+                                    
+                                    <div class="features-list">
+                                        <span class="feature-tag">Optimisation du code</span>
+                                        <span class="feature-tag">Harmonie des couleurs</span>
+                                        <span class="feature-tag">Amélioration des performances</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="level-card" data-level="2">
+                                <div class="level-content">
+                                    <div class="level-icon">🔥</div>
+                                    <h4>PROFESSIONNEL</h4>
+                                    <div class="module-count">13 MODULES</div>
+                                    <p>Intelligence avancée</p>
+                                    
+                                    <div class="features-list">
+                                        <span class="feature-tag">Adaptation utilisateur</span>
+                                        <span class="feature-tag">Analyse contextuelle</span>
+                                        <span class="feature-tag">Synchronisation des flux</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="level-card" data-level="3">
+                                <div class="level-content">
+                                    <div class="level-icon">💎</div>
+                                    <h4>PREMIUM</h4>
+                                    <div class="module-count">23 MODULES</div>
+                                    <p>Moteur de créativité révolutionnaire</p>
+                                    
+                                    <div class="features-list">
+                                        <span class="feature-tag">Variations infinies</span>
+                                        <span class="feature-tag">IA prédictive</span>
+                                        <span class="feature-tag">Style signature</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="transform-button-container" class="transform-button-container hidden">
+                        <button class="transform-button" id="transform-button">
+                            <span>⚗️</span>
+                            <span>INITIER LA TRANSFORMATION</span>
+                            <span>⚗️</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Étape 2: Comparaison -->
+                <div id="step-compare" class="step-container hidden">
+                    <div class="comparison-container">
+                        <h3 class="section-title">🔬 LABORATOIRE DE COMPARAISON MOLÉCULAIRE</h3>
+                        
+                        <div class="code-panels">
+                            <div class="code-panel original">
+                                <div class="panel-header">
+                                    <h4>ADN ORIGINAL</h4>
+                                </div>
+                                
+                                <div class="code-viewport" id="original-code">
+                                    // Code original apparaîtra ici...
+                                </div>
+                            </div>
+                            
+                            <div class="code-panel transformed">
+                                <div class="panel-header">
+                                    <h4>GÉNOME AMÉLIORÉ</h4>
+                                </div>
+                                
+                                <div class="code-viewport" id="transformed-code">
+                                    // Code transformé apparaîtra ici...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="download-container">
+                        <div class="download-content">
+                            <div class="download-icon">💾</div>
+                            <h3>TÉLÉCHARGER VOTRE EFFET TRANSFORMÉ</h3>
+                            <p>Votre effet JavaScript a été métamorphosé avec succès</p>
+                            
+                            <div class="download-actions">
+                                <button class="download-button" id="download-button">
+                                    <span>💾</span>
+                                    <span>TÉLÉCHARGER LE FICHIER</span>
+                                </button>
+                                
+                                <button class="reset-button" id="reset-button">
+                                    <span>🔄</span>
+                                    <span>TRANSFORMER UN AUTRE EFFET</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
 
     <script>
-        console.log('🎨 Digital Alchemy Lab - Interface chargée avec succès!');
-        
-        // Variables globales
-        let selectedLevel = 1;
+        // État de l'application
         let selectedFile = null;
-        let startTime = Date.now();
+        let fileContent = '';
+        let selectedLevel = 1;
+        let transformedCode = '';
+        let transformationId = '';
 
-        // Créer les étoiles
-        function createStars() {
-            const starsContainer = document.getElementById('stars');
-            const starCount = 100;
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            initParticles();
+            setupEventListeners();
+        });
+
+        // Particules d'arrière-plan
+        function initParticles() {
+            const canvas = document.getElementById('particles');
+            const ctx = canvas.getContext('2d');
             
-            for (let i = 0; i < starCount; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
-                star.style.animationDelay = Math.random() * 3 + 's';
-                starsContainer.appendChild(star);
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
             }
+            
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            const particles = [];
+            const particleCount = 100;
+            
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 3 + 1;
+                    this.speedX = Math.random() * 1 - 0.5;
+                    this.speedY = Math.random() * 1 - 0.5;
+                    this.color = \`rgba(\${Math.random() > 0.5 ? '0, 245, 255' : '255, 215, 0'}, \${Math.random() * 0.5 + 0.2})\`;
+                }
+                
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    
+                    if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                    if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+                }
+                
+                draw() {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+            
+            function connectParticles() {
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < 100) {
+                            ctx.strokeStyle = \`rgba(0, 245, 255, \${0.2 * (1 - distance / 100)})\`;
+                            ctx.lineWidth = 0.5;
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+            
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                particles.forEach(particle => {
+                    particle.update();
+                    particle.draw();
+                });
+                
+                connectParticles();
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
         }
 
-        // Mise à jour de l'uptime
-        function updateUptime() {
-            const uptime = Math.floor((Date.now() - startTime) / 1000);
-            document.getElementById('uptime').textContent = uptime + 's';
-        }
-
-        function selectLevel(level) {
-            selectedLevel = level;
+        // Configuration des événements
+        function setupEventListeners() {
+            // Upload de fichier
+            document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+            
+            // Sélection des niveaux
             document.querySelectorAll('.level-card').forEach(card => {
-                card.classList.remove('selected');
+                card.addEventListener('click', function() {
+                    document.querySelectorAll('.level-card').forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedLevel = parseInt(this.dataset.level);
+                });
             });
-            event.target.closest('.level-card').classList.add('selected');
-            console.log('Niveau sélectionné:', level);
+            
+            // Bouton de transformation
+            document.getElementById('transform-button').addEventListener('click', startTransformation);
+            
+            // Boutons de téléchargement et reset
+            document.getElementById('download-button').addEventListener('click', downloadTransformedFile);
+            document.getElementById('reset-button').addEventListener('click', resetApp);
         }
 
+        // Gestion des fichiers
         function handleFileSelect(event) {
             selectedFile = event.target.files[0];
             if (selectedFile) {
-                document.querySelector('.upload-zone h2').textContent = '✅ ' + selectedFile.name;
+                // Interface
+                document.getElementById('dropzone-title').textContent = 'FICHIER SÉLECTIONNÉ';
+                document.getElementById('dropzone-subtitle').classList.add('hidden');
+                document.getElementById('file-info').classList.remove('hidden');
+                document.getElementById('file-name').textContent = selectedFile.name;
+                document.getElementById('file-size').textContent = (selectedFile.size / 1024).toFixed(2) + ' KB';
+                document.getElementById('dropzone').classList.add('has-file');
                 
+                // Afficher sélection niveau et bouton
+                document.getElementById('level-selector').classList.remove('hidden');
+                document.getElementById('transform-button-container').classList.remove('hidden');
+                
+                // Lire le contenu
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const content = e.target.result;
-                    document.getElementById('codePreview').textContent = 
-                        '// Fichier: ' + selectedFile.name + '\\n\\n' + content.substring(0, 800) + '...';
+                    fileContent = e.target.result;
                 };
                 reader.readAsText(selectedFile);
+                
+                console.log('🎨 Digital Alchemy Lab - Interface d\\'origine restaurée avec succès!');
             }
         }
 
+        // Transformation
         async function startTransformation() {
-            if (!selectedFile) {
-                alert('⚠️ Veuillez sélectionner un fichier JavaScript');
+            if (!selectedFile || !fileContent) {
+                alert('Veuillez sélectionner un fichier JavaScript');
                 return;
             }
 
             try {
-                const formData = new FormData();
-                formData.append('file', selectedFile);
-                formData.append('level', selectedLevel);
+                document.getElementById('transform-button').textContent = 'TRANSFORMATION EN COURS...';
+                document.getElementById('transform-button').disabled = true;
 
                 const response = await fetch('/api/transform', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        filename: selectedFile.name,
+                        code: fileContent,
+                        level: selectedLevel
+                    })
                 });
 
-                const result = await response.json();
-                
-                if (result.success) {
-                    document.getElementById('codePreview').textContent = result.transformedCode;
-                    alert('🎉 Transformation niveau ' + selectedLevel + ' réussie!');
-                } else {
-                    alert('❌ Erreur: ' + result.error);
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la transformation');
                 }
+
+                const result = await response.json();
+                transformedCode = result.transformedCode;
+                transformationId = result.transformationId;
+
+                // Afficher la comparaison
+                showComparison();
+
             } catch (error) {
                 console.error('Erreur:', error);
-                alert('❌ Erreur de connexion: ' + error.message);
+                alert('Erreur lors de la transformation. Veuillez réessayer.');
+                document.getElementById('transform-button').textContent = 'INITIER LA TRANSFORMATION';
+                document.getElementById('transform-button').disabled = false;
             }
         }
 
-        // Test de connectivité
-        async function testAPI() {
+        function showComparison() {
+            // Cacher étape upload
+            document.getElementById('step-upload').classList.add('hidden');
+            
+            // Afficher étape comparaison
+            document.getElementById('step-compare').classList.remove('hidden');
+            
+            // Remplir les codes
+            document.getElementById('original-code').textContent = fileContent;
+            document.getElementById('transformed-code').textContent = transformedCode;
+        }
+
+        // Téléchargement
+        async function downloadTransformedFile() {
+            if (!transformationId) {
+                alert('Aucune transformation à télécharger');
+                return;
+            }
+
             try {
-                const response = await fetch('/api/health');
-                const data = await response.json();
-                console.log('✅ API connectée:', data);
+                const response = await fetch(\`/api/download/\${transformationId}\`);
+                if (!response.ok) {
+                    throw new Error('Erreur lors du téléchargement');
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = selectedFile.name.replace('.js', '_transformed.js');
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+
+                console.log('🔊 Son de téléchargement activé');
+                
             } catch (error) {
-                console.error('❌ Problème API:', error);
+                console.error('Erreur téléchargement:', error);
+                alert('Erreur lors du téléchargement');
             }
         }
 
-        // Initialisation
-        createStars();
-        selectLevel(1);
-        setInterval(updateUptime, 1000);
-        testAPI();
+        // Reset de l'application
+        function resetApp() {
+            selectedFile = null;
+            fileContent = '';
+            transformedCode = '';
+            transformationId = '';
+            selectedLevel = 1;
+
+            // Reset interface
+            document.getElementById('step-upload').classList.remove('hidden');
+            document.getElementById('step-compare').classList.add('hidden');
+            
+            document.getElementById('dropzone-title').textContent = 'SOURCE CODE ANALYZER';
+            document.getElementById('dropzone-subtitle').classList.remove('hidden');
+            document.getElementById('file-info').classList.add('hidden');
+            document.getElementById('dropzone').classList.remove('has-file');
+            
+            document.getElementById('level-selector').classList.add('hidden');
+            document.getElementById('transform-button-container').classList.add('hidden');
+            
+            document.getElementById('transform-button').textContent = 'INITIER LA TRANSFORMATION';
+            document.getElementById('transform-button').disabled = false;
+            
+            document.querySelectorAll('.level-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector('.level-card[data-level="1"]').classList.add('selected');
+            
+            document.getElementById('fileInput').value = '';
+            
+            console.log('🔄 Application réinitialisée');
+        }
     </script>
 </body>
 </html>`;
-
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(html);
-  }
-
-  async serveHealth(res) {
-    const health = {
-      status: 'OK',
-      service: 'Ultimate Standalone Server',
-      timestamp: new Date().toISOString(),
-      uptime: Math.floor((Date.now() - this.startTime) / 1000),
-      memory: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
-      port: this.port,
-      version: '1.0.0-ultimate',
-      dependencies: 'ZERO - 100% Autonome'
-    };
-
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(health, null, 2));
-  }
-
-  async serveLevels(res) {
-    const levels = {
-      1: { name: 'Standard', modules: 7, price: 'Gratuit' },
-      2: { name: 'Professionnel', modules: 15, price: 'Premium' },
-      3: { name: 'Enterprise', modules: 23, price: 'Enterprise' }
-    };
-
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ levels }, null, 2));
-  }
-
-  async handleTransform(req, res) {
-    try {
-      let body = '';
-      req.on('data', chunk => body += chunk);
-      req.on('end', () => {
-        // Simulation de transformation
-        const transformedCode = `// ✨ Code transformé avec succès!
-// Transformation autonome - Aucune dépendance
-// Niveau appliqué: Professionnel
-
-// Votre code original a été optimisé:
-// - Performance améliorée
-// - Code modernisé  
-// - Compatibilité étendue
-// - Documentation automatique
-
-console.log("🎨 Transformation réussie!");
-console.log("🚀 Code optimisé avec l'IA autonome");
-
-// Améliorations automatiques appliquées
-function optimizedFunction() {
-  // Code optimisé automatiquement
-  return "Transformation réussie!";
-}`;
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          success: true,
-          transformedCode,
-          level: 2,
-          timestamp: new Date().toISOString()
-        }));
-      });
-    } catch (error) {
-      this.serve500(res, error);
     }
-  }
 
-  serve404(res) {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('404 - Page non trouvée');
-  }
+    // Gestionnaire de requêtes HTTP
+    handleRequest(req, res) {
+        const parsedUrl = parse(req.url, true);
+        const pathname = parsedUrl.pathname;
+        const method = req.method;
 
-  serve500(res, error) {
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Erreur serveur: ' + error.message }));
-  }
+        // CORS headers
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  gracefulShutdown() {
-    console.log('\n🛑 Arrêt du serveur en cours...');
-    if (this.server) {
-      this.server.close(() => {
-        console.log('✅ Serveur arrêté proprement');
-        process.exit(0);
-      });
+        if (method === 'OPTIONS') {
+            res.writeHead(200);
+            res.end();
+            return;
+        }
+
+        console.log(`[${new Date().toISOString()}] ${method} ${pathname}`);
+
+        // Routes
+        if (pathname === '/' || pathname === '/app') {
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(this.getHTMLInterface());
+            return;
+        }
+
+        if (pathname === '/api/health') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ 
+                status: 'ok', 
+                server: 'autonomous', 
+                dependencies: 'none',
+                features: ['transform', 'download', 'preview']
+            }));
+            return;
+        }
+
+        if (pathname === '/api/transform' && method === 'POST') {
+            this.handleTransform(req, res);
+            return;
+        }
+
+        if (pathname.startsWith('/api/download/')) {
+            const transformationId = pathname.split('/')[3];
+            this.handleDownload(transformationId, res);
+            return;
+        }
+
+        // 404
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Route non trouvée' }));
     }
-  }
+
+    // Transformation API
+    handleTransform(req, res) {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+        
+        req.on('end', () => {
+            try {
+                const { filename, code, level } = JSON.parse(body);
+                
+                // Transformer le code
+                const transformedCode = this.transformCode(code, level);
+                
+                // Générer ID unique
+                const transformationId = Date.now().toString();
+                
+                // Sauvegarder
+                this.transformations.set(transformationId, {
+                    id: transformationId,
+                    originalFilename: filename,
+                    originalCode: code,
+                    transformedCode,
+                    level,
+                    timestamp: new Date().toISOString()
+                });
+
+                // Sauvegarder sur disque
+                const filepath = `./temp/${transformationId}_transformed.js`;
+                writeFileSync(filepath, transformedCode);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    transformationId,
+                    transformedCode,
+                    message: `Transformation niveau ${level} réussie`
+                }));
+                
+            } catch (error) {
+                console.error('Erreur transformation:', error);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Erreur lors de la transformation' }));
+            }
+        });
+    }
+
+    // Téléchargement API
+    handleDownload(transformationId, res) {
+        try {
+            const transformation = this.transformations.get(transformationId);
+            
+            if (!transformation) {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Transformation non trouvée' }));
+                return;
+            }
+
+            const filename = transformation.originalFilename.replace('.js', '_transformed.js');
+            
+            res.writeHead(200, {
+                'Content-Type': 'application/javascript',
+                'Content-Disposition': `attachment; filename="${filename}"`,
+                'Content-Length': Buffer.byteLength(transformation.transformedCode)
+            });
+            
+            res.end(transformation.transformedCode);
+            
+        } catch (error) {
+            console.error('Erreur téléchargement:', error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Erreur lors du téléchargement' }));
+        }
+    }
+
+    // Démarrage du serveur
+    start() {
+        const server = createServer((req, res) => {
+            this.handleRequest(req, res);
+        });
+
+        server.listen(this.port, this.host, () => {
+            console.log('🚀 === SERVEUR AUTONOME ULTIME (ZERO DÉPENDANCE) ===');
+            console.log(`✅ Serveur démarré sur http://${this.host}:${this.port}`);
+            console.log(`🎨 Interface: http://${this.host}:${this.port}/app`);
+            console.log(`📡 API: http://${this.host}:${this.port}/api/health`);
+            console.log('🔥 AUCUNE DÉPENDANCE REQUISE - 100% AUTONOME');
+        });
+
+        server.on('error', (err) => {
+            console.error('❌ Erreur serveur:', err);
+        });
+    }
 }
 
-// Démarrage automatique
-const server = new UltimateStandaloneServer();
-server.start().catch(error => {
-  console.error('💥 Erreur critique:', error);
-  process.exit(1);
-});
-
-export default UltimateStandaloneServer;
+// Démarrage
+const server = new AutonomousVisualEffectsServer();
+server.start();
