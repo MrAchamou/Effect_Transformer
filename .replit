@@ -386,3 +386,12 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node ultimate-standalone-server.mjs"
+
+[[workflows.workflow]]
+name = "Test Audit Modules"
+author = 46771790
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server/test-modules-audit.js"

@@ -1,24 +1,7 @@
-
 import fs from 'fs/promises';
 import path from 'path';
 
-interface TransformOptions {
-  level: number;
-  filename?: string;
-  options?: Record<string, any>;
-}
-
-interface TransformResult {
-  transformedCode: string;
-  statistics: {
-    originalLines: number;
-    newLines: number;
-    improvements: string[];
-    modulesApplied: string[];
-  };
-  documentation: string;
-}
-
+// Interface pour l'analyse d'un effet (code, métadonnées, etc.)
 interface EffectAnalysis {
   isValid: boolean;
   format: string;
@@ -34,6 +17,7 @@ interface EffectAnalysis {
   errors?: string[];
 }
 
+// Interface pour le résultat du reconditionnement d'un effet
 interface ReconditioningResult {
   success: boolean;
   effect?: string;
@@ -45,10 +29,146 @@ interface ReconditioningResult {
   migrationReport?: any;
 }
 
-export class UniversalPreprocessor {
-  private modules: Map<number, string[]> = new Map();
+// Interface pour les options de transformation
+interface TransformOptions {
+  level: number;
+  filename?: string;
+  options?: Record<string, any>;
+}
+
+// Interface pour le résultat final de la transformation
+interface TransformResult {
+  transformedCode: string;
+  statistics: {
+    originalLines: number;
+    newLines: number;
+    improvements: string[];
+    modulesApplied: string[];
+  };
+  documentation: string;
+}
+
+// Système d'audit des modules de transformation
+class ModuleAuditSystem {
+  private moduleRegistry: Map<string, { version: string, status: string, lastAudit: Date, analysis: any }> = new Map();
+  private moduleConfig: Map<string, any> = new Map();
 
   constructor() {
+    // Initialisation avec des modules par défaut (peut être étendue)
+    this.registerModule('CodeOptimizationEngine', '1.0.0', { complexity: 'low', performance: 'high', stability: 'stable' });
+    this.registerModule('ContentAnalyzer', '1.1.0', { complexity: 'medium', performance: 'medium', stability: 'stable' });
+    this.registerModule('SmartOptimizer', '1.0.0', { complexity: 'low', performance: 'high', stability: 'stable' });
+    this.registerModule('VisualFocusEngine', '1.0.0', { complexity: 'medium', performance: 'medium', stability: 'stable' });
+    this.registerModule('TimingMaster', '1.0.0', { complexity: 'low', performance: 'high', stability: 'stable' });
+    this.registerModule('ColorHarmonyEngine', '1.0.0', { complexity: 'medium', performance: 'medium', stability: 'stable' });
+    this.registerModule('PerformanceAdaptiveEngine', '1.2.0', { complexity: 'high', performance: 'high', stability: 'stable' });
+    this.registerModule('ContextualAdaptationEngine', '1.0.0', { complexity: 'high', performance: 'medium', stability: 'stable' });
+    this.registerModule('IntelligentResponseSystem', '1.0.0', { complexity: 'high', performance: 'medium', stability: 'stable' });
+    this.registerModule('BehavioralLearningModule', '1.0.0', { complexity: 'high', performance: 'low', stability: 'beta' });
+    this.registerModule('AdvancedVisualizationEngine', '1.1.0', { complexity: 'high', performance: 'medium', stability: 'stable' });
+    this.registerModule('SmartInteractionHandler', '1.0.0', { complexity: 'medium', performance: 'medium', stability: 'stable' });
+    this.registerModule('DynamicOptimizationEngine', '1.3.0', { complexity: 'high', performance: 'high', stability: 'stable' });
+    this.registerModule('PredictiveEnhancementModule', '1.0.0', { complexity: 'high', performance: 'medium', stability: 'stable' });
+    this.registerModule('UserPreferenceLearningSystem', '1.0.0', { complexity: 'high', performance: 'low', stability: 'stable' });
+    this.registerModule('AIEnhancedDecisionMaking', '1.0.0', { complexity: 'very-high', performance: 'low', stability: 'beta' });
+    this.registerModule('QuantumVisualProcessing', '1.0.0', { complexity: 'very-high', performance: 'unknown', stability: 'experimental' });
+    this.registerModule('NeuralNetworkIntegration', '1.0.0', { complexity: 'very-high', performance: 'low', stability: 'beta' });
+    this.registerModule('MachineLearningOptimizer', '1.0.0', { complexity: 'very-high', performance: 'low', stability: 'beta' });
+    this.registerModule('AdvancedPatternRecognition', '1.0.0', { complexity: 'very-high', performance: 'medium', stability: 'stable' });
+    this.registerModule('IntelligentResourceManagement', '1.0.0', { complexity: 'high', performance: 'medium', stability: 'stable' });
+    this.registerModule('PredictiveUserBehavior', '1.0.0', { complexity: 'high', performance: 'medium', stability: 'stable' });
+    this.registerModule('AutomaticCodeEvolution', '1.0.0', { complexity: 'very-high', performance: 'low', stability: 'experimental' });
+  }
+
+  // Enregistre un module et ses métadonnées
+  registerModule(name: string, version: string, analysis: any): void {
+    if (!this.moduleRegistry.has(name)) {
+      this.moduleRegistry.set(name, { version, status: 'registered', lastAudit: new Date(), analysis });
+      console.log(`📚 Module '${name}' enregistré (v${version})`);
+    }
+  }
+
+  // Configure un module avec des options spécifiques
+  configureModule(name: string, config: any): void {
+    if (this.moduleRegistry.has(name)) {
+      this.moduleConfig.set(name, config);
+      console.log(`⚙️ Configuration pour le module '${name}' mise à jour.`);
+    } else {
+      console.warn(`⚠️ Le module '${name}' n'est pas enregistré pour la configuration.`);
+    }
+  }
+
+  // Audite un module et met à jour son statut
+  auditModule(name: string): { status: string, analysis: any, config: any } {
+    const moduleInfo = this.moduleRegistry.get(name);
+    if (!moduleInfo) {
+      console.warn(`⚠️ Audit échoué: Module '${name}' inconnu.`);
+      return { status: 'unknown', analysis: {}, config: {} };
+    }
+
+    // Simulation d'audit : vérification de la conformité
+    let status = moduleInfo.status;
+    if (moduleInfo.analysis.stability === 'beta' || moduleInfo.analysis.stability === 'experimental') {
+      status = 'needs_review';
+    } else if (moduleInfo.analysis.performance === 'low' && moduleInfo.analysis.complexity !== 'low') {
+      status = 'needs_optimization';
+    } else if (moduleInfo.analysis.performance === 'unknown') {
+      status = 'needs_benchmarking';
+    } else {
+      status = 'active';
+    }
+
+    moduleInfo.status = status;
+    moduleInfo.lastAudit = new Date();
+    this.moduleRegistry.set(name, moduleInfo);
+
+    console.log(`🔍 Audit du module '${name}': Statut = ${status}`);
+    return {
+      status: status,
+      analysis: moduleInfo.analysis,
+      config: this.moduleConfig.get(name) || {}
+    };
+  }
+
+  // Vérifie si un module est actif et fonctionnel
+  isModuleActive(name: string): boolean {
+    const auditResult = this.auditModule(name); // Ré-auditer pour obtenir le statut le plus récent
+    return auditResult.status === 'active';
+  }
+
+  // Obtient la liste des modules actifs pour un niveau donné
+  getActiveModulesForLevel(level: number): string[] {
+    const allModules = this.getAllModulesForLevel(level);
+    return allModules.filter(moduleName => this.isModuleActive(moduleName));
+  }
+
+  // Obtient tous les modules enregistrés pour un niveau donné
+  getAllModulesForLevel(level: number): string[] {
+    // Ceci est une simplification. Dans une vraie implémentation,
+    // les modules seraient catégorisés par niveau de manière plus explicite.
+    const allRegisteredModules = Array.from(this.moduleRegistry.keys());
+    return allRegisteredModules.slice(0, level * 10); // Répartition grossière par niveau
+  }
+
+  // Obtient l'analyse d'un module
+  getModuleAnalysis(name: string): any {
+    return this.moduleRegistry.get(name)?.analysis || {};
+  }
+
+  // Obtient la configuration d'un module
+  getModuleConfig(name: string): any {
+    return this.moduleConfig.get(name) || {};
+  }
+}
+
+
+export class UniversalPreprocessor {
+  private modules: Map<number, string[]> = new Map();
+  private isInitialized: boolean = false;
+  private moduleAuditSystem: ModuleAuditSystem;
+
+  constructor() {
+    this.moduleAuditSystem = new ModuleAuditSystem();
     this.initializeModules();
   }
 
@@ -56,7 +176,7 @@ export class UniversalPreprocessor {
     // Modules par niveau
     this.modules.set(1, [
       'CodeOptimizationEngine',
-      'ContentAnalyzer', 
+      'ContentAnalyzer',
       'SmartOptimizer',
       'VisualFocusEngine',
       'TimingMaster',
@@ -92,22 +212,22 @@ export class UniversalPreprocessor {
   // =================== FONCTION PRINCIPALE DE RECONDITIONNEMENT ===================
   async processEffect(inputEffect: string): Promise<ReconditioningResult> {
     console.log('🔄 Début du processus de reconditionnement');
-    
+
     try {
       // 1. ANALYSE COMPLÈTE
       const analysis = await this.analyzeEffect(inputEffect);
-      
+
       // 2. VALIDATION D'ENTRÉE
       if (!analysis.isValid) {
         return this.applyFallbackStrategy(inputEffect, analysis.errors || []);
       }
-      
+
       // 3. RECONDITIONNEMENT
       const standardEffect = await this.reconditionEffect(inputEffect, analysis);
-      
+
       // 4. VALIDATION DE SORTIE
       const validationResult = await this.validateStandardEffect(standardEffect, inputEffect);
-      
+
       // 5. RETOUR CONDITIONNEL
       if (validationResult.success) {
         console.log('✅ Reconditionnement réussi');
@@ -123,7 +243,7 @@ export class UniversalPreprocessor {
         console.log('⚠️ Validation échouée, application du fallback');
         return this.applyFallbackStrategy(inputEffect, validationResult.errors || []);
       }
-      
+
     } catch (error) {
       console.error('❌ Erreur lors du reconditionnement:', error);
       // Gestion d'erreur globale
@@ -139,7 +259,7 @@ export class UniversalPreprocessor {
   // =================== PHASE 1: ANALYSE STRUCTURELLE COMPLÈTE ===================
   private async analyzeEffect(code: string): Promise<EffectAnalysis> {
     console.log('📊 Analyse structurelle de l\'effet...');
-    
+
     const analysis: EffectAnalysis = {
       isValid: true,
       format: this.detectInputFormat(code),
@@ -204,13 +324,13 @@ export class UniversalPreprocessor {
     // Détection par API
     if (/getContext\s*\(\s*['"]2d['"]/.test(code)) return 'canvas2d';
     if (/getContext\s*\(\s*['"]webgl['"]/.test(code)) return '3d';
-    
+
     return 'generic';
   }
 
   private detectSubcategory(code: string): string {
     const category = this.detectCategory(code);
-    
+
     const subcategories = {
       particles: {
         fire: /fire|flame|burn/i,
@@ -244,9 +364,9 @@ export class UniversalPreprocessor {
     const loops = (code.match(/for|while/g) || []).length;
     const conditions = (code.match(/if|switch/g) || []).length;
     const classes = (code.match(/class\s+\w+/g) || []).length;
-    
+
     const complexity = functions + loops * 2 + conditions + classes * 3;
-    
+
     if (complexity < 10) return 'simple';
     if (complexity < 30) return 'medium';
     return 'complex';
@@ -273,7 +393,7 @@ export class UniversalPreprocessor {
 
   private detectAPIs(code: string): string[] {
     const apis = [];
-    
+
     if (/canvas|getContext/.test(code)) apis.push('canvas');
     if (/webgl|gl\./.test(code)) apis.push('webgl');
     if (/audio|AudioContext/.test(code)) apis.push('audio');
@@ -287,18 +407,18 @@ export class UniversalPreprocessor {
 
   private detectDependencies(code: string): string[] {
     const deps = [];
-    
+
     // Détection d'imports/requires
     const importMatches = code.match(/import\s+.*\s+from\s+['"]([^'"]+)['"]/g);
     const requireMatches = code.match(/require\s*\(\s*['"]([^'"]+)['"]\s*\)/g);
-    
+
     if (importMatches) {
       importMatches.forEach(match => {
         const dep = match.match(/from\s+['"]([^'"]+)['"]/)?.[1];
         if (dep && !dep.startsWith('.')) deps.push(dep);
       });
     }
-    
+
     if (requireMatches) {
       requireMatches.forEach(match => {
         const dep = match.match(/['"]([^'"]+)['"]/)?.[1];
@@ -316,7 +436,7 @@ export class UniversalPreprocessor {
 
   private extractMethods(code: string): string[] {
     const methods = [];
-    
+
     // Méthodes de classe
     const classMethods = code.match(/(?:^|\s)(\w+)\s*\([^)]*\)\s*{/gm);
     if (classMethods) {
@@ -340,7 +460,7 @@ export class UniversalPreprocessor {
 
   private extractParameters(code: string): string[] {
     const params = [];
-    
+
     // Recherche de patterns de configuration
     const configMatches = code.match(/(?:config|options|settings)\s*[=:]\s*{([^}]*)}/gs);
     if (configMatches) {
@@ -360,7 +480,7 @@ export class UniversalPreprocessor {
 
   private detectEvents(code: string): string[] {
     const events = [];
-    
+
     const eventPatterns = [
       /addEventListener\s*\(\s*['"](\w+)['"]/g,
       /on(\w+)\s*=/g,
@@ -390,12 +510,12 @@ export class UniversalPreprocessor {
   // =================== PHASE 2: RECONDITIONNEMENT VERS STRUCTURE STANDARD ===================
   private async reconditionEffect(code: string, analysis: EffectAnalysis): Promise<string> {
     console.log('🔄 Reconditionnement vers structure standard...');
-    
+
     const effectName = this.generateEffectName(analysis);
     const metadata = this.generateMetadata(analysis, effectName);
     const parameters = this.generateParameters(analysis);
     const systems = this.generateSystems(analysis);
-    
+
     const standardEffect = `
 // =================== EFFET RECONDITIONNÉ AUTOMATIQUEMENT ===================
 // Original Format: ${analysis.format}
@@ -414,17 +534,17 @@ export class ${effectName}Effect {
 
     constructor(userConfig = {}) {
         console.log('🎨 Initialisation de l\\'effet ${effectName}');
-        
+
         // INITIALISATION STANDARD
         this.config = this._mergeConfig(userConfig);
         this.state = this._initializeState();
         this.systems = this._initializeSystems();
-        
+
         // PRÉSERVATION DE L'EFFET ORIGINAL
         this._originalCode = ${JSON.stringify(code)};
         this._originalAPI = null;
         this._migrationMap = new Map();
-        
+
         // INITIALISATION SPÉCIALISÉE
         this._initializeOriginalLogic();
     }
@@ -435,62 +555,62 @@ export class ${effectName}Effect {
         this.canvas = canvas;
         this.container = container;
         this.context = canvas.getContext('2d');
-        
+
         this.systems.core.active = true;
         this.systems.core.phase = 'initializing';
-        
+
         // Appel de l'initialisation originale si elle existe
         if (this._originalInit) {
             this._originalInit.call(this, canvas, container);
         }
-        
+
         this.systems.core.phase = 'ready';
         return this;
     }
 
     update(deltaTime) {
         if (!this.systems.core.active) return;
-        
+
         const startTime = performance.now();
-        
+
         this.systems.core.time.delta = deltaTime;
         this.systems.core.time.current += deltaTime;
-        
+
         // Appel de l'update original
         if (this._originalUpdate) {
             this._originalUpdate.call(this, deltaTime);
         }
-        
+
         this.systems.performance.updateTime = performance.now() - startTime;
     }
 
     render(context, deltaTime) {
         if (!this.systems.core.active) return;
-        
+
         const startTime = performance.now();
-        
+
         context = context || this.context;
-        
+
         // Appel du render original
         if (this._originalRender) {
             this._originalRender.call(this, context, deltaTime);
         } else if (this._originalDraw) {
             this._originalDraw.call(this, context, deltaTime);
         }
-        
+
         this.systems.performance.renderTime = performance.now() - startTime;
     }
 
     destroy() {
         console.log('🗑️ Destruction de l\\'effet');
-        
+
         if (this._originalDestroy) {
             this._originalDestroy.call(this);
         }
-        
+
         this.systems.core.active = false;
         this.systems.core.phase = 'destroyed';
-        
+
         // Nettoyage
         this.systems = null;
         this.config = null;
@@ -575,12 +695,12 @@ export class ${effectName}Effect {
     // =================== MÉTHODES INTERNES ===================
     _mergeConfig(userConfig) {
         const defaultConfig = {};
-        
+
         // Conversion des defaultParameters vers config
         Object.entries(this.constructor.defaultParameters).forEach(([key, param]) => {
             defaultConfig[key] = param.default;
         });
-        
+
         return { ...defaultConfig, ...userConfig };
     }
 
@@ -599,7 +719,7 @@ export class ${effectName}Effect {
     _initializeOriginalLogic() {
         // INJECTION DU CODE ORIGINAL ADAPTÉ
         ${this.adaptOriginalCode(code, analysis)}
-        
+
         // PRÉSERVATION DE L'API ORIGINALE
         this._preserveOriginalAPI();
     }
@@ -607,9 +727,9 @@ export class ${effectName}Effect {
     _preserveOriginalAPI() {
         // Créer des proxies vers les méthodes originales
         // Maintenir la compatibilité avec l'ancien code
-        
+
         const originalMethods = ${JSON.stringify(analysis.methods)};
-        
+
         originalMethods.forEach(method => {
             if (this['_original' + method.charAt(0).toUpperCase() + method.slice(1)]) {
                 this[method] = this['_original' + method.charAt(0).toUpperCase() + method.slice(1)].bind(this);
@@ -663,7 +783,7 @@ export default ${effectName}Effect;
 
     // Paramètres spécialisés selon la catégorie
     const categoryParams = this.getCategorySpecificParameters(analysis.category);
-    
+
     // Paramètres détectés dans le code original
     const detectedParams = {};
     analysis.parameters.forEach(param => {
@@ -754,7 +874,7 @@ export default ${effectName}Effect;
 
   private generateImports(analysis: EffectAnalysis): string {
     const imports = [];
-    
+
     analysis.dependencies.forEach(dep => {
       if (dep.startsWith('three')) {
         imports.push(`import * as THREE from 'three';`);
@@ -769,101 +889,85 @@ export default ${effectName}Effect;
   private adaptOriginalCode(code: string, analysis: EffectAnalysis): string {
     let adapted = code;
 
-    // Extraction et adaptation des méthodes selon le format détecté
+    // Extraire les méthodes pertinentes de l'objet ou de la classe originale
+    const extractMethodsFromCode = (sourceCode: string, isClass: boolean): string => {
+      let extracted = '';
+      const methodRegex = isClass
+        ? /(\w+)\s*\([^)]*\)\s*{((?:[^{}]*\{[^{}]*\})*[^{}]*)}/g
+        : /(\w+):\s*function\s*\([^)]*\)\s*{((?:[^{}]*\{[^{}]*\})*[^{}]*)}/g;
+
+      let match;
+      while ((match = methodRegex.exec(sourceCode)) !== null) {
+        const methodName = match[1];
+        const methodBody = match[2];
+
+        if (methodName !== 'constructor' && methodName !== 'initialize' && methodName !== 'update' && methodName !== 'render' && methodName !== 'destroy') {
+          const paramNames = this.extractParameterNames(match[0]);
+          extracted += `
+        this._original${methodName.charAt(0).toUpperCase() + methodName.slice(1)} = function(${paramNames}) {
+${methodBody}
+        }.bind(this);`;
+        }
+      }
+      return extracted;
+    };
+
+    // Adapter selon le format détecté
     switch (analysis.format) {
       case 'ES6Class':
-        adapted = this.adaptES6Class(code);
+        adapted = extractMethodsFromCode(code, true);
         break;
       case 'FunctionConstructor':
-        adapted = this.adaptFunctionConstructor(code);
+        // Si c'est une fonction constructeur, on extrait son corps
+        const constructorBody = code.match(/function\s+\w+\s*\(([^)]*)\)\s*{((?:[^{}]*\{[^{}]*\})*[^{}]*)}/s);
+        if (constructorBody) {
+          const paramNames = constructorBody[1];
+          const body = constructorBody[2];
+          adapted = `
+        // Code original adapté depuis FunctionConstructor
+        const originalLogic = function(${paramNames}) {
+${body}
+        }.bind(this);
+        originalLogic();
+        `;
+        } else {
+          adapted = this.wrapGenericCode(code);
+        }
         break;
       case 'ObjectLiteral':
-        adapted = this.adaptObjectLiteral(code);
+        adapted = extractMethodsFromCode(code, false);
         break;
       case 'CommonJS':
-        adapted = this.adaptCommonJS(code);
+        // Convertir CommonJS en ESM et adapter
+        let commonJsAdapted = code.replace(/module\.exports\s*=\s*/, '');
+        commonJsAdapted = commonJsAdapted.replace(/require\s*\(\s*['"]([^'"]+)['"]\s*\)/g, '// require: $1');
+        adapted = this.wrapGenericCode(commonJsAdapted);
         break;
       default:
         adapted = this.wrapGenericCode(code);
     }
 
+    // Chercher et préserver les méthodes clés du cycle de vie si elles existent dans le code original
+    const lifecycleMethods = ['initialize', 'update', 'render', 'destroy'];
+    lifecycleMethods.forEach(methodName => {
+      const methodSignatureRegex = new RegExp(`(?:${methodName}|_original${methodName.charAt(0).toUpperCase() + methodName.slice(1)})\\s*\\([^)]*\\)\\s*{`);
+      if (methodSignatureRegex.test(code)) {
+        const originalMethodCapture = new RegExp(`(?:${methodName})\\s*\\(([^)]*)\\)\\s*{((?:[^{}]*\{[^{}]*\})*[^{}]*)}`, 's');
+        const match = code.match(originalMethodCapture);
+        if (match) {
+          const paramNames = match[1];
+          const body = match[2];
+          adapted += `
+        this._original${methodName.charAt(0).toUpperCase() + methodName.slice(1)} = function(${paramNames}) {
+${body}
+        }.bind(this);`;
+        }
+      }
+    });
+
     return adapted;
   }
 
-  private adaptES6Class(code: string): string {
-    // Extraire les méthodes de la classe originale
-    const methodPattern = /(\w+)\s*\([^)]*\)\s*{([^{}]*(?:{[^{}]*}[^{}]*)*)}/g;
-    const methods = [];
-    let match;
-
-    while ((match = methodPattern.exec(code)) !== null) {
-      const methodName = match[1];
-      const methodBody = match[2];
-      
-      if (methodName !== 'constructor') {
-        methods.push(`
-        this._original${methodName.charAt(0).toUpperCase() + methodName.slice(1)} = function(${this.extractParameterNames(match[0])}) {
-${methodBody}
-        }.bind(this);`);
-      }
-    }
-
-    return methods.join('\n');
-  }
-
-  private adaptFunctionConstructor(code: string): string {
-    // Adapter une fonction constructeur
-    const functionBody = code.replace(/function\s+\w+\s*\([^)]*\)\s*{/, '').replace(/}$/, '');
-    
-    return `
-        // Code original adapté
-        const originalLogic = function() {
-${functionBody}
-        }.bind(this);
-        
-        originalLogic();
-    `;
-  }
-
-  private adaptObjectLiteral(code: string): string {
-    // Adapter un objet littéral
-    const objectMatch = code.match(/{([^{}]*(?:{[^{}]*}[^{}]*)*)}/);
-    if (objectMatch) {
-      const objectBody = objectMatch[1];
-      const methods = objectBody.split(',').map(prop => {
-        const [key, value] = prop.split(':');
-        if (key && value && value.includes('function')) {
-          const methodName = key.trim().replace(/['"]/g, '');
-          return `
-        this._original${methodName.charAt(0).toUpperCase() + methodName.slice(1)} = ${value.trim()}.bind(this);`;
-        }
-        return '';
-      }).filter(Boolean);
-
-      return methods.join('\n');
-    }
-    
-    return this.wrapGenericCode(code);
-  }
-
-  private adaptCommonJS(code: string): string {
-    // Convertir CommonJS vers ESM et adapter
-    let adapted = code.replace(/module\.exports\s*=\s*/, '');
-    adapted = adapted.replace(/require\s*\(\s*['"]([^'"]+)['"]\s*\)/g, '// require: $1');
-    
-    return this.wrapGenericCode(adapted);
-  }
-
-  private wrapGenericCode(code: string): string {
-    return `
-        // Code original encapsulé
-        try {
-            ${code}
-        } catch (error) {
-            console.warn('Erreur dans le code original:', error);
-        }
-    `;
-  }
 
   private extractParameterNames(functionString: string): string {
     const paramMatch = functionString.match(/\(([^)]*)\)/);
@@ -873,7 +977,7 @@ ${functionBody}
   // =================== PHASE 3: VALIDATION ===================
   private async validateStandardEffect(standardEffect: string, originalEffect: string): Promise<any> {
     console.log('✅ Validation de l\'effet standardisé...');
-    
+
     const validation = {
       success: true,
       errors: [],
@@ -911,22 +1015,31 @@ ${functionBody}
 
     // Test API standard
     const requiredMethods = ['initialize', 'update', 'render', 'destroy', 'start', 'stop'];
-    const missingMethods = requiredMethods.filter(method => !standardEffect.includes(method));
-    
+    const missingMethods = requiredMethods.filter(method => !standardEffect.includes(`this.${method}`));
+
     if (missingMethods.length === 0) {
       validation.tests.apiComplete = true;
     } else {
-      validation.errors.push(`Méthodes manquantes: ${missingMethods.join(', ')}`);
+      validation.errors.push(`Méthodes API standard manquantes: ${missingMethods.join(', ')}`);
     }
 
     // Estimation de préservation de fonctionnalité (basique)
     const originalComplexity = this.calculateComplexityScore(originalEffect);
     const standardComplexity = this.calculateComplexityScore(standardEffect);
-    
-    if (standardComplexity >= originalComplexity * 0.8) {
+
+    // Comparaison des lignes et des méthodes
+    const originalLines = originalEffect.split('\n').length;
+    const standardLines = standardEffect.split('\n').length;
+    const originalMethodsCount = (originalEffect.match(/\w+\s*\(.*?\)\s*{/g) || []).length;
+    const standardMethodsCount = (standardEffect.match(/\w+\s*\(.*?\)\s*{/g) || []).length;
+
+
+    if (standardComplexity >= originalComplexity * 0.8 &&
+      standardLines >= originalLines * 0.5 && standardLines <= originalLines * 2 &&
+      standardMethodsCount >= originalMethodsCount * 0.7) {
       validation.tests.functionalityPreserved = true;
     } else {
-      validation.warnings.push('Possible perte de fonctionnalité détectée');
+      validation.warnings.push('Possible perte de fonctionnalité détectée ou changement significatif de complexité/taille.');
     }
 
     validation.success = validation.errors.length === 0;
@@ -940,7 +1053,8 @@ ${functionBody}
       /class\s+\w+/g,
       /for|while/g,
       /if|switch/g,
-      /try|catch/g
+      /try|catch/g,
+      /\w+\s*\(.*?\)\s*{/g // Compter les définitions de méthodes/fonctions
     ];
 
     return patterns.reduce((score, pattern) => {
@@ -951,10 +1065,10 @@ ${functionBody}
   // =================== GESTION DES FALLBACKS ===================
   private applyFallbackStrategy(inputEffect: string, errors: string[]): ReconditioningResult {
     console.log('⚠️ Application de la stratégie de fallback');
-    
+
     // Mode "Wrapper": Encapsuler l'effet original tel quel
     const wrappedEffect = this.wrapOriginalEffect(inputEffect);
-    
+
     return {
       success: false,
       error: `Reconditionnement échoué: ${errors.join(', ')}`,
@@ -988,7 +1102,7 @@ export class WrappedEffect {
     constructor(config = {}) {
         this.config = config;
         this.active = false;
-        
+
         // Initialisation du code original
         try {
             ${code}
@@ -1002,13 +1116,13 @@ export class WrappedEffect {
     update(deltaTime) { /* Code original si applicable */ }
     render(context, deltaTime) { /* Code original si applicable */ }
     destroy() { this.active = false; }
-    
+
     start() { this.active = true; return this; }
     stop() { this.active = false; return this; }
     pause() { this.active = false; return this; }
     resume() { this.active = true; return this; }
     reset() { return this; }
-    
+
     setParameter(name, value) { return this; }
     getParameter(name) { return null; }
     getState() { return { active: this.active }; }
@@ -1040,15 +1154,15 @@ export default WrappedEffect;
     };
   }
 
-  // =================== MÉTHODES EXISTANTES ADAPTÉES ===================
+  // =================== MÉTHODES DE TRANSFORMATION PRINCIPALE ===================
   async transform(code: string, options: TransformOptions): Promise<TransformResult> {
     console.log(`🔄 Début de transformation niveau ${options.level}`);
-    
+
     // 1. RECONDITIONNEMENT PRÉALABLE
     const reconditioningResult = await this.processEffect(code);
-    
+
     let transformedCode = code;
-    
+
     if (reconditioningResult.success && reconditioningResult.effect) {
       console.log('✅ Utilisation de l\'effet reconditionné');
       transformedCode = reconditioningResult.effect;
@@ -1056,39 +1170,45 @@ export default WrappedEffect;
       console.log('⚠️ Utilisation du fallback pour la transformation');
       transformedCode = reconditioningResult.fallback || code;
     }
-    
+
     const originalLines = code.split('\n').length;
-    const modulesToApply = this.modules.get(options.level) || this.modules.get(1)!;
+    const modulesToApply = this.getModulesForLevel(options.level);
     const improvements: string[] = [];
-    
+
+    // Vérification et renforcement des modules avant application
+    const activeModules = this.moduleAuditSystem.getActiveModulesForLevel(options.level);
+    if (modulesToApply.length > 0 && activeModules.length === 0) {
+      console.warn(`⚠️ Aucun module actif trouvé pour le niveau ${options.level}. Les transformations peuvent être incomplètes.`);
+      improvements.push(`Aucun module actif pour le niveau ${options.level}`);
+    } else if (modulesToApply.length > 0) {
+      improvements.push(`Application des modules actifs: ${activeModules.join(', ')}`);
+    }
+
     try {
       // Analyse du code (utilise la nouvelle analyse si disponible)
       const analysis = reconditioningResult.metadata || this.analyzeCode(transformedCode);
-      
+
       // Ajout de l'amélioration de reconditionnement
       if (reconditioningResult.success) {
         improvements.push('Reconditionnement automatique vers structure standard');
       }
-      
-      // Application des transformations selon le niveau
+
+      // Application des transformations selon le niveau et les modules actifs
       switch (options.level) {
         case 1:
-          transformedCode = await this.applyBasicOptimizations(transformedCode, analysis);
-          improvements.push('Optimisations de base appliquées');
+          transformedCode = await this.applyLevel1Transformations(transformedCode, analysis, activeModules);
           break;
         case 2:
-          transformedCode = await this.applyProfessionalEnhancements(transformedCode, analysis);
-          improvements.push('Améliorations professionnelles appliquées');
+          transformedCode = await this.applyLevel2Transformations(transformedCode, analysis, activeModules);
           break;
         case 3:
-          transformedCode = await this.applyEnterpriseFeatures(transformedCode, analysis);
-          improvements.push('Fonctionnalités enterprise appliquées');
+          transformedCode = await this.applyLevel3Transformations(transformedCode, analysis, activeModules);
           break;
       }
 
       // Génération de la documentation enrichie
       const documentation = await this.generateDocumentation(transformedCode, options, reconditioningResult);
-      
+
       const newLines = transformedCode.split('\n').length;
 
       console.log(`✅ Transformation terminée: ${originalLines} → ${newLines} lignes`);
@@ -1099,7 +1219,7 @@ export default WrappedEffect;
           originalLines,
           newLines,
           improvements,
-          modulesApplied: modulesToApply
+          modulesApplied: activeModules // Utilise les modules actifs
         },
         documentation
       };
@@ -1109,6 +1229,55 @@ export default WrappedEffect;
       throw new Error(`Transformation échouée: ${error.message}`);
     }
   }
+
+  // Obtient la liste des modules pour un niveau donné
+  private getModulesForLevel(level: number): string[] {
+    return this.modules.get(level) || [];
+  }
+
+  // Fonctions de transformation par niveau, intégrant l'audit
+  private async applyLevel1Transformations(code: string, analysis: any, activeModules: string[]): Promise<string> {
+    let transformed = code;
+    if (activeModules.includes('CodeOptimizationEngine')) transformed = this.applyBasicOptimizations(transformed, analysis);
+    if (activeModules.includes('ContentAnalyzer')) { /* Analyse de contenu non implémentée ici */ }
+    if (activeModules.includes('SmartOptimizer')) transformed = this.applySmartOptimizations(transformed);
+    if (activeModules.includes('VisualFocusEngine')) { /* Amélioration focus visuel non implémentée */ }
+    if (activeModules.includes('TimingMaster')) transformed = this.applyTimingMaster(transformed);
+    if (activeModules.includes('ColorHarmonyEngine')) { /* Harmonisation couleur non implémentée */ }
+    if (activeModules.includes('PerformanceAdaptiveEngine')) transformed = this.applyPerformanceAdaptation(transformed);
+
+    return transformed;
+  }
+
+  private async applyLevel2Transformations(code: string, analysis: any, activeModules: string[]): Promise<string> {
+    let transformed = await this.applyLevel1Transformations(code, analysis, activeModules); // Héritage des transformations de niveau 1
+    if (activeModules.includes('ContextualAdaptationEngine')) transformed = this.addContextualAdaptation(transformed);
+    if (activeModules.includes('IntelligentResponseSystem')) { /* Système réponse intelligent non implémenté */ }
+    if (activeModules.includes('BehavioralLearningModule')) transformed = this.addUserLearning(transformed);
+    if (activeModules.includes('AdvancedVisualizationEngine')) { /* Visualisation avancée non implémentée */ }
+    if (activeModules.includes('SmartInteractionHandler')) { /* Gestionnaire interaction non implémenté */ }
+    if (activeModules.includes('DynamicOptimizationEngine')) transformed = this.addDynamicOptimizations(transformed);
+    if (activeModules.includes('PredictiveEnhancementModule')) { /* Amélioration prédictive non implémentée */ }
+    if (activeModules.includes('UserPreferenceLearningSystem')) transformed = this.addUserPreferenceLearning(transformed);
+
+    return transformed;
+  }
+
+  private async applyLevel3Transformations(code: string, analysis: any, activeModules: string[]): Promise<string> {
+    let transformed = await this.applyLevel2Transformations(code, analysis, activeModules); // Héritage des transformations de niveau 2
+    if (activeModules.includes('AIEnhancedDecisionMaking')) transformed = this.addAIFeatures(transformed);
+    if (activeModules.includes('QuantumVisualProcessing')) transformed = this.addQuantumOptimizations(transformed);
+    if (activeModules.includes('NeuralNetworkIntegration')) { /* Intégration réseau neuronal non implémentée */ }
+    if (activeModules.includes('MachineLearningOptimizer')) transformed = this.addMachineLearning(transformed);
+    if (activeModules.includes('AdvancedPatternRecognition')) { /* Reconnaissance patterns avancée non implémentée */ }
+    if (activeModules.includes('IntelligentResourceManagement')) { /* Gestion ressources intelligente non implémentée */ }
+    if (activeModules.includes('PredictiveUserBehavior')) { /* Comportement utilisateur prédictif non implémenté */ }
+    if (activeModules.includes('AutomaticCodeEvolution')) { /* Évolution code automatique non implémentée */ }
+
+    return transformed;
+  }
+
+  // --- Implémentations des modules de transformation ---
 
   private analyzeCode(code: string): any {
     const analysis = {
@@ -1123,54 +1292,303 @@ export default WrappedEffect;
     return analysis;
   }
 
-  // Méthodes de transformation existantes (inchangées)
-  private async applyBasicOptimizations(code: string, analysis: any): Promise<string> {
+  // Module: CodeOptimizationEngine
+  private applyBasicOptimizations(code: string, analysis: any): string {
     let optimized = code;
-
-    // Optimisation des performances de base
     optimized = optimized.replace(/var /g, 'let ');
     optimized = optimized.replace(/function\s+(\w+)\s*\(/g, 'const $1 = (');
-    
-    // Ajout d'optimisations Canvas si détecté
-    if (analysis.hasCanvas) {
-      optimized = this.optimizeCanvas(optimized);
-    }
-
-    // Ajout de gestion d'erreurs
+    if (analysis.hasCanvas) optimized = this.optimizeCanvas(optimized);
     optimized = this.addErrorHandling(optimized);
-
     return optimized;
   }
 
-  private async applyProfessionalEnhancements(code: string, analysis: any): Promise<string> {
-    let enhanced = await this.applyBasicOptimizations(code, analysis);
-
-    // Ajout d'intelligence contextuelle
-    enhanced = this.addContextualAdaptation(enhanced);
-    
-    // Système d'apprentissage utilisateur
-    enhanced = this.addUserLearning(enhanced);
-
-    // Optimisations avancées
-    enhanced = this.addAdvancedOptimizations(enhanced);
-
-    return enhanced;
+  // Module: SmartOptimizer
+  private applySmartOptimizations(code: string): string {
+    // Ex: minification basique (simulée)
+    return code.replace(/\s+/g, ' ').trim();
   }
 
-  private async applyEnterpriseFeatures(code: string, analysis: any): Promise<string> {
-    let enterprise = await this.applyProfessionalEnhancements(code, analysis);
-
-    // Intelligence artificielle avancée
-    enterprise = this.addAIFeatures(enterprise);
-    
-    // Apprentissage automatique
-    enterprise = this.addMachineLearning(enterprise);
-
-    // Optimisations quantiques (simulation)
-    enterprise = this.addQuantumOptimizations(enterprise);
-
-    return enterprise;
+  // Module: TimingMaster
+  private applyTimingMaster(code: string): string {
+    // Ex: Ajout de logs de performance
+    return `
+    // === Module TimingMaster ===
+    const _originalRender = render;
+    render = function(context, deltaTime) {
+      const start = performance.now();
+      _originalRender.call(this, context, deltaTime);
+      console.log(\`Render time: \${performance.now() - start}ms\`);
+    };
+    ${code}
+    `;
   }
+
+  // Module: PerformanceAdaptiveEngine
+  private applyPerformanceAdaptation(code: string): string {
+    // Ex: Réduction de la fréquence si le CPU est surchargé (simulé)
+    return `
+    // === Module PerformanceAdaptiveEngine ===
+    let frameCount = 0;
+    const frameCheckInterval = 100; // Vérifier toutes les 100 frames
+    const targetFPS = 60;
+
+    const _originalUpdate = update;
+    update = function(deltaTime) {
+      frameCount++;
+      // Simuler une détection de surcharge
+      if (frameCount % frameCheckInterval === 0 && performance.now() % 2 === 0) {
+        console.log('Performance adaptative: Réduction de la fréquence');
+        // Ici, on réduirait la complexité ou la fréquence des updates/renders
+      }
+      _originalUpdate.call(this, deltaTime);
+    };
+    ${code}
+    `;
+  }
+
+  // Module: ContextualAdaptationEngine
+  private addContextualAdaptation(code: string): string {
+    return `
+// === Module d'adaptation contextuelle ===
+class ContextualAdaptation {
+  constructor() {
+    this.userContext = this.detectUserContext();
+  }
+
+  detectUserContext() {
+    return {
+      deviceType: /Mobile/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+      performance: this.benchmarkPerformance(),
+      preferences: this.getUserPreferences()
+    };
+  }
+
+  benchmarkPerformance() {
+    const start = performance.now();
+    for (let i = 0; i < 100000; i++) { Math.random(); }
+    return performance.now() - start;
+  }
+
+  getUserPreferences() {
+    return {
+      reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      highContrast: window.matchMedia('(prefers-contrast: high)').matches
+    };
+  }
+}
+
+const contextualAdaptation = new ContextualAdaptation();
+
+${code}
+`;
+  }
+
+  // Module: BehavioralLearningModule (UserLearningSystem)
+  private addUserLearning(code: string): string {
+    return `
+// === Système d'apprentissage utilisateur ===
+class UserLearningSystem {
+  constructor() {
+    this.interactions = [];
+    this.preferences = new Map();
+  }
+
+  recordInteraction(type, data) {
+    this.interactions.push({
+      type, data, timestamp: Date.now()
+    });
+    this.analyzePatterns();
+  }
+
+  analyzePatterns() {
+    // Analyse des patterns d'interaction
+    const recentInteractions = this.interactions.slice(-50);
+    // Mise à jour des préférences basée sur l'usage
+  }
+
+  getOptimalSettings() {
+    // Retourne les paramètres optimaux basés sur l'apprentissage
+    return this.preferences;
+  }
+}
+
+const userLearning = new UserLearningSystem();
+
+${code}
+`;
+  }
+
+  // Module: DynamicOptimizationEngine
+  private addDynamicOptimizations(code: string): string {
+    return `
+    // === Module DynamicOptimizationEngine ===
+    const dynamicOptimizer = {
+      optimize: function(config) {
+        console.log('Optimisation dynamique appliquée avec config:', config);
+        // Logique d'optimisation dynamique ici
+      }
+    };
+    ${code}
+    `;
+  }
+
+  // Module: UserPreferenceLearningSystem
+  private addUserPreferenceLearning(code: string): string {
+    return `
+    // === Module UserPreferenceLearningSystem ===
+    class UserPreferenceLearning {
+        constructor() {
+            this.userPreferences = this.loadPreferences();
+        }
+
+        loadPreferences() {
+            // Simule le chargement des préférences utilisateur
+            return localStorage.getItem('userPreferences') ? JSON.parse(localStorage.getItem('userPreferences')) : { theme: 'dark', textSize: 'medium' };
+        }
+
+        savePreferences(prefs) {
+            this.userPreferences = { ...this.userPreferences, ...prefs };
+            localStorage.setItem('userPreferences', JSON.stringify(this.userPreferences));
+        }
+
+        getPreference(key) {
+            return this.userPreferences[key];
+        }
+    }
+    const userPreferenceManager = new UserPreferenceLearning();
+    ${code}
+    `;
+  }
+
+  // Module: AIEnhancedDecisionMaking
+  private addAIFeatures(code: string): string {
+    return `
+// === Intelligence Artificielle Avancée ===
+class AIEnhancedDecisionMaking {
+  constructor() {
+    this.neuralNetwork = this.initializeNetwork();
+    this.decisionHistory = [];
+  }
+
+  initializeNetwork() {
+    return {
+      layers: [
+        { neurons: 10, activation: 'relu' },
+        { neurons: 5, activation: 'sigmoid' }
+      ],
+      weights: this.generateRandomWeights()
+    };
+  }
+
+  generateRandomWeights() {
+    // Simulation de poids de réseau de neurones
+    return Array.from({ length: 50 }, () => Math.random() * 2 - 1);
+  }
+
+  makeDecision(inputs) {
+    // Simulation de prise de décision par IA
+    const processed = this.processInputs(inputs);
+    const decision = this.forwardPass(processed);
+    this.decisionHistory.push({ inputs, decision, timestamp: Date.now() });
+    return decision;
+  }
+
+  processInputs(inputs) {
+    return inputs.map(input => Math.tanh(input));
+  }
+
+  forwardPass(inputs) {
+    return { confidence: Math.random(), action: 'optimize' };
+  }
+}
+
+const aiDecisionMaker = new AIEnhancedDecisionMaking();
+
+${code}
+`;
+  }
+
+  // Module: QuantumVisualProcessing
+  private addQuantumOptimizations(code: string): string {
+    return `
+// === Optimisations Quantiques (Simulation) ===
+class QuantumVisualProcessor {
+  constructor() {
+    this.quantumStates = new Array(8).fill(0).map(() => ({
+      amplitude: Math.random(),
+      phase: Math.random() * Math.PI * 2
+    }));
+  }
+
+  processQuantumSuperposition(visualData) {
+    // Simulation de traitement quantique
+    return this.quantumStates.map(state => {
+      return visualData.map(data => ({
+        value: data * state.amplitude * Math.cos(state.phase),
+        probability: Math.abs(state.amplitude) ** 2
+      }));
+    });
+  }
+
+  collapseToClassicalState(quantumResults) {
+    // Effondrement vers l'état classique optimal
+    return quantumResults.reduce((best, current) => {
+      const currentScore = current.reduce((sum, item) => sum + item.probability, 0);
+      const bestScore = best.reduce((sum, item) => sum + item.probability, 0);
+      return currentScore > bestScore ? current : best;
+    });
+  }
+}
+
+const quantumProcessor = new QuantumVisualProcessor();
+
+${code}
+`;
+  }
+
+  // Module: MachineLearningOptimizer
+  private addMachineLearning(code: string): string {
+    return `
+// === Apprentissage Automatique ===
+class MachineLearningOptimizer {
+  constructor() {
+    this.trainingData = [];
+    this.model = this.initializeModel();
+  }
+
+  initializeModel() {
+    return {
+      type: 'regression',
+      parameters: new Array(10).fill(0).map(() => Math.random()),
+      learningRate: 0.01
+    };
+  }
+
+  train(input, expectedOutput) {
+    const prediction = this.predict(input);
+    const error = expectedOutput - prediction;
+
+    // Descente de gradient simplifiée
+    this.model.parameters = this.model.parameters.map((param, index) => {
+      return param + this.model.learningRate * error * input[index % input.length];
+    });
+  }
+
+  predict(input) {
+    return this.model.parameters.reduce((sum, param, index) => {
+      return sum + param * (input[index % input.length] || 0);
+    }, 0);
+  }
+}
+
+const mlOptimizer = new MachineLearningOptimizer();
+
+${code}
+`;
+  }
+
+
+  // --- Méthodes utilitaires ---
 
   private optimizeCanvas(code: string): string {
     return code.replace(
@@ -1191,234 +1609,57 @@ ${code}
 } catch (error) {
   console.error('❌ Erreur dans l\\'effet visuel:', error);
   // Fallback gracieux
-  if (typeof fallbackEffect === 'function') fallbackEffect();
+  // if (typeof fallbackEffect === 'function') fallbackEffect(); // Commenté car 'fallbackEffect' n'est pas défini ici
 }
 `;
   }
 
-  private addContextualAdaptation(code: string): string {
-    return `
-// === Module d'adaptation contextuelle ===
-class ContextualAdaptation {
-  constructor() {
-    this.userContext = this.detectUserContext();
-  }
-  
-  detectUserContext() {
-    return {
-      deviceType: /Mobile/.test(navigator.userAgent) ? 'mobile' : 'desktop',
-      performance: this.benchmarkPerformance(),
-      preferences: this.getUserPreferences()
-    };
-  }
-  
-  benchmarkPerformance() {
-    const start = performance.now();
-    for (let i = 0; i < 100000; i++) { Math.random(); }
-    return performance.now() - start;
-  }
-  
-  getUserPreferences() {
-    return {
-      reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-      highContrast: window.matchMedia('(prefers-contrast: high)').matches
-    };
-  }
-}
-
-const contextualAdaptation = new ContextualAdaptation();
-
-${code}
-`;
-  }
-
-  private addUserLearning(code: string): string {
-    return `
-// === Système d'apprentissage utilisateur ===
-class UserLearningSystem {
-  constructor() {
-    this.interactions = [];
-    this.preferences = new Map();
-  }
-  
-  recordInteraction(type, data) {
-    this.interactions.push({
-      type, data, timestamp: Date.now()
-    });
-    this.analyzePatterns();
-  }
-  
-  analyzePatterns() {
-    // Analyse des patterns d'interaction
-    const recentInteractions = this.interactions.slice(-50);
-    // Mise à jour des préférences basée sur l'usage
-  }
-  
-  getOptimalSettings() {
-    // Retourne les paramètres optimaux basés sur l'apprentissage
-    return this.preferences;
-  }
-}
-
-const userLearning = new UserLearningSystem();
-
-${code}
-`;
-  }
+  // Les modules suivants sont des exemples et nécessitent une implémentation plus poussée.
 
   private addAdvancedOptimizations(code: string): string {
     return `
-// === Optimisations avancées ===
-const AdvancedOptimizer = {
-  memoryPool: new Map(),
-  frameCache: new WeakMap(),
-  
-  optimizeAnimation(callback) {
-    let lastTime = 0;
-    const targetFPS = 60;
-    const interval = 1000 / targetFPS;
-    
-    return function optimizedFrame(currentTime) {
-      if (currentTime - lastTime >= interval) {
-        callback(currentTime);
-        lastTime = currentTime;
+// === Optimisations avancées (Module non spécifié) ===
+// Placeholder pour des optimisations avancées
+${code}
+`;
+  }
+
+  // Gère les méthodes de cycle de vie originales
+  private wrapOriginalMethods(code: string, analysis: EffectAnalysis): string {
+    let wrappedCode = code;
+    const originalMethods = analysis.methods;
+
+    originalMethods.forEach(methodName => {
+      // Créer une version wrapper pour les méthodes si elles existent
+      const originalMethodNameCapped = `_original${methodName.charAt(0).toUpperCase() + methodName.slice(1)}`;
+      const wrapperMethodName = methodName; // On utilise le nom original pour l'appel
+
+      // Vérifier si la méthode originale existe dans le code adaptaté
+      if (wrappedCode.includes(`this.${originalMethodNameCapped}`)) {
+        // Remplacer l'appel à la méthode originale par l'appel à la méthode standard (qui appelle l'originale)
+        const regex = new RegExp(`this\\.${wrapperMethodName}\\s*\\(`, 'g');
+        wrappedCode = wrappedCode.replace(regex, `this.${wrapperMethodName}.call(this,`);
       }
-      requestAnimationFrame(optimizedFrame);
-    };
-  }
-};
-
-${code}
-`;
-  }
-
-  private addAIFeatures(code: string): string {
-    return `
-// === Intelligence Artificielle Avancée ===
-class AIEnhancedDecisionMaking {
-  constructor() {
-    this.neuralNetwork = this.initializeNetwork();
-    this.decisionHistory = [];
-  }
-  
-  initializeNetwork() {
-    return {
-      layers: [
-        { neurons: 10, activation: 'relu' },
-        { neurons: 5, activation: 'sigmoid' }
-      ],
-      weights: this.generateRandomWeights()
-    };
-  }
-  
-  generateRandomWeights() {
-    // Simulation de poids de réseau de neurones
-    return Array.from({ length: 50 }, () => Math.random() * 2 - 1);
-  }
-  
-  makeDecision(inputs) {
-    // Simulation de prise de décision par IA
-    const processed = this.processInputs(inputs);
-    const decision = this.forwardPass(processed);
-    this.decisionHistory.push({ inputs, decision, timestamp: Date.now() });
-    return decision;
-  }
-  
-  processInputs(inputs) {
-    return inputs.map(input => Math.tanh(input));
-  }
-  
-  forwardPass(inputs) {
-    return { confidence: Math.random(), action: 'optimize' };
-  }
-}
-
-const aiDecisionMaker = new AIEnhancedDecisionMaking();
-
-${code}
-`;
-  }
-
-  private addMachineLearning(code: string): string {
-    return `
-// === Apprentissage Automatique ===
-class MachineLearningOptimizer {
-  constructor() {
-    this.trainingData = [];
-    this.model = this.initializeModel();
-  }
-  
-  initializeModel() {
-    return {
-      type: 'regression',
-      parameters: new Array(10).fill(0).map(() => Math.random()),
-      learningRate: 0.01
-    };
-  }
-  
-  train(input, expectedOutput) {
-    const prediction = this.predict(input);
-    const error = expectedOutput - prediction;
-    
-    // Descente de gradient simplifiée
-    this.model.parameters = this.model.parameters.map((param, index) => {
-      return param + this.model.learningRate * error * input[index % input.length];
     });
-  }
-  
-  predict(input) {
-    return this.model.parameters.reduce((sum, param, index) => {
-      return sum + param * (input[index % input.length] || 0);
-    }, 0);
-  }
-}
 
-const mlOptimizer = new MachineLearningOptimizer();
-
-${code}
-`;
+    return wrappedCode;
   }
 
-  private addQuantumOptimizations(code: string): string {
+  // Encapsule le code original pour préserver les méthodes
+  private wrapGenericCode(code: string): string {
     return `
-// === Optimisations Quantiques (Simulation) ===
-class QuantumVisualProcessor {
-  constructor() {
-    this.quantumStates = new Array(8).fill(0).map(() => ({ 
-      amplitude: Math.random(), 
-      phase: Math.random() * Math.PI * 2 
-    }));
-  }
-  
-  processQuantumSuperposition(visualData) {
-    // Simulation de traitement quantique
-    return this.quantumStates.map(state => {
-      return visualData.map(data => ({
-        value: data * state.amplitude * Math.cos(state.phase),
-        probability: Math.abs(state.amplitude) ** 2
-      }));
-    });
-  }
-  
-  collapseToClassicalState(quantumResults) {
-    // Effondrement vers l'état classique optimal
-    return quantumResults.reduce((best, current) => {
-      const currentScore = current.reduce((sum, item) => sum + item.probability, 0);
-      const bestScore = best.reduce((sum, item) => sum + item.probability, 0);
-      return currentScore > bestScore ? current : best;
-    });
-  }
-}
-
-const quantumProcessor = new QuantumVisualProcessor();
-
-${code}
-`;
+        // Code original encapsulé
+        try {
+            ${code}
+        } catch (error) {
+            console.warn('Erreur dans le code original:', error);
+        }
+    `;
   }
 
   private async generateDocumentation(code: string, options: TransformOptions, reconditioningResult?: ReconditioningResult): Promise<string> {
-    const modulesApplied = this.modules.get(options.level) || [];
-    
+    const modulesApplied = this.moduleAuditSystem.getActiveModulesForLevel(options.level);
+
     let reconditioningSection = '';
     if (reconditioningResult) {
       reconditioningSection = `
@@ -1432,7 +1673,7 @@ ${reconditioningResult.migrationReport ? `
 **Transformations:** ${reconditioningResult.migrationReport.transformationsApplied?.join(', ') || 'N/A'}
 ` : ''}`;
     }
-    
+
     return `
 # Documentation de Transformation
 
@@ -1462,7 +1703,7 @@ ${options.level >= 3 ? '- IA avancée\n- Apprentissage automatique\n- Optimisati
 
 ## Instructions d'Installation
 1. Copiez le code transformé dans votre projet
-2. L'effet est maintenant compatible avec tous les 24 modules de transformation
+2. L'effet est maintenant compatible avec les modules actifs de niveau ${options.level}
 3. Utilisez l'API standard pour contrôler l'effet
 4. Testez sur différents navigateurs
 
@@ -1474,7 +1715,7 @@ Pour toute question, consultez la documentation complète.
   private getLevelName(level: number): string {
     const names = {
       1: 'Standard',
-      2: 'Professionnel', 
+      2: 'Professionnel',
       3: 'Enterprise'
     };
     return names[level] || 'Standard';
