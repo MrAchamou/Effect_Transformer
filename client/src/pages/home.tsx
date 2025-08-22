@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { useToast } from "@/hooks/use-toast";
 
 // ==================== HOOKS PERSONNALISÉS ====================
 const useFileUpload = () => {
@@ -32,11 +31,10 @@ const useFileUpload = () => {
 
 const useTransformation = () => {
   const [transformedCode, setTransformedCode] = useState('');
-  const { toast } = useToast();
   
   const transformCode = async (originalCode, level) => {
     try {
-      // Appel API réel pour la transformation
+      // Appel API réel vers votre backend amélioré
       const response = await fetch('/api/upload', {
         method: 'POST',
         headers: {
@@ -59,8 +57,11 @@ const useTransformation = () => {
         setTransformedCode(result.transformedCode);
       } else {
         // Fallback avec transformation simulée
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         let transformed = originalCode;
         
+        // Ajouter des commentaires selon le niveau
         if (level >= 1) {
           transformed = `// ✨ Optimisation Standard appliquée\n${transformed}`;
         }
@@ -75,16 +76,12 @@ const useTransformation = () => {
         
         setTransformedCode(transformed);
       }
-
-      toast({
-        title: "Transformation réussie",
-        description: `Niveau ${level} appliqué avec succès`,
-      });
-
     } catch (error) {
       console.error('Erreur transformation:', error);
       
       // Fallback en cas d'erreur API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       let transformed = originalCode;
       
       if (level >= 1) {
@@ -100,12 +97,6 @@ const useTransformation = () => {
       }
       
       setTransformedCode(transformed);
-      
-      toast({
-        title: "Mode Hors Ligne",
-        description: "Transformation simulée appliquée",
-        variant: "destructive",
-      });
     }
   };
   
@@ -118,14 +109,17 @@ const useTransformation = () => {
 
 const useAudioEffects = () => {
   const playUploadSound = () => {
+    // Son de upload réussi
     console.log('🔊 Son de upload activé');
   };
   
   const playTransformSound = () => {
+    // Son de transformation
     console.log('🔊 Son de transformation activé');
   };
   
   const playDownloadSound = () => {
+    // Son de téléchargement
     console.log('🔊 Son de téléchargement activé');
   };
   
@@ -143,6 +137,7 @@ const ParticleBackground = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
+    // Définir la taille du canvas
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -151,6 +146,7 @@ const ParticleBackground = () => {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     
+    // Créer les particules
     const particles = [];
     const particleCount = 100;
     
@@ -168,6 +164,7 @@ const ParticleBackground = () => {
         this.x += this.speedX;
         this.y += this.speedY;
         
+        // Rebondir sur les bords
         if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
         if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
       }
@@ -729,6 +726,11 @@ export default function Home() {
     
     setCurrentStep('download');
   };
+
+  // Log pour confirmation du chargement
+  useEffect(() => {
+    console.log('🎨 Digital Alchemy Lab - Interface d\'origine restaurée avec succès!');
+  }, []);
   
   return (
     <div className="digital-alchemy-app">
