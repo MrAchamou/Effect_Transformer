@@ -1,74 +1,52 @@
-
 /**
  * 📊 PERFORMANCE MONITORING SYSTEM ADVANCED 2.0 - MODULE NIVEAU 3 RÉVOLUTIONNAIRE 📊
  * 
- * Système de surveillance de performance avec IA prédictive et optimisation temps réel
- * Monitore, analyse et optimise automatiquement les performances de l'application
+ * Système de surveillance de performance ultra-intelligent
+ * Le gardien invisible qui veille sur chaque milliseconde
  * 
  * Fonctionnalités révolutionnaires :
- * - Real-time Performance AI qui prédit les goulots d'étranglement
- * - Advanced Metrics Collector avec métriques personnalisées
- * - Performance Bottleneck Detector avec diagnostic automatique
- * - Smart Alert System avec notifications intelligentes
- * - Performance Optimizer Engine avec corrections automatiques
- * - Historical Trend Analyzer pour l'apprentissage long terme
+ * - Real-time Performance Analytics avec prédiction intelligente
+ * - Adaptive Threshold System qui apprend des patterns
+ * - Performance Bottleneck Detector avec résolution automatique
+ * - Resource Usage Optimizer qui optimise en temps réel
+ * - Performance Regression Prevention avec alertes prédictives
+ * - Smart Performance Profiling avec insights automatiques
+ * - Performance Budget Manager pour contrôle strict des ressources
+ * 
+ * @version 2.0.0
+ * @autonome 100% - Aucune dépendance externe
+ * @performance Impact minimal sur les performances
  */
 
-export interface PerformanceMetrics {
-  fps: number;
-  frame_time: number;
-  memory_usage: number;
-  cpu_usage: number;
-  gpu_usage: number;
-  network_latency: number;
-  dom_nodes: number;
-  event_listeners: number;
-  animation_count: number;
-  shader_compilations: number;
-  texture_memory: number;
-  draw_calls: number;
-}
-
-export interface PerformanceThresholds {
-  fps_critical: number;
-  fps_warning: number;
-  memory_critical: number;
-  memory_warning: number;
-  cpu_critical: number;
-  cpu_warning: number;
-  frame_time_critical: number;
-  frame_time_warning: number;
-}
-
-export interface PerformanceAlert {
-  id: string;
-  type: 'critical' | 'warning' | 'info';
-  metric: string;
-  current_value: number;
-  threshold: number;
-  severity_score: number;
+interface PerformanceMetric {
+  name: string;
+  value: number;
   timestamp: number;
-  suggested_actions: string[];
-  auto_fix_available: boolean;
+  context: string;
+  impact: 'low' | 'medium' | 'high' | 'critical';
 }
 
-export interface PerformanceOptimization {
-  id: string;
-  target_metric: string;
-  optimization_type: 'immediate' | 'gradual' | 'scheduled';
-  expected_improvement: number;
-  implementation_cost: number;
-  success_probability: number;
-  side_effects: string[];
+interface PerformanceThreshold {
+  warning: number;
+  critical: number;
+  adaptive: boolean;
+  history: number[];
 }
 
-export interface PerformanceTrend {
-  metric_name: string;
-  trend_direction: 'improving' | 'degrading' | 'stable';
-  trend_strength: number;
-  prediction_confidence: number;
-  estimated_future_value: number;
-  time_to_critical: number | null;
+interface PerformanceBudget {
+  category: string;
+  allocated: number;
+  consumed: number;
+  efficiency: number;
+  status: 'healthy' | 'warning' | 'critical';
+}
+
+interface BottleneckAnalysis {
+  location: string;
+  severity: number;
+  cause: string;
+  suggestedFix: string;
+  estimatedGain: number;
 }
 
 /**
@@ -102,7 +80,7 @@ class PerformancePredictiveAI {
       'dom_bloat_progressive',
       'animation_overload_pattern'
     ];
-    
+
     patterns.forEach(pattern => {
       this.patternRecognition.set(pattern, Math.random() * 0.7 + 0.2);
     });
@@ -115,7 +93,7 @@ class PerformancePredictiveAI {
   ): PerformanceTrend {
     const features = this.extractTrendFeatures(recentValues, currentContext);
     const prediction = this.calculateTrendPrediction(features);
-    
+
     const trend: PerformanceTrend = {
       metric_name: metricName,
       trend_direction: this.determineTrendDirection(prediction.direction),
@@ -137,23 +115,23 @@ class PerformancePredictiveAI {
     if (values.length < 2) return Array(10).fill(0.5);
 
     const features = [];
-    
+
     // Tendance générale
     const slope = this.calculateSlope(values);
     features.push(Math.max(-1, Math.min(1, slope)));
-    
+
     // Volatilité
     const volatility = this.calculateVolatility(values);
     features.push(Math.min(1, volatility));
-    
+
     // Moyenne mobile
     const movingAvg = values.slice(-5).reduce((a, b) => a + b, 0) / Math.min(5, values.length);
     features.push(movingAvg / (Math.max(...values) || 1));
-    
+
     // Accélération
     const acceleration = this.calculateAcceleration(values);
     features.push(Math.max(-1, Math.min(1, acceleration)));
-    
+
     // Contexte système
     features.push(context.system_load || 0.5);
     features.push(context.concurrent_processes || 0.5);
@@ -172,7 +150,7 @@ class PerformancePredictiveAI {
     const sumY = values.reduce((a, b) => a + b, 0);
     const sumXY = values.reduce((sum, y, x) => sum + x * y, 0);
     const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
-    
+
     return (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
   }
 
@@ -200,7 +178,7 @@ class PerformancePredictiveAI {
     const direction = prediction > 0.5 ? 1 : prediction < -0.5 ? -1 : 0;
     const strength = Math.abs(prediction - 0.5) * 2;
     const confidence = Math.min(1, this.predictionAccuracy + strength * 0.2);
-    
+
     return {
       direction,
       strength,
@@ -219,13 +197,13 @@ class PerformancePredictiveAI {
   private updateLearning(metricName: string, values: number[], prediction: any): void {
     const history = this.learningHistory.get(metricName) || [];
     history.push(prediction.confidence);
-    
+
     if (history.length > 50) {
       history.shift();
     }
-    
+
     this.learningHistory.set(metricName, history);
-    
+
     // Ajuster la précision de prédiction
     const avgConfidence = history.reduce((a, b) => a + b, 0) / history.length;
     this.predictionAccuracy = avgConfidence;
@@ -263,7 +241,7 @@ class AdvancedMetricsCollector {
       'network_latency', 'dom_nodes', 'event_listeners', 'animation_count',
       'shader_compilations', 'texture_memory', 'draw_calls'
     ];
-    
+
     standardMetrics.forEach(metric => {
       this.metricsHistory.set(metric, []);
     });
@@ -297,7 +275,7 @@ class AdvancedMetricsCollector {
       // Estimation de la complexité de rendu
       const elements = document.querySelectorAll('*');
       let complexity = 0;
-      
+
       elements.forEach(el => {
         const styles = window.getComputedStyle(el);
         if (styles.transform !== 'none') complexity += 2;
@@ -305,7 +283,7 @@ class AdvancedMetricsCollector {
         if (styles.boxShadow !== 'none') complexity += 1;
         if (styles.textShadow !== 'none') complexity += 1;
       });
-      
+
       return Math.min(1, complexity / elements.length);
     });
   }
@@ -328,7 +306,7 @@ class AdvancedMetricsCollector {
     try {
       // Métriques de performance standard
       const standardMetrics = await this.collectStandardMetrics();
-      
+
       // Métriques personnalisées
       for (const [name, collector] of this.customMetrics) {
         try {
@@ -405,7 +383,7 @@ class AdvancedMetricsCollector {
     const canvases = document.querySelectorAll('canvas').length;
     const videos = document.querySelectorAll('video').length;
     const transforms = document.querySelectorAll('[style*="transform"]').length;
-    
+
     return Math.min(100, (canvases * 20 + videos * 30 + transforms * 5));
   }
 
@@ -452,12 +430,12 @@ class AdvancedMetricsCollector {
   private recordMetric(name: string, value: number): void {
     const history = this.metricsHistory.get(name) || [];
     history.push(value);
-    
+
     // Limiter la taille de l'historique
     if (history.length > this.maxHistorySize) {
       history.shift();
     }
-    
+
     this.metricsHistory.set(name, history);
   }
 
@@ -564,7 +542,7 @@ class BottleneckDetector {
 
     for (const [ruleName, rule] of this.detectionRules) {
       const severity = rule(metrics);
-      
+
       if (severity > 0.5) {
         const alert = this.createAlert(ruleName, severity, metrics);
         alerts.push(alert);
@@ -573,7 +551,7 @@ class BottleneckDetector {
 
     // Enregistrer l'historique
     alerts.forEach(alert => this.alertHistory.push(alert));
-    
+
     // Limiter l'historique
     if (this.alertHistory.length > 500) {
       this.alertHistory = this.alertHistory.slice(-250);
@@ -584,7 +562,7 @@ class BottleneckDetector {
 
   private createAlert(ruleName: string, severity: number, metrics: PerformanceMetrics): PerformanceAlert {
     const alertConfig = this.getAlertConfiguration(ruleName, metrics);
-    
+
     return {
       id: `${ruleName}_${Date.now()}`,
       type: severity > 0.8 ? 'critical' : severity > 0.6 ? 'warning' : 'info',
@@ -786,10 +764,10 @@ class PerformanceOptimizer {
     }
 
     console.log(`⚡ Application de l'optimisation: ${optimizationId}`);
-    
+
     try {
       const success = await this.executeOptimization(optimization);
-      
+
       this.optimizationHistory.push({
         id: optimizationId,
         timestamp: Date.now(),
@@ -894,7 +872,7 @@ export class PerformanceMonitoringSystem {
   private metricsCollector: AdvancedMetricsCollector;
   private bottleneckDetector: BottleneckDetector;
   private optimizer: PerformanceOptimizer;
-  
+
   // État et configuration
   private isRunning: boolean = false;
   private monitoringInterval: number = 1000; // 1 seconde
@@ -906,7 +884,7 @@ export class PerformanceMonitoringSystem {
     this.metricsCollector = new AdvancedMetricsCollector();
     this.bottleneckDetector = new BottleneckDetector();
     this.optimizer = new PerformanceOptimizer();
-    
+
     console.log('📊 Performance Monitoring System Advanced 2.0 initialisé');
   }
 
@@ -944,7 +922,7 @@ export class PerformanceMonitoringSystem {
 
       // Analyser les tendances pour chaque métrique clé
       const keyMetrics = ['fps', 'memory_usage', 'cpu_usage', 'gpu_usage'];
-      
+
       for (const metricName of keyMetrics) {
         const history = this.metricsCollector.getMetricHistory(metricName);
         if (history.length >= 5) {
@@ -985,7 +963,7 @@ export class PerformanceMonitoringSystem {
 
       if (alerts.length > 0) {
         console.log(`🚨 ${alerts.length} alertes de performance détectées`);
-        
+
         // Notifier les callbacks
         this.alertCallbacks.forEach(callback => {
           try {
@@ -1008,12 +986,12 @@ export class PerformanceMonitoringSystem {
 
   private async handleAlertsAutomatically(alerts: PerformanceAlert[]): Promise<void> {
     const criticalAlerts = alerts.filter(a => a.type === 'critical' && a.auto_fix_available);
-    
+
     if (criticalAlerts.length > 0) {
       console.log(`⚡ Traitement automatique de ${criticalAlerts.length} alertes critiques`);
-      
+
       const suggestions = this.optimizer.suggestOptimizations(criticalAlerts);
-      
+
       // Appliquer les optimisations les plus efficaces
       for (const optimization of suggestions.slice(0, 2)) { // Max 2 à la fois
         await this.optimizer.applyOptimization(optimization.id);
