@@ -20,7 +20,7 @@ localPort = 5173
 externalPort = 5173
 
 [workflows]
-runButton = "Interface Corrigée"
+runButton = "Serveur Autonome Ultime"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -377,3 +377,12 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node standalone-server.mjs"
+
+[[workflows.workflow]]
+name = "Serveur Autonome Ultime"
+author = 46771790
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node ultimate-standalone-server.mjs"
