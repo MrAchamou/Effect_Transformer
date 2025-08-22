@@ -14,22 +14,36 @@ const PORT = process.env.PORT || 5000;
 
 // Configuration CORS ultra-permissive pour Replit
 app.use((req, res, next) => {
-  // Permettre toutes les origines en développement
+  // Autoriser TOUS les hôtes Replit automatiquement
   const origin = req.headers.origin;
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
+  const host = req.get('host');
+  
+  // Toujours autoriser en développement
+  if (process.env.NODE_ENV !== 'production') {
+    res.header('Access-Control-Allow-Origin', origin || '*');
   } else {
-    res.header('Access-Control-Allow-Origin', '*');
+    // En production, autoriser tous les domaines Replit
+    if (origin && (origin.includes('.replit.dev') || origin.includes('.replit.app'))) {
+      res.header('Access-Control-Allow-Origin', origin);
+    } else {
+      res.header('Access-Control-Allow-Origin', '*');
+    }
   }
   
+  // Headers permissifs
   res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma, X-Forwarded-For');
-  res.header('Access-Control-Max-Age', '86400'); // 24 heures
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma, X-Forwarded-For, X-Replit-User-Id, X-Replit-User-Name');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  // Autoriser les hôtes Replit dynamiques
+  if (host && host.includes('.replit.dev')) {
+    res.header('Access-Control-Allow-Origin', `https://${host}`);
+  }
   
   // Gestion preflight OPTIONS
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
+    res.status(204).end();
     return;
   }
   

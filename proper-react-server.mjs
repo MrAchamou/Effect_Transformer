@@ -36,12 +36,13 @@ if (!fs.existsSync(nodeModulesPath)) {
 function startViteServer() {
   console.log('🎨 Lancement de Vite pour votre interface React...');
   
-  // Démarrer Vite en mode développement
-  const viteServer = spawn('npx', ['vite', '--host', '0.0.0.0', '--port', '5000'], {
+  // Démarrer Vite en mode développement avec configuration Replit
+  const viteServer = spawn('npx', ['vite', '--host', '0.0.0.0', '--port', '5000', '--cors'], {
     stdio: 'inherit',
     env: {
       ...process.env,
-      NODE_ENV: 'development'
+      NODE_ENV: 'development',
+      VITE_ALLOW_ALL_HOSTS: 'true'
     }
   });
 

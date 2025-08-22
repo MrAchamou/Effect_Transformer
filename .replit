@@ -20,7 +20,7 @@ localPort = 5173
 externalPort = 5173
 
 [workflows]
-runButton = "Interface Originale"
+runButton = "CORS Fixé"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -350,3 +350,12 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node proper-react-server.mjs"
+
+[[workflows.workflow]]
+name = "CORS Fixé"
+author = 46768796
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node replit-cors-fix.mjs"
