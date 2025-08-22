@@ -315,6 +315,32 @@ export class ContextAdaptationEngine {
     return this.optimizeAdaptationStrategy(strategy, context);
   }
 
+  private optimizeAdaptationStrategy(strategy: AdaptationStrategy, context: EnvironmentContext): AdaptationStrategy {
+    // Optimisation intelligente de la stratégie basée sur le contexte
+    const optimized = { ...strategy };
+
+    // Ajustements basés sur les métriques de performance
+    if (this.adaptationMetrics.performance_impact < 0.7) {
+      optimized.visual_adaptation.animation_style = 'subtle';
+      optimized.stealth_integration.invisibility_level = 'transparent';
+    }
+
+    // Ajustements basés sur l'industrie
+    if (context.brand_context.industry_sector === 'finance') {
+      optimized.visual_adaptation.color_harmonization = 'preserve';
+      optimized.behavioral_adaptation.timing_synchronization = 'exact';
+      optimized.stealth_integration.native_appearance = true;
+    }
+
+    // Ajustements temporels intelligents
+    if (context.temporal_context.time_of_day === 'night') {
+      optimized.temporal_adaptation.circadian_alignment = true;
+      optimized.visual_adaptation.color_harmonization = 'blend';
+    }
+
+    return optimized;
+  }
+
   private async applyInvisibleAdaptation(targetElement: HTMLElement): Promise<void> {
     if (!this.adaptationStrategy || !this.currentContext) return;
 
@@ -575,7 +601,7 @@ export class ContextAdaptationEngine {
 
   // --- Méthodes d'implémentation détaillées ---
 
-  private async applyColorPalette(element: HTMLElement, palette: any): void {
+  private async applyColorPalette(element: HTMLElement, palette: any): Promise<void> {
     element.style.setProperty('--adapted-primary', palette.primary);
     element.style.setProperty('--adapted-secondary', palette.secondary);
     element.style.setProperty('--adapted-accent', palette.accent);
@@ -900,15 +926,15 @@ class EnvironmentalDNAScanner {
 
   private analyzeBorders(): any {
     return {
-      radiusPatterns: [0, 4, 8, 16],
-      widthPatterns: [1, 2, 4],
+      radius_patterns: [0, 4, 8, 16],
+      width_patterns: [1, 2, 4],
       styles: ['solid', 'dashed', 'dotted']
     };
   }
 
   private analyzeShadows(): any {
     return {
-      elevations: [2, 4, 8, 16, 24],
+      elevation_levels: [2, 4, 8, 16, 24],
       blurs: [4, 8, 16, 32],
       spreads: [0, 2, 4, 8]
     };
@@ -919,7 +945,7 @@ class EnvironmentalDNAScanner {
     const containerStyles = container ? window.getComputedStyle(container) : null;
 
     return {
-      containerType: this.detectContainerType(containerStyles),
+      container_type: this.detectContainerType(containerStyles),
       breakpoints: this.detectBreakpoints(),
       density: 'comfortable',
       orientation: 'adaptive'
@@ -1169,11 +1195,11 @@ class TemporalSynchronizationEngine {
     const now = new Date();
 
     return {
-      timeOfDay: this.getTimeOfDay(now),
+      time_of_day: this.getTimeOfDay(now),
       season: this.getSeason(now),
-      dayOfWeek: now.toLocaleDateString('en', { weekday: 'long' }).toLowerCase(),
-      specialEvents: this.getSpecialEvents(now),
-      businessHours: this.isBusinessHours(now)
+      day_of_week: now.toLocaleDateString('en', { weekday: 'long' }).toLowerCase(),
+      special_events: this.getSpecialEvents(now),
+      business_hours: this.isBusinessHours(now)
     };
   }
 
