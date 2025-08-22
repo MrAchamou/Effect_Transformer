@@ -40,13 +40,8 @@ app.use((req, res, next) => {
 
 // Routes API
 app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Code Enhancement Server', 
-    status: 'Running',
-    version: '1.0.0',
-    timestamp: new Date().toISOString(),
-    cors: 'Fully configured for Replit'
-  });
+  // Redirection automatique vers l'interface
+  res.redirect('/app');
 });
 
 app.get('/api/health', (req, res) => {
