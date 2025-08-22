@@ -85,6 +85,37 @@ app.get('/api/levels', (req, res) => {
   });
 });
 
+// Route de transformation (simulée pour la démo)
+app.post('/api/transform', (req, res) => {
+  try {
+    // Simulation d'une transformation
+    const transformedCode = `// Code transformé avec succès !
+// Niveau de transformation appliqué
+console.log("✨ Votre code a été optimisé avec l'IA !");
+
+// Optimisations appliquées :
+// - Performance améliorée
+// - Code modernisé  
+// - Compatibilité étendue
+// - Documentation automatique
+
+// Votre code original a été amélioré !
+`;
+
+    res.json({
+      success: true,
+      result: transformedCode,
+      message: 'Transformation réussie !',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Erreur lors de la transformation'
+    });
+  }
+});
+
 // Route pour servir l'interface React
 app.get('/app', async (req, res) => {
   try {
@@ -394,7 +425,7 @@ console.log("✨ Transformez vos effets visuels avec l'IA");
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     document.getElementById('codePreview').textContent = 
-                        '// Fichier: ' + selectedFile.name + '\\n\\n' + e.target.result.substring(0, 500) + '...';
+                        '// Fichier: ' + selectedFile.name + '\n\n' + e.target.result.substring(0, 500) + '...';
                 };
                 reader.readAsText(selectedFile);
             }
