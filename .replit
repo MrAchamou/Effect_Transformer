@@ -20,7 +20,7 @@ localPort = 5173
 externalPort = 5173
 
 [workflows]
-runButton = "Interface Complète"
+runButton = "Interface Corrigée"
 
 [[workflows.workflow]]
 name = "Development Server"
@@ -362,6 +362,15 @@ args = "node replit-cors-fix.mjs"
 
 [[workflows.workflow]]
 name = "Interface Complète"
+author = 46768796
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node standalone-server.mjs"
+
+[[workflows.workflow]]
+name = "Interface Corrigée"
 author = 46768796
 mode = "sequential"
 
