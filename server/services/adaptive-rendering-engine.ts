@@ -2,936 +2,858 @@
 /**
  * 🎨 ADAPTIVE RENDERING ENGINE 2.0 - MODULE NIVEAU 3 RÉVOLUTIONNAIRE 🎨
  * 
- * Moteur de rendu adaptatif avec IA et optimisation temps réel
- * S'adapte automatiquement aux performances et contexte utilisateur
+ * Moteur de rendu adaptatif avec optimisation automatique selon le device
+ * Adapte automatiquement la qualité et les techniques de rendu
  * 
  * Fonctionnalités révolutionnaires :
- * - Adaptive Quality AI qui ajuste la qualité selon les performances
- * - Dynamic LOD System avec prédiction intelligente
- * - Context-Aware Rendering selon l'usage (animation, interaction, etc.)
- * - Smart Frame Rate Controller avec lissage adaptatif
- * - Advanced Shader Management avec compilation optimisée
- * - Real-time Performance Monitor avec métriques prédictives
+ * - Device Capability Detector avec analyse GPU/CPU
+ * - Quality Manager adaptatif en temps réel
+ * - Performance Monitor avec throttling intelligent
+ * - Fallback Strategy System pour compatibilité maximale
+ * - Battery Optimizer pour devices mobiles
+ * - Render Technique Selector automatique
  */
+
+export interface DeviceCapabilities {
+  gpu: {
+    vendor: string;
+    renderer: string;
+    max_texture_size: number;
+    webgl_version: number;
+    extensions: string[];
+    performance_tier: 'low' | 'medium' | 'high' | 'ultra';
+  };
+  cpu: {
+    cores: number;
+    performance_score: number;
+    architecture: string;
+  };
+  memory: {
+    total: number;
+    available: number;
+    device_memory: number;
+  };
+  display: {
+    width: number;
+    height: number;
+    pixel_ratio: number;
+    refresh_rate: number;
+  };
+  network: {
+    connection_type: string;
+    effective_type: string;
+    downlink: number;
+  };
+  battery?: {
+    level: number;
+    charging: boolean;
+  };
+}
 
 export interface RenderingProfile {
-  id: string;
   name: string;
-  quality_level: number;
-  performance_target: number;
-  adaptation_speed: number;
-  features: RenderingFeatures;
-  constraints: PerformanceConstraints;
-  optimizations: RenderingOptimizations;
+  quality_level: number; // 0-1
+  techniques: {
+    use_webgl2: boolean;
+    enable_shadows: boolean;
+    enable_reflections: boolean;
+    enable_anti_aliasing: boolean;
+    enable_post_processing: boolean;
+    particle_density: number;
+    animation_fps: number;
+    texture_quality: 'low' | 'medium' | 'high' | 'ultra';
+  };
+  performance_targets: {
+    target_fps: number;
+    max_draw_calls: number;
+    max_vertices: number;
+    memory_budget: number; // MB
+  };
 }
 
-export interface RenderingFeatures {
-  particles_enabled: boolean;
-  shadows_enabled: boolean;
-  post_processing: boolean;
-  anti_aliasing: 'none' | 'fxaa' | 'msaa' | 'taa';
-  texture_filtering: 'nearest' | 'linear' | 'trilinear' | 'anisotropic';
-  shader_complexity: 'low' | 'medium' | 'high' | 'ultra';
-  geometry_detail: number;
-  animation_quality: number;
-}
-
-export interface PerformanceConstraints {
-  target_fps: number;
-  max_draw_calls: number;
-  max_triangles: number;
-  max_texture_memory: number;
-  cpu_budget_ms: number;
-  gpu_budget_ms: number;
-  memory_budget_mb: number;
-}
-
-export interface RenderingOptimizations {
-  frustum_culling: boolean;
-  occlusion_culling: boolean;
-  level_of_detail: boolean;
-  instancing: boolean;
-  batching: boolean;
-  texture_streaming: boolean;
-  shader_caching: boolean;
-  geometry_compression: boolean;
-}
-
-export interface PerformanceMetrics {
-  current_fps: number;
-  average_fps: number;
-  frame_time: number;
-  draw_calls: number;
-  triangles: number;
-  texture_memory: number;
-  gpu_utilization: number;
-  cpu_utilization: number;
-  memory_usage: number;
-  quality_score: number;
-}
-
-export interface AdaptationRule {
-  id: string;
-  condition: (metrics: PerformanceMetrics) => boolean;
-  action: (profile: RenderingProfile) => RenderingProfile;
-  priority: number;
-  cooldown: number;
-  last_applied: number;
-}
-
-export interface ContextualSettings {
-  context: 'idle' | 'interaction' | 'animation' | 'transition' | 'focused' | 'background';
-  quality_modifier: number;
-  performance_modifier: number;
-  feature_overrides: Partial<RenderingFeatures>;
+export interface AdaptiveSettings {
+  auto_quality: boolean;
+  battery_saving: boolean;
+  performance_priority: 'quality' | 'performance' | 'balanced';
+  thermal_throttling: boolean;
+  adaptive_fps: boolean;
+  memory_management: boolean;
 }
 
 /**
- * 🧠 IA ADAPTIVE QUALITY - Système d'IA pour ajustement qualité/performance
+ * 🔍 DEVICE CAPABILITY DETECTOR
  */
-class AdaptiveQualityAI {
-  private learningData: Map<string, PerformanceMetrics[]> = new Map();
-  private predictions: Map<string, number> = new Map();
-  private adaptationHistory: AdaptationEvent[] = [];
-  private neuralWeights: Float32Array = new Float32Array(16);
-  private isLearning: boolean = true;
+class DeviceCapabilityDetector {
+  private capabilities: DeviceCapabilities | null = null;
+  private benchmarkResults: Map<string, number> = new Map();
 
-  constructor() {
-    this.initializeWeights();
-    console.log('🧠 Adaptive Quality AI initialisée');
+  public async detectCapabilities(): Promise<DeviceCapabilities> {
+    console.log('🔍 Détection des capacités du device...');
+
+    const capabilities: DeviceCapabilities = {
+      gpu: await this.detectGPUCapabilities(),
+      cpu: await this.detectCPUCapabilities(),
+      memory: this.detectMemoryInfo(),
+      display: this.detectDisplayInfo(),
+      network: this.detectNetworkInfo(),
+      battery: await this.detectBatteryInfo()
+    };
+
+    this.capabilities = capabilities;
+    await this.runPerformanceBenchmarks();
+
+    console.log('✅ Capacités détectées:', capabilities);
+    return capabilities;
   }
 
-  private initializeWeights(): void {
-    // Initialisation des poids neuraux avec valeurs optimisées
-    for (let i = 0; i < this.neuralWeights.length; i++) {
-      this.neuralWeights[i] = (Math.random() - 0.5) * 0.1;
-    }
-  }
-
-  public predictOptimalQuality(metrics: PerformanceMetrics, context: string): number {
-    const features = this.extractFeatures(metrics, context);
-    let prediction = 0.5; // Qualité de base
-
-    // Réseau de neurones simplifié
-    for (let i = 0; i < features.length && i < this.neuralWeights.length; i++) {
-      prediction += features[i] * this.neuralWeights[i];
-    }
-
-    // Activation sigmoïde
-    prediction = 1 / (1 + Math.exp(-prediction));
+  private async detectGPUCapabilities(): Promise<DeviceCapabilities['gpu']> {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
     
-    // Clamp entre 0.1 et 1.0
-    return Math.max(0.1, Math.min(1.0, prediction));
+    if (!gl) {
+      return {
+        vendor: 'unknown',
+        renderer: 'software',
+        max_texture_size: 512,
+        webgl_version: 0,
+        extensions: [],
+        performance_tier: 'low'
+      };
+    }
+
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    const vendor = debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : 'unknown';
+    const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'unknown';
+    const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    const extensions = gl.getSupportedExtensions() || [];
+
+    // Détermination du tier de performance GPU
+    let performanceTier: 'low' | 'medium' | 'high' | 'ultra' = 'low';
+    
+    if (renderer.includes('RTX') || renderer.includes('RX 6') || renderer.includes('M1')) {
+      performanceTier = 'ultra';
+    } else if (renderer.includes('GTX') || renderer.includes('RX') || renderer.includes('Arc')) {
+      performanceTier = 'high';
+    } else if (renderer.includes('Intel Iris') || renderer.includes('Radeon')) {
+      performanceTier = 'medium';
+    }
+
+    return {
+      vendor,
+      renderer,
+      max_texture_size: maxTextureSize,
+      webgl_version: gl.getParameter(gl.VERSION).includes('2.0') ? 2 : 1,
+      extensions,
+      performance_tier: performanceTier
+    };
   }
 
-  private extractFeatures(metrics: PerformanceMetrics, context: string): number[] {
-    return [
-      metrics.current_fps / 60.0,
-      metrics.frame_time / 16.67,
-      metrics.gpu_utilization / 100.0,
-      metrics.cpu_utilization / 100.0,
-      metrics.memory_usage / 1000.0,
-      context === 'animation' ? 1.0 : 0.0,
-      context === 'interaction' ? 1.0 : 0.0,
-      context === 'background' ? 1.0 : 0.0
-    ];
+  private async detectCPUCapabilities(): Promise<DeviceCapabilities['cpu']> {
+    const cores = navigator.hardwareConcurrency || 2;
+    
+    // Benchmark CPU simple
+    const start = performance.now();
+    let iterations = 0;
+    while (performance.now() - start < 50) { // 50ms de test
+      Math.random() * Math.random();
+      iterations++;
+    }
+    
+    const performanceScore = iterations / 1000; // Score relatif
+
+    return {
+      cores,
+      performance_score: performanceScore,
+      architecture: cores >= 8 ? 'high-end' : cores >= 4 ? 'mid-range' : 'low-end'
+    };
   }
 
-  public learn(metrics: PerformanceMetrics, appliedQuality: number, resultingPerformance: number): void {
-    if (!this.isLearning) return;
+  private detectMemoryInfo(): DeviceCapabilities['memory'] {
+    const nav = navigator as any;
+    const deviceMemory = nav.deviceMemory || 4; // GB, fallback 4GB
+    const memoryInfo = (performance as any).memory;
+    
+    return {
+      total: memoryInfo?.totalJSHeapSize || 1073741824, // 1GB fallback
+      available: memoryInfo?.usedJSHeapSize || 536870912, // 512MB fallback
+      device_memory: deviceMemory
+    };
+  }
 
-    const features = this.extractFeatures(metrics, 'unknown');
-    const error = resultingPerformance - appliedQuality;
-    const learningRate = 0.01;
+  private detectDisplayInfo(): DeviceCapabilities['display'] {
+    return {
+      width: window.screen.width,
+      height: window.screen.height,
+      pixel_ratio: window.devicePixelRatio || 1,
+      refresh_rate: (screen as any).refreshRate || 60
+    };
+  }
 
-    // Mise à jour des poids (gradient descent simplifié)
-    for (let i = 0; i < features.length && i < this.neuralWeights.length; i++) {
-      this.neuralWeights[i] += learningRate * error * features[i];
+  private detectNetworkInfo(): DeviceCapabilities['network'] {
+    const connection = (navigator as any).connection || {};
+    
+    return {
+      connection_type: connection.type || 'unknown',
+      effective_type: connection.effectiveType || '4g',
+      downlink: connection.downlink || 10
+    };
+  }
+
+  private async detectBatteryInfo(): Promise<DeviceCapabilities['battery'] | undefined> {
+    try {
+      const battery = await (navigator as any).getBattery?.();
+      return battery ? {
+        level: battery.level,
+        charging: battery.charging
+      } : undefined;
+    } catch {
+      return undefined;
     }
   }
 
-  public getConfidence(): number {
-    return Math.min(1.0, this.adaptationHistory.length / 100);
+  private async runPerformanceBenchmarks(): Promise<void> {
+    // Benchmark rendu WebGL
+    const glBenchmark = await this.benchmarkWebGLPerformance();
+    this.benchmarkResults.set('webgl_performance', glBenchmark);
+
+    // Benchmark animation
+    const animationBenchmark = await this.benchmarkAnimationPerformance();
+    this.benchmarkResults.set('animation_performance', animationBenchmark);
+
+    console.log('📊 Benchmarks terminés:', Object.fromEntries(this.benchmarkResults));
+  }
+
+  private async benchmarkWebGLPerformance(): Promise<number> {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const gl = canvas.getContext('webgl');
+    
+    if (!gl) return 0;
+
+    const start = performance.now();
+    
+    // Test de rendu simple
+    for (let i = 0; i < 100; i++) {
+      gl.clearColor(Math.random(), Math.random(), Math.random(), 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+    }
+    
+    const duration = performance.now() - start;
+    return Math.max(0, 1000 - duration); // Score inversé (plus rapide = meilleur score)
+  }
+
+  private async benchmarkAnimationPerformance(): Promise<number> {
+    return new Promise((resolve) => {
+      const start = performance.now();
+      let frames = 0;
+      
+      const testElement = document.createElement('div');
+      testElement.style.cssText = `
+        position: fixed;
+        top: -100px;
+        left: -100px;
+        width: 50px;
+        height: 50px;
+        background: red;
+        transition: transform 0.1s;
+      `;
+      document.body.appendChild(testElement);
+      
+      const animate = () => {
+        frames++;
+        testElement.style.transform = `translateX(${frames}px)`;
+        
+        if (performance.now() - start < 500) { // Test 500ms
+          requestAnimationFrame(animate);
+        } else {
+          document.body.removeChild(testElement);
+          resolve(frames * 2); // FPS approximatif
+        }
+      };
+      
+      requestAnimationFrame(animate);
+    });
+  }
+
+  public getBenchmarkResults(): Map<string, number> {
+    return this.benchmarkResults;
+  }
+
+  public getCapabilities(): DeviceCapabilities | null {
+    return this.capabilities;
   }
 }
 
 /**
- * 🔄 DYNAMIC LOD SYSTEM - Système de niveau de détail intelligent
+ * 🎯 QUALITY MANAGER ADAPTATIF
  */
-class DynamicLODSystem {
-  private lodLevels: Map<string, LODLevel[]> = new Map();
-  private distanceThresholds: number[] = [10, 50, 100, 500];
-  private qualityMultiplier: number = 1.0;
-  private adaptiveDistances: boolean = true;
-
-  constructor() {
-    this.initializeLODLevels();
-    console.log('🔄 Dynamic LOD System initialisé');
-  }
-
-  private initializeLODLevels(): void {
-    const defaultLevels: LODLevel[] = [
-      { level: 0, quality: 1.0, triangles: 1.0, textures: 1.0, distance: 0 },
-      { level: 1, quality: 0.75, triangles: 0.5, textures: 0.75, distance: 10 },
-      { level: 2, quality: 0.5, triangles: 0.25, textures: 0.5, distance: 50 },
-      { level: 3, quality: 0.25, triangles: 0.1, textures: 0.25, distance: 100 }
-    ];
-
-    this.lodLevels.set('default', defaultLevels);
-  }
-
-  public calculateLOD(distance: number, importance: number, performance: number): number {
-    const adjustedDistance = distance / (importance * this.qualityMultiplier);
-    
-    for (let i = this.distanceThresholds.length - 1; i >= 0; i--) {
-      if (adjustedDistance >= this.distanceThresholds[i] * (2 - performance)) {
-        return i + 1;
-      }
-    }
-    
-    return 0;
-  }
-
-  public adaptDistances(averagePerformance: number): void {
-    if (!this.adaptiveDistances) return;
-
-    const factor = Math.pow(averagePerformance, 0.5);
-    this.distanceThresholds = this.distanceThresholds.map(d => d * factor);
-  }
-
-  public setQualityMultiplier(multiplier: number): void {
-    this.qualityMultiplier = Math.max(0.1, Math.min(2.0, multiplier));
-  }
-}
-
-interface LODLevel {
-  level: number;
-  quality: number;
-  triangles: number;
-  textures: number;
-  distance: number;
-}
-
-interface AdaptationEvent {
-  timestamp: number;
-  trigger: string;
-  old_quality: number;
-  new_quality: number;
-  performance_before: number;
-  performance_after: number;
-}
-
-/**
- * 🎯 SMART FRAME RATE CONTROLLER - Contrôleur intelligent de FPS
- */
-class SmartFrameRateController {
+class AdaptiveQualityManager {
+  private currentProfile: RenderingProfile;
   private targetFPS: number = 60;
   private currentFPS: number = 60;
-  private frameTimeHistory: number[] = [];
-  private adaptiveTarget: boolean = true;
-  private smoothingFactor: number = 0.1;
-  private lastAdjustment: number = 0;
-  private adjustmentCooldown: number = 1000;
+  private fpsHistory: number[] = [];
+  private adaptationEnabled: boolean = true;
+
+  private renderingProfiles: Map<string, RenderingProfile> = new Map();
 
   constructor() {
-    console.log('🎯 Smart Frame Rate Controller initialisé');
+    this.initializeRenderingProfiles();
+    this.currentProfile = this.renderingProfiles.get('balanced')!;
   }
 
-  public updateFrameTime(frameTime: number): void {
-    this.frameTimeHistory.push(frameTime);
-    if (this.frameTimeHistory.length > 60) {
-      this.frameTimeHistory.shift();
-    }
-
-    this.currentFPS = 1000 / frameTime;
-    
-    if (this.adaptiveTarget) {
-      this.adjustTargetFPS();
-    }
-  }
-
-  private adjustTargetFPS(): void {
-    const now = Date.now();
-    if (now - this.lastAdjustment < this.adjustmentCooldown) return;
-
-    const avgFrameTime = this.frameTimeHistory.reduce((a, b) => a + b, 0) / this.frameTimeHistory.length;
-    const stability = this.calculateStability();
-
-    if (stability > 0.9 && avgFrameTime < 14) { // Marge pour 72 FPS
-      this.targetFPS = Math.min(this.targetFPS + 5, 120);
-      this.lastAdjustment = now;
-    } else if (stability < 0.7 && avgFrameTime > 18) { // Plus de 55 FPS
-      this.targetFPS = Math.max(this.targetFPS - 5, 30);
-      this.lastAdjustment = now;
-    }
-  }
-
-  private calculateStability(): number {
-    if (this.frameTimeHistory.length < 10) return 1.0;
-
-    const mean = this.frameTimeHistory.reduce((a, b) => a + b, 0) / this.frameTimeHistory.length;
-    const variance = this.frameTimeHistory.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / this.frameTimeHistory.length;
-    const stability = 1 / (1 + variance / (mean * mean));
-
-    return Math.max(0, Math.min(1, stability));
-  }
-
-  public getTargetFPS(): number {
-    return this.targetFPS;
-  }
-
-  public getPerformanceScore(): number {
-    const fpsRatio = this.currentFPS / this.targetFPS;
-    const stability = this.calculateStability();
-    
-    return (fpsRatio * 0.7 + stability * 0.3);
-  }
-}
-
-/**
- * 🛠️ ADVANCED SHADER MANAGER - Gestionnaire de shaders optimisé
- */
-class AdvancedShaderManager {
-  private shaderCache: Map<string, WebGLShader> = new Map();
-  private programCache: Map<string, WebGLProgram> = new Map();
-  private compilationQueue: ShaderCompilationTask[] = [];
-  private isCompiling: boolean = false;
-  private qualityVariants: Map<string, string[]> = new Map();
-
-  constructor() {
-    this.initializeQualityVariants();
-    console.log('🛠️ Advanced Shader Manager initialisé');
-  }
-
-  private initializeQualityVariants(): void {
-    // Variants de shaders pour différents niveaux de qualité
-    this.qualityVariants.set('particle', [
-      'particle_ultra', 'particle_high', 'particle_medium', 'particle_low'
-    ]);
-    
-    this.qualityVariants.set('lighting', [
-      'lighting_pbr', 'lighting_phong', 'lighting_lambert', 'lighting_flat'
-    ]);
-  }
-
-  public getOptimalShader(baseShader: string, quality: number): string {
-    const variants = this.qualityVariants.get(baseShader) || [baseShader];
-    const index = Math.floor(quality * (variants.length - 1));
-    
-    return variants[Math.max(0, Math.min(index, variants.length - 1))];
-  }
-
-  public async precompileShaders(quality: number): Promise<void> {
-    const shadersToCompile = this.getShadersForQuality(quality);
-    
-    for (const shader of shadersToCompile) {
-      this.queueCompilation(shader);
-    }
-    
-    await this.processCompilationQueue();
-  }
-
-  private getShadersForQuality(quality: number): string[] {
-    const shaders: string[] = [];
-    
-    for (const [baseShader, variants] of this.qualityVariants) {
-      const optimalShader = this.getOptimalShader(baseShader, quality);
-      if (!this.shaderCache.has(optimalShader)) {
-        shaders.push(optimalShader);
-      }
-    }
-    
-    return shaders;
-  }
-
-  private queueCompilation(shader: string): void {
-    this.compilationQueue.push({
-      shader,
-      priority: this.getShaderPriority(shader),
-      timestamp: Date.now()
-    });
-  }
-
-  private getShaderPriority(shader: string): number {
-    if (shader.includes('particle')) return 1;
-    if (shader.includes('lighting')) return 2;
-    return 3;
-  }
-
-  private async processCompilationQueue(): Promise<void> {
-    if (this.isCompiling) return;
-    
-    this.isCompiling = true;
-    
-    // Trier par priorité
-    this.compilationQueue.sort((a, b) => a.priority - b.priority);
-    
-    while (this.compilationQueue.length > 0) {
-      const task = this.compilationQueue.shift()!;
-      await this.compileShader(task.shader);
-      
-      // Pause pour éviter de bloquer le thread principal
-      await new Promise(resolve => setTimeout(resolve, 1));
-    }
-    
-    this.isCompiling = false;
-  }
-
-  private async compileShader(shader: string): Promise<void> {
-    // Simulation de compilation de shader
-    return new Promise(resolve => {
-      setTimeout(() => {
-        this.shaderCache.set(shader, {} as WebGLShader);
-        resolve();
-      }, Math.random() * 50 + 10);
-    });
-  }
-}
-
-interface ShaderCompilationTask {
-  shader: string;
-  priority: number;
-  timestamp: number;
-}
-
-/**
- * 🎨 ADAPTIVE RENDERING ENGINE 2.0 - CLASSE PRINCIPALE
- */
-export class AdaptiveRenderingEngine {
-  private profiles: Map<string, RenderingProfile> = new Map();
-  private currentProfile: RenderingProfile;
-  private adaptationRules: AdaptationRule[] = [];
-  private performanceHistory: PerformanceMetrics[] = [];
-  private contextualSettings: Map<string, ContextualSettings> = new Map();
-  
-  // Composants IA
-  private qualityAI: AdaptiveQualityAI;
-  private lodSystem: DynamicLODSystem;
-  private frameController: SmartFrameRateController;
-  private shaderManager: AdvancedShaderManager;
-  
-  // État et monitoring
-  private isRunning: boolean = false;
-  private lastUpdate: number = 0;
-  private currentContext: string = 'idle';
-  private adaptationCount: number = 0;
-
-  constructor() {
-    this.initializeProfiles();
-    this.initializeAdaptationRules();
-    this.initializeContextualSettings();
-    
-    this.qualityAI = new AdaptiveQualityAI();
-    this.lodSystem = new DynamicLODSystem();
-    this.frameController = new SmartFrameRateController();
-    this.shaderManager = new AdvancedShaderManager();
-    
-    this.currentProfile = this.profiles.get('adaptive')!;
-    
-    console.log('🎨 Adaptive Rendering Engine 2.0 initialisé - IA prédictive activée');
-  }
-
-  /**
-   * Initialisation des profils de rendu
-   */
-  private initializeProfiles(): void {
-    // Profil Ultra Performance
-    this.profiles.set('ultra', {
-      id: 'ultra',
-      name: 'Ultra Performance',
+  private initializeRenderingProfiles(): void {
+    // Profil Ultra
+    this.renderingProfiles.set('ultra', {
+      name: 'ultra',
       quality_level: 1.0,
-      performance_target: 1.0,
-      adaptation_speed: 0.1,
-      features: {
-        particles_enabled: true,
-        shadows_enabled: true,
-        post_processing: true,
-        anti_aliasing: 'taa',
-        texture_filtering: 'anisotropic',
-        shader_complexity: 'ultra',
-        geometry_detail: 1.0,
-        animation_quality: 1.0
+      techniques: {
+        use_webgl2: true,
+        enable_shadows: true,
+        enable_reflections: true,
+        enable_anti_aliasing: true,
+        enable_post_processing: true,
+        particle_density: 1.0,
+        animation_fps: 60,
+        texture_quality: 'ultra'
       },
-      constraints: {
-        target_fps: 120,
+      performance_targets: {
+        target_fps: 60,
         max_draw_calls: 2000,
-        max_triangles: 2000000,
-        max_texture_memory: 512,
-        cpu_budget_ms: 8,
-        gpu_budget_ms: 8,
-        memory_budget_mb: 1024
-      },
-      optimizations: {
-        frustum_culling: true,
-        occlusion_culling: true,
-        level_of_detail: true,
-        instancing: true,
-        batching: true,
-        texture_streaming: true,
-        shader_caching: true,
-        geometry_compression: true
+        max_vertices: 100000,
+        memory_budget: 512
       }
     });
 
-    // Profil Adaptatif (par défaut)
-    this.profiles.set('adaptive', {
-      id: 'adaptive',
-      name: 'Adaptive Quality',
-      quality_level: 0.75,
-      performance_target: 0.8,
-      adaptation_speed: 0.3,
-      features: {
-        particles_enabled: true,
-        shadows_enabled: true,
-        post_processing: true,
-        anti_aliasing: 'fxaa',
-        texture_filtering: 'trilinear',
-        shader_complexity: 'high',
-        geometry_detail: 0.8,
-        animation_quality: 0.9
+    // Profil High
+    this.renderingProfiles.set('high', {
+      name: 'high',
+      quality_level: 0.8,
+      techniques: {
+        use_webgl2: true,
+        enable_shadows: true,
+        enable_reflections: false,
+        enable_anti_aliasing: true,
+        enable_post_processing: true,
+        particle_density: 0.8,
+        animation_fps: 60,
+        texture_quality: 'high'
       },
-      constraints: {
+      performance_targets: {
+        target_fps: 60,
+        max_draw_calls: 1500,
+        max_vertices: 75000,
+        memory_budget: 384
+      }
+    });
+
+    // Profil Balanced
+    this.renderingProfiles.set('balanced', {
+      name: 'balanced',
+      quality_level: 0.6,
+      techniques: {
+        use_webgl2: true,
+        enable_shadows: false,
+        enable_reflections: false,
+        enable_anti_aliasing: true,
+        enable_post_processing: false,
+        particle_density: 0.6,
+        animation_fps: 60,
+        texture_quality: 'medium'
+      },
+      performance_targets: {
         target_fps: 60,
         max_draw_calls: 1000,
-        max_triangles: 1000000,
-        max_texture_memory: 256,
-        cpu_budget_ms: 16,
-        gpu_budget_ms: 16,
-        memory_budget_mb: 512
-      },
-      optimizations: {
-        frustum_culling: true,
-        occlusion_culling: true,
-        level_of_detail: true,
-        instancing: true,
-        batching: true,
-        texture_streaming: true,
-        shader_caching: true,
-        geometry_compression: false
+        max_vertices: 50000,
+        memory_budget: 256
       }
     });
 
     // Profil Performance
-    this.profiles.set('performance', {
-      id: 'performance',
-      name: 'Maximum Performance',
+    this.renderingProfiles.set('performance', {
+      name: 'performance',
       quality_level: 0.4,
-      performance_target: 1.0,
-      adaptation_speed: 0.5,
-      features: {
-        particles_enabled: true,
-        shadows_enabled: false,
-        post_processing: false,
-        anti_aliasing: 'none',
-        texture_filtering: 'linear',
-        shader_complexity: 'low',
-        geometry_detail: 0.5,
-        animation_quality: 0.6
+      techniques: {
+        use_webgl2: false,
+        enable_shadows: false,
+        enable_reflections: false,
+        enable_anti_aliasing: false,
+        enable_post_processing: false,
+        particle_density: 0.4,
+        animation_fps: 30,
+        texture_quality: 'medium'
       },
-      constraints: {
-        target_fps: 60,
+      performance_targets: {
+        target_fps: 30,
         max_draw_calls: 500,
-        max_triangles: 500000,
-        max_texture_memory: 128,
-        cpu_budget_ms: 16,
-        gpu_budget_ms: 16,
-        memory_budget_mb: 256
+        max_vertices: 25000,
+        memory_budget: 128
+      }
+    });
+
+    // Profil Low
+    this.renderingProfiles.set('low', {
+      name: 'low',
+      quality_level: 0.2,
+      techniques: {
+        use_webgl2: false,
+        enable_shadows: false,
+        enable_reflections: false,
+        enable_anti_aliasing: false,
+        enable_post_processing: false,
+        particle_density: 0.2,
+        animation_fps: 30,
+        texture_quality: 'low'
       },
-      optimizations: {
-        frustum_culling: true,
-        occlusion_culling: false,
-        level_of_detail: true,
-        instancing: true,
-        batching: true,
-        texture_streaming: false,
-        shader_caching: true,
-        geometry_compression: true
+      performance_targets: {
+        target_fps: 30,
+        max_draw_calls: 250,
+        max_vertices: 10000,
+        memory_budget: 64
       }
     });
   }
 
-  /**
-   * Initialisation des règles d'adaptation
-   */
-  private initializeAdaptationRules(): void {
-    // Règle: FPS trop bas
-    this.adaptationRules.push({
-      id: 'low_fps',
-      condition: (metrics) => metrics.current_fps < metrics.target_fps * 0.8,
-      action: (profile) => this.reduceQuality(profile, 0.9),
-      priority: 1,
-      cooldown: 2000,
-      last_applied: 0
-    });
+  public adaptQualityBasedOnCapabilities(capabilities: DeviceCapabilities): RenderingProfile {
+    console.log('🎯 Adaptation de la qualité selon les capacités...');
 
-    // Règle: FPS élevé stable
-    this.adaptationRules.push({
-      id: 'high_fps',
-      condition: (metrics) => metrics.current_fps > metrics.target_fps * 1.1 && metrics.average_fps > metrics.target_fps,
-      action: (profile) => this.increaseQuality(profile, 1.05),
-      priority: 3,
-      cooldown: 5000,
-      last_applied: 0
-    });
+    let recommendedProfile = 'low';
 
-    // Règle: Utilisation GPU élevée
-    this.adaptationRules.push({
-      id: 'high_gpu',
-      condition: (metrics) => metrics.gpu_utilization > 90,
-      action: (profile) => this.optimizeForGPU(profile),
-      priority: 2,
-      cooldown: 3000,
-      last_applied: 0
-    });
+    // Analyse GPU
+    switch (capabilities.gpu.performance_tier) {
+      case 'ultra':
+        recommendedProfile = 'ultra';
+        break;
+      case 'high':
+        recommendedProfile = 'high';
+        break;
+      case 'medium':
+        recommendedProfile = 'balanced';
+        break;
+      case 'low':
+        recommendedProfile = 'performance';
+        break;
+    }
 
-    // Règle: Mémoire faible
-    this.adaptationRules.push({
-      id: 'low_memory',
-      condition: (metrics) => metrics.memory_usage > 800,
-      action: (profile) => this.optimizeMemory(profile),
-      priority: 1,
-      cooldown: 1000,
-      last_applied: 0
-    });
+    // Ajustements selon CPU
+    if (capabilities.cpu.cores < 4 && recommendedProfile !== 'low') {
+      const profiles = ['ultra', 'high', 'balanced', 'performance', 'low'];
+      const currentIndex = profiles.indexOf(recommendedProfile);
+      recommendedProfile = profiles[Math.min(currentIndex + 1, profiles.length - 1)];
+    }
+
+    // Ajustements selon mémoire
+    if (capabilities.memory.device_memory < 4 && recommendedProfile !== 'low') {
+      recommendedProfile = 'performance';
+    }
+
+    // Ajustements selon batterie
+    if (capabilities.battery && capabilities.battery.level < 0.2 && !capabilities.battery.charging) {
+      recommendedProfile = 'low';
+    }
+
+    this.currentProfile = this.renderingProfiles.get(recommendedProfile)!;
+    console.log(`✅ Profil adapté: ${recommendedProfile}`);
+    
+    return this.currentProfile;
   }
 
-  /**
-   * Initialisation des paramètres contextuels
-   */
-  private initializeContextualSettings(): void {
-    this.contextualSettings.set('idle', {
-      context: 'idle',
-      quality_modifier: 0.8,
-      performance_modifier: 0.7,
-      feature_overrides: {}
-    });
-
-    this.contextualSettings.set('interaction', {
-      context: 'interaction',
-      quality_modifier: 1.0,
-      performance_modifier: 1.2,
-      feature_overrides: {
-        animation_quality: 1.0
-      }
-    });
-
-    this.contextualSettings.set('animation', {
-      context: 'animation',
-      quality_modifier: 0.9,
-      performance_modifier: 1.1,
-      feature_overrides: {
-        particles_enabled: true,
-        animation_quality: 0.95
-      }
-    });
-
-    this.contextualSettings.set('background', {
-      context: 'background',
-      quality_modifier: 0.5,
-      performance_modifier: 0.4,
-      feature_overrides: {
-        particles_enabled: false,
-        shadows_enabled: false,
-        post_processing: false
-      }
-    });
-  }
-
-  /**
-   * Démarrage du moteur de rendu adaptatif
-   */
-  public async initialize(): Promise<void> {
-    // Précompilation des shaders pour le profil actuel
-    await this.shaderManager.precompileShaders(this.currentProfile.quality_level);
+  public updatePerformanceMetrics(fps: number, drawCalls: number, vertices: number, memoryUsage: number): void {
+    this.currentFPS = fps;
+    this.fpsHistory.push(fps);
     
-    // Démarrage du monitoring
-    this.startPerformanceMonitoring();
-    
-    this.isRunning = true;
-    console.log('🚀 Moteur de rendu adaptatif démarré');
-  }
+    // Garder seulement les 60 dernières mesures (1 seconde à 60fps)
+    if (this.fpsHistory.length > 60) {
+      this.fpsHistory.shift();
+    }
 
-  /**
-   * Mise à jour temps réel avec adaptation
-   */
-  public update(deltaTime: number): void {
-    if (!this.isRunning) return;
-
-    const now = Date.now();
-    this.lastUpdate = now;
-
-    // Mise à jour du contrôleur de FPS
-    this.frameController.updateFrameTime(deltaTime);
-
-    // Collecte des métriques de performance
-    const metrics = this.collectPerformanceMetrics();
-    
-    // Prédiction IA de la qualité optimale
-    const predictedQuality = this.qualityAI.predictOptimalQuality(metrics, this.currentContext);
-    
-    // Application des règles d'adaptation
-    this.applyAdaptationRules(metrics);
-    
-    // Adaptation contextuelle
-    this.applyContextualAdaptations();
-    
-    // Mise à jour du système LOD
-    this.lodSystem.adaptDistances(metrics.current_fps / this.frameController.getTargetFPS());
-    
-    // Apprentissage IA
-    this.qualityAI.learn(metrics, this.currentProfile.quality_level, this.frameController.getPerformanceScore());
-    
-    // Stockage des métriques
-    this.performanceHistory.push(metrics);
-    if (this.performanceHistory.length > 300) { // 5 minutes à 60 FPS
-      this.performanceHistory.shift();
+    // Adaptation automatique si activée
+    if (this.adaptationEnabled) {
+      this.performAdaptiveAdjustments(drawCalls, vertices, memoryUsage);
     }
   }
 
-  /**
-   * Collecte des métriques de performance actuelles
-   */
-  private collectPerformanceMetrics(): PerformanceMetrics {
-    const targetFPS = this.frameController.getTargetFPS();
-    const currentFPS = Math.min(targetFPS * 1.5, 120); // Simulation
+  private performAdaptiveAdjustments(drawCalls: number, vertices: number, memoryUsage: number): void {
+    const avgFPS = this.fpsHistory.reduce((a, b) => a + b, 0) / this.fpsHistory.length;
     
+    // Si FPS en dessous de la cible, réduire la qualité
+    if (avgFPS < this.targetFPS * 0.8) {
+      this.adaptDown();
+    }
+    // Si FPS stable au-dessus de la cible, augmenter la qualité
+    else if (avgFPS > this.targetFPS * 1.1 && this.fpsHistory.length >= 60) {
+      this.adaptUp();
+    }
+
+    // Adaptation selon l'utilisation mémoire
+    if (memoryUsage > this.currentProfile.performance_targets.memory_budget * 0.9) {
+      this.reduceMemoryUsage();
+    }
+  }
+
+  private adaptDown(): void {
+    const profiles = ['ultra', 'high', 'balanced', 'performance', 'low'];
+    const currentIndex = profiles.indexOf(this.currentProfile.name);
+    
+    if (currentIndex < profiles.length - 1) {
+      const newProfile = profiles[currentIndex + 1];
+      this.currentProfile = this.renderingProfiles.get(newProfile)!;
+      console.log(`📉 Qualité réduite vers: ${newProfile}`);
+    }
+  }
+
+  private adaptUp(): void {
+    const profiles = ['low', 'performance', 'balanced', 'high', 'ultra'];
+    const currentIndex = profiles.indexOf(this.currentProfile.name);
+    
+    if (currentIndex < profiles.length - 1) {
+      const newProfile = profiles[currentIndex + 1];
+      this.currentProfile = this.renderingProfiles.get(newProfile)!;
+      console.log(`📈 Qualité augmentée vers: ${newProfile}`);
+    }
+  }
+
+  private reduceMemoryUsage(): void {
+    // Réductions spécifiques pour la mémoire
+    this.currentProfile.techniques.particle_density *= 0.8;
+    this.currentProfile.performance_targets.max_vertices *= 0.9;
+    console.log('🧠 Réduction de l'utilisation mémoire');
+  }
+
+  public getCurrentProfile(): RenderingProfile {
+    return this.currentProfile;
+  }
+
+  public setAdaptationEnabled(enabled: boolean): void {
+    this.adaptationEnabled = enabled;
+  }
+
+  public getPerformanceMetrics(): any {
     return {
-      current_fps: currentFPS,
-      average_fps: this.calculateAverageFPS(),
-      frame_time: 1000 / currentFPS,
-      draw_calls: Math.floor(Math.random() * 500 + 200),
-      triangles: Math.floor(Math.random() * 500000 + 100000),
-      texture_memory: Math.floor(Math.random() * 200 + 50),
-      gpu_utilization: Math.min(100, Math.random() * 80 + 20),
-      cpu_utilization: Math.min(100, Math.random() * 60 + 10),
-      memory_usage: Math.floor(Math.random() * 400 + 200),
-      quality_score: this.calculateQualityScore()
+      current_fps: this.currentFPS,
+      target_fps: this.targetFPS,
+      average_fps: this.fpsHistory.length > 0 ? 
+        this.fpsHistory.reduce((a, b) => a + b, 0) / this.fpsHistory.length : 0,
+      adaptation_enabled: this.adaptationEnabled,
+      profile: this.currentProfile.name
+    };
+  }
+}
+
+/**
+ * 🔋 BATTERY OPTIMIZER
+ */
+class BatteryOptimizer {
+  private batteryInfo: DeviceCapabilities['battery'] | null = null;
+  private optimizationLevel: 'none' | 'light' | 'aggressive' = 'none';
+  private thermalThrottling: boolean = false;
+
+  public async updateBatteryStatus(): Promise<void> {
+    try {
+      const battery = await (navigator as any).getBattery?.();
+      if (battery) {
+        this.batteryInfo = {
+          level: battery.level,
+          charging: battery.charging
+        };
+        
+        this.adjustOptimizationLevel();
+      }
+    } catch {
+      console.log('⚠️ API Battery non disponible');
+    }
+  }
+
+  private adjustOptimizationLevel(): void {
+    if (!this.batteryInfo) return;
+
+    const { level, charging } = this.batteryInfo;
+
+    if (charging) {
+      this.optimizationLevel = 'none';
+    } else if (level < 0.15) {
+      this.optimizationLevel = 'aggressive';
+    } else if (level < 0.30) {
+      this.optimizationLevel = 'light';
+    } else {
+      this.optimizationLevel = 'none';
+    }
+
+    console.log(`🔋 Niveau d'optimisation batterie: ${this.optimizationLevel}`);
+  }
+
+  public optimizeProfile(profile: RenderingProfile): RenderingProfile {
+    if (this.optimizationLevel === 'none') return profile;
+
+    const optimizedProfile = { ...profile };
+
+    if (this.optimizationLevel === 'light') {
+      optimizedProfile.techniques.animation_fps = Math.min(optimizedProfile.techniques.animation_fps, 45);
+      optimizedProfile.techniques.particle_density *= 0.8;
+      optimizedProfile.performance_targets.target_fps = Math.min(optimizedProfile.performance_targets.target_fps, 45);
+    }
+
+    if (this.optimizationLevel === 'aggressive') {
+      optimizedProfile.techniques.animation_fps = Math.min(optimizedProfile.techniques.animation_fps, 30);
+      optimizedProfile.techniques.particle_density *= 0.5;
+      optimizedProfile.techniques.enable_post_processing = false;
+      optimizedProfile.techniques.enable_anti_aliasing = false;
+      optimizedProfile.performance_targets.target_fps = Math.min(optimizedProfile.performance_targets.target_fps, 30);
+    }
+
+    return optimizedProfile;
+  }
+
+  public getBatteryInfo(): any {
+    return {
+      battery_level: this.batteryInfo?.level || null,
+      charging: this.batteryInfo?.charging || null,
+      optimization_level: this.optimizationLevel,
+      thermal_throttling: this.thermalThrottling
+    };
+  }
+}
+
+/**
+ * 🎨 ADAPTIVE RENDERING ENGINE PRINCIPAL
+ */
+export class AdaptiveRenderingEngine {
+  private isRunning: boolean = false;
+  private capabilityDetector: DeviceCapabilityDetector;
+  private qualityManager: AdaptiveQualityManager;
+  private batteryOptimizer: BatteryOptimizer;
+  
+  private currentCapabilities: DeviceCapabilities | null = null;
+  private adaptiveSettings: AdaptiveSettings;
+  
+  // Métriques de performance temps réel
+  private performanceMetrics: any = {
+    current_fps: 60,
+    target_fps: 60,
+    frame_time: 16.67,
+    draw_calls: 0,
+    vertices: 0,
+    memory_usage: 0,
+    quality_adaptations: 0,
+    battery_optimizations: 0
+  };
+
+  constructor() {
+    this.capabilityDetector = new DeviceCapabilityDetector();
+    this.qualityManager = new AdaptiveQualityManager();
+    this.batteryOptimizer = new BatteryOptimizer();
+    
+    this.adaptiveSettings = {
+      auto_quality: true,
+      battery_saving: true,
+      performance_priority: 'balanced',
+      thermal_throttling: true,
+      adaptive_fps: true,
+      memory_management: true
     };
   }
 
-  /**
-   * Application des règles d'adaptation
-   */
-  private applyAdaptationRules(metrics: PerformanceMetrics): void {
-    const now = Date.now();
-    
-    for (const rule of this.adaptationRules.sort((a, b) => a.priority - b.priority)) {
-      if (now - rule.last_applied < rule.cooldown) continue;
-      
-      if (rule.condition(metrics)) {
-        const oldProfile = { ...this.currentProfile };
-        this.currentProfile = rule.action(this.currentProfile);
-        
-        rule.last_applied = now;
-        this.adaptationCount++;
-        
-        console.log(`🔄 Adaptation appliquée: ${rule.id} (${this.adaptationCount})`);
-        break; // Une seule adaptation par frame
-      }
+  public async start(): Promise<void> {
+    if (this.isRunning) {
+      console.log('⚠️ Adaptive Rendering Engine déjà démarré');
+      return;
     }
+
+    console.log('🚀 Démarrage de l\'Adaptive Rendering Engine...');
+    
+    this.isRunning = true;
+    
+    // Détection des capacités du device
+    this.currentCapabilities = await this.capabilityDetector.detectCapabilities();
+    
+    // Adaptation initiale de la qualité
+    this.qualityManager.adaptQualityBasedOnCapabilities(this.currentCapabilities);
+    
+    // Démarrage des processus de monitoring
+    this.startPerformanceMonitoring();
+    this.startBatteryMonitoring();
+    
+    console.log('✅ Adaptive Rendering Engine démarré avec succès');
   }
 
-  /**
-   * Application des adaptations contextuelles
-   */
-  private applyContextualAdaptations(): void {
-    const contextSettings = this.contextualSettings.get(this.currentContext);
-    if (!contextSettings) return;
-
-    // Application des modificateurs
-    const qualityModifier = contextSettings.quality_modifier;
-    const performanceModifier = contextSettings.performance_modifier;
-    
-    // Mise à jour temporaire du profil
-    this.currentProfile.quality_level *= qualityModifier;
-    this.currentProfile.performance_target *= performanceModifier;
-    
-    // Application des overrides
-    Object.assign(this.currentProfile.features, contextSettings.feature_overrides);
-  }
-
-  /**
-   * Changement de contexte d'utilisation
-   */
-  public setContext(context: string): void {
-    if (this.currentContext === context) return;
-    
-    console.log(`🎯 Changement de contexte: ${this.currentContext} → ${context}`);
-    this.currentContext = context;
-    
-    // Préchargement des shaders pour le nouveau contexte
-    const contextSettings = this.contextualSettings.get(context);
-    if (contextSettings) {
-      const newQuality = this.currentProfile.quality_level * contextSettings.quality_modifier;
-      this.shaderManager.precompileShaders(newQuality);
-    }
-  }
-
-  /**
-   * Méthodes utilitaires d'adaptation
-   */
-  private reduceQuality(profile: RenderingProfile, factor: number): RenderingProfile {
-    const newProfile = { ...profile };
-    newProfile.quality_level = Math.max(0.1, newProfile.quality_level * factor);
-    newProfile.features.geometry_detail = Math.max(0.1, newProfile.features.geometry_detail * factor);
-    newProfile.features.animation_quality = Math.max(0.1, newProfile.features.animation_quality * factor);
-    
-    if (newProfile.quality_level < 0.3) {
-      newProfile.features.shadows_enabled = false;
-      newProfile.features.post_processing = false;
-    }
-    
-    return newProfile;
-  }
-
-  private increaseQuality(profile: RenderingProfile, factor: number): RenderingProfile {
-    const newProfile = { ...profile };
-    newProfile.quality_level = Math.min(1.0, newProfile.quality_level * factor);
-    newProfile.features.geometry_detail = Math.min(1.0, newProfile.features.geometry_detail * factor);
-    newProfile.features.animation_quality = Math.min(1.0, newProfile.features.animation_quality * factor);
-    
-    if (newProfile.quality_level > 0.7) {
-      newProfile.features.shadows_enabled = true;
-      newProfile.features.post_processing = true;
-    }
-    
-    return newProfile;
-  }
-
-  private optimizeForGPU(profile: RenderingProfile): RenderingProfile {
-    const newProfile = { ...profile };
-    newProfile.features.shader_complexity = 'medium';
-    newProfile.features.geometry_detail *= 0.8;
-    newProfile.optimizations.instancing = true;
-    newProfile.optimizations.batching = true;
-    
-    return newProfile;
-  }
-
-  private optimizeMemory(profile: RenderingProfile): RenderingProfile {
-    const newProfile = { ...profile };
-    newProfile.features.texture_filtering = 'linear';
-    newProfile.optimizations.texture_streaming = true;
-    newProfile.optimizations.geometry_compression = true;
-    newProfile.constraints.max_texture_memory *= 0.8;
-    
-    return newProfile;
-  }
-
-  /**
-   * Méthodes de calcul
-   */
-  private calculateAverageFPS(): number {
-    if (this.performanceHistory.length === 0) return 60;
-    
-    const recent = this.performanceHistory.slice(-60); // Dernière seconde
-    return recent.reduce((sum, m) => sum + m.current_fps, 0) / recent.length;
-  }
-
-  private calculateQualityScore(): number {
-    const profile = this.currentProfile;
-    let score = 0;
-    
-    score += profile.features.particles_enabled ? 0.2 : 0;
-    score += profile.features.shadows_enabled ? 0.2 : 0;
-    score += profile.features.post_processing ? 0.2 : 0;
-    score += profile.features.geometry_detail * 0.2;
-    score += profile.features.animation_quality * 0.2;
-    
-    return Math.max(0, Math.min(1, score));
-  }
-
-  /**
-   * Démarrage du monitoring de performance
-   */
   private startPerformanceMonitoring(): void {
-    setInterval(() => {
+    let frameCount = 0;
+    let lastTime = performance.now();
+    
+    const monitor = () => {
       if (!this.isRunning) return;
       
-      const metrics = this.collectPerformanceMetrics();
-      console.log(`📊 Performance - FPS: ${metrics.current_fps.toFixed(1)}, Quality: ${(this.currentProfile.quality_level * 100).toFixed(1)}%, Context: ${this.currentContext}`);
-    }, 5000);
-  }
-
-  /**
-   * API publique
-   */
-  public getCurrentProfile(): RenderingProfile {
-    return { ...this.currentProfile };
-  }
-
-  public setProfile(profileId: string): boolean {
-    const profile = this.profiles.get(profileId);
-    if (!profile) return false;
+      const currentTime = performance.now();
+      frameCount++;
+      
+      // Calcul FPS chaque seconde
+      if (currentTime - lastTime >= 1000) {
+        const fps = (frameCount * 1000) / (currentTime - lastTime);
+        this.performanceMetrics.current_fps = fps;
+        this.performanceMetrics.frame_time = 1000 / fps;
+        
+        // Mise à jour du quality manager
+        this.qualityManager.updatePerformanceMetrics(
+          fps,
+          this.performanceMetrics.draw_calls,
+          this.performanceMetrics.vertices,
+          this.performanceMetrics.memory_usage
+        );
+        
+        frameCount = 0;
+        lastTime = currentTime;
+      }
+      
+      requestAnimationFrame(monitor);
+    };
     
-    this.currentProfile = { ...profile };
-    console.log(`🎨 Profil changé: ${profile.name}`);
-    return true;
+    requestAnimationFrame(monitor);
   }
 
-  public getPerformanceMetrics(): PerformanceMetrics {
-    return this.collectPerformanceMetrics();
+  private startBatteryMonitoring(): void {
+    if (!this.adaptiveSettings.battery_saving) return;
+    
+    // Mise à jour initiale
+    this.batteryOptimizer.updateBatteryStatus();
+    
+    // Mise à jour périodique (toutes les 30 secondes)
+    setInterval(() => {
+      this.batteryOptimizer.updateBatteryStatus();
+    }, 30000);
   }
 
-  public getAdaptationStats(): any {
+  public getRenderingProfile(): RenderingProfile {
+    let profile = this.qualityManager.getCurrentProfile();
+    
+    // Optimisation batterie si activée
+    if (this.adaptiveSettings.battery_saving) {
+      profile = this.batteryOptimizer.optimizeProfile(profile);
+    }
+    
+    return profile;
+  }
+
+  public updateRenderingMetrics(drawCalls: number, vertices: number, memoryUsage: number): void {
+    this.performanceMetrics.draw_calls = drawCalls;
+    this.performanceMetrics.vertices = vertices;
+    this.performanceMetrics.memory_usage = memoryUsage;
+  }
+
+  public forceQualityLevel(level: 'ultra' | 'high' | 'balanced' | 'performance' | 'low'): void {
+    console.log(`🎯 Forçage du niveau de qualité: ${level}`);
+    this.qualityManager.setAdaptationEnabled(false);
+    
+    // Simulation de capacités pour forcer le niveau
+    const mockCapabilities: DeviceCapabilities = {
+      gpu: { performance_tier: level === 'ultra' ? 'ultra' : level === 'high' ? 'high' : 'medium' } as any,
+      cpu: { cores: 8 } as any,
+      memory: { device_memory: 8 } as any,
+      display: {} as any,
+      network: {} as any
+    };
+    
+    this.qualityManager.adaptQualityBasedOnCapabilities(mockCapabilities);
+  }
+
+  public enableAutoAdaptation(): void {
+    console.log('🔄 Activation de l\'adaptation automatique');
+    this.qualityManager.setAdaptationEnabled(true);
+  }
+
+  public updateSettings(settings: Partial<AdaptiveSettings>): void {
+    this.adaptiveSettings = { ...this.adaptiveSettings, ...settings };
+    console.log('⚙️ Paramètres mis à jour:', settings);
+  }
+
+  public getSystemStatus(): any {
+    const qualityMetrics = this.qualityManager.getPerformanceMetrics();
+    const batteryInfo = this.batteryOptimizer.getBatteryInfo();
+    const benchmarks = this.capabilityDetector.getBenchmarkResults();
+    
     return {
-      adaptations_count: this.adaptationCount,
-      ai_confidence: this.qualityAI.getConfidence(),
-      current_context: this.currentContext,
-      performance_score: this.frameController.getPerformanceScore(),
-      quality_level: this.currentProfile.quality_level,
-      target_fps: this.frameController.getTargetFPS()
+      adaptive_rendering_engine: {
+        running: this.isRunning,
+        capabilities: this.currentCapabilities,
+        current_profile: this.getRenderingProfile(),
+        settings: this.adaptiveSettings,
+        performance: {
+          ...this.performanceMetrics,
+          quality_metrics: qualityMetrics
+        },
+        battery: batteryInfo,
+        benchmarks: Object.fromEntries(benchmarks)
+      }
     };
   }
 
   public destroy(): void {
     this.isRunning = false;
-    console.log('🎨 Adaptive Rendering Engine arrêté');
+    console.log('🔥 Adaptive Rendering Engine arrêté');
   }
 }
 
 /**
- * 🌟 FACTORY POUR CRÉER LE MOTEUR DE RENDU ADAPTATIF
+ * 🏭 FACTORY POUR CRÉATION RAPIDE
  */
-export function createAdaptiveRenderingEngine(): AdaptiveRenderingEngine {
-  return new AdaptiveRenderingEngine();
-}
+export class AdaptiveRenderingEngineFactory {
+  public static async createOptimizedEngine(priority: 'quality' | 'performance' | 'balanced' = 'balanced'): Promise<AdaptiveRenderingEngine> {
+    const engine = new AdaptiveRenderingEngine();
+    
+    engine.updateSettings({
+      performance_priority: priority,
+      auto_quality: true,
+      battery_saving: priority !== 'quality',
+      adaptive_fps: true,
+      memory_management: true
+    });
+    
+    await engine.start();
+    
+    console.log(`🏭 Adaptive Rendering Engine créé (priorité: ${priority})`);
+    return engine;
+  }
 
-/**
- * 🎮 EXEMPLE D'UTILISATION
- */
-export const adaptiveRenderingExample = `
-// === UTILISATION DU MOTEUR DE RENDU ADAPTATIF ===
+  public static async createMobileOptimizedEngine(): Promise<AdaptiveRenderingEngine> {
+    const engine = new AdaptiveRenderingEngine();
+    
+    engine.updateSettings({
+      performance_priority: 'performance',
+      auto_quality: true,
+      battery_saving: true,
+      thermal_throttling: true,
+      adaptive_fps: true,
+      memory_management: true
+    });
+    
+    await engine.start();
+    
+    console.log('📱 Adaptive Rendering Engine optimisé mobile créé');
+    return engine;
+  }
 
-const renderingEngine = createAdaptiveRenderingEngine();
-
-// Initialisation
-await renderingEngine.initialize();
-
-// Dans la boucle de rendu
-function render(deltaTime) {
-  // Mise à jour du moteur adaptatif
-  renderingEngine.update(deltaTime);
-  
-  // Récupération du profil actuel
-  const profile = renderingEngine.getCurrentProfile();
-  
-  // Application des paramètres de rendu
-  applyRenderingSettings(profile);
-  
-  // Rendu selon le contexte
-  if (userInteracting) {
-    renderingEngine.setContext('interaction');
-  } else if (animationPlaying) {
-    renderingEngine.setContext('animation');
-  } else {
-    renderingEngine.setContext('idle');
+  public static async createDesktopOptimizedEngine(): Promise<AdaptiveRenderingEngine> {
+    const engine = new AdaptiveRenderingEngine();
+    
+    engine.updateSettings({
+      performance_priority: 'quality',
+      auto_quality: true,
+      battery_saving: false,
+      thermal_throttling: false,
+      adaptive_fps: false,
+      memory_management: true
+    });
+    
+    await engine.start();
+    
+    console.log('🖥️ Adaptive Rendering Engine optimisé desktop créé');
+    return engine;
   }
 }
 
-// Surveillance des performances
-setInterval(() => {
-  const stats = renderingEngine.getAdaptationStats();
-  console.log('Stats adaptation:', stats);
-}, 10000);
-`;
+// Export des types et classes
+export {
+  DeviceCapabilityDetector,
+  AdaptiveQualityManager,
+  BatteryOptimizer,
+  AdaptiveRenderingEngineFactory
+};
