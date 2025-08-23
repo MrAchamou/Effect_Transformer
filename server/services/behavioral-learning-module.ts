@@ -1,4 +1,3 @@
-
 /**
  * 🧠 MODULE D'APPRENTISSAGE COMPORTEMENTAL 2.0
  * 
@@ -14,6 +13,10 @@
  * @dependencies none
  * @intelligence_level advanced
  */
+
+import { type Transformation, type InsertTransformation } from "@shared/schema";
+import { randomUUID } from "crypto";
+import LearningPersistenceSystem from './learning-persistence-system';
 
 interface BehavioralPattern {
   id: string;
@@ -71,7 +74,8 @@ export class BehavioralLearningModule {
   private learningCache: Map<string, any> = new Map();
   private autonomousMode: boolean = true;
   private performanceMetrics: Map<string, number> = new Map();
-  
+  private persistenceSystem: LearningPersistenceSystem;
+
   // Configuration de l'apprentissage
   private readonly learningConfig = {
     max_patterns_per_user: 1000,
@@ -117,6 +121,8 @@ export class BehavioralLearningModule {
 
   constructor(config: Partial<typeof BehavioralLearningModule.prototype.learningConfig> = {}) {
     this.learningConfig = { ...this.learningConfig, ...config };
+    this.persistenceSystem = new LearningPersistenceSystem(); // Initialisation du système de persistance
+    this.loadLearningData(); // Chargement des données au démarrage
     this.initializeNeuralNetwork();
     this.setupPerformanceTracking();
     this.activate();
@@ -213,6 +219,7 @@ export class BehavioralLearningModule {
     this.updatePerformanceMetrics('interaction_processing', executionTime);
 
     console.log(`📝 Interaction enregistrée pour ${userId}: ${interaction.action}`);
+    this.saveLearningData(); // Sauvegarde après chaque interaction
   }
 
   /**
@@ -239,13 +246,13 @@ export class BehavioralLearningModule {
   private extractBehavioralPatterns(profile: UserProfile, interaction: any): void {
     // Analyse de fréquence d'actions
     this.analyzeActionFrequency(profile, interaction);
-    
+
     // Analyse de timing
     this.analyzeTimingPatterns(profile, interaction);
-    
+
     // Analyse de contexte
     this.analyzeContextualPatterns(profile, interaction);
-    
+
     // Analyse de séquences
     this.analyzeSequencePatterns(profile, interaction);
   }
@@ -288,7 +295,7 @@ export class BehavioralLearningModule {
   private analyzeTimingPatterns(profile: UserProfile, interaction: any): void {
     const hour = new Date(interaction.timestamp).getHours();
     const dayOfWeek = new Date(interaction.timestamp).getDay();
-    
+
     // Pattern horaire
     const hourPattern = this.getOrCreatePattern(
       profile, 
@@ -296,7 +303,7 @@ export class BehavioralLearningModule {
       { hour_range: this.getHourRange(hour) }
     );
     hourPattern.frequency++;
-    
+
     // Pattern jour de semaine
     const dayPattern = this.getOrCreatePattern(
       profile, 
@@ -330,7 +337,7 @@ export class BehavioralLearningModule {
     if (profile.interaction_history.length >= 2) {
       const previousAction = profile.interaction_history[profile.interaction_history.length - 2].action;
       const currentAction = interaction.action;
-      
+
       const sequencePattern = this.getOrCreatePattern(
         profile,
         'choice',
@@ -377,7 +384,7 @@ export class BehavioralLearningModule {
   private performAutonomousLearning(profile: UserProfile): void {
     // Nettoyage des patterns obsolètes
     this.cleanupObsoletePatterns(profile);
-    
+
     // Mise à jour du réseau de neurones
     if (profile.learning_metadata.total_interactions % this.learningConfig.network_update_interval === 0) {
       this.updateNeuralNetwork(profile);
@@ -418,7 +425,7 @@ export class BehavioralLearningModule {
    */
   private updateNeuralNetwork(profile: UserProfile): void {
     const trainingData = this.prepareTrainingData(profile);
-    
+
     if (trainingData.length < 10) return; // Pas assez de données
 
     for (const data of trainingData) {
@@ -441,13 +448,13 @@ export class BehavioralLearningModule {
     expected: number[];
   }> {
     const trainingData: Array<{ input: number[]; expected: number[] }> = [];
-    
+
     const interactions = profile.interaction_history.slice(-50); // 50 dernières
-    
+
     for (let i = 1; i < interactions.length; i++) {
       const current = interactions[i];
       const previous = interactions[i - 1];
-      
+
       // Input: contexte précédent normalisé (10 dimensions)
       const input = [
         this.normalizeValue(new Date(previous.timestamp).getHours(), 0, 23),
@@ -483,17 +490,17 @@ export class BehavioralLearningModule {
 
     for (let layer = 0; layer < this.neuralNetwork.weights.length; layer++) {
       const newActivation: number[] = [];
-      
+
       for (let j = 0; j < this.neuralNetwork.weights[layer].length; j++) {
         let sum = this.neuralNetwork.biases[layer][j];
-        
+
         for (let k = 0; k < activation.length; k++) {
           sum += activation[k] * this.neuralNetwork.weights[layer][j][k];
         }
-        
+
         newActivation.push(this.activationFunction(sum));
       }
-      
+
       activation = newActivation;
     }
 
@@ -512,7 +519,7 @@ export class BehavioralLearningModule {
 
     // Mise à jour simplifiée des poids (gradient descent basique)
     const lr = this.neuralNetwork.learning_rate;
-    
+
     // Mise à jour couche de sortie
     for (let i = 0; i < this.neuralNetwork.weights[1].length; i++) {
       for (let j = 0; j < this.neuralNetwork.weights[1][i].length; j++) {
@@ -554,7 +561,7 @@ export class BehavioralLearningModule {
     }
 
     const startTime = performance.now();
-    
+
     // Vérification du cache
     const cacheKey = `${userId}_${JSON.stringify(context)}`;
     if (this.learningCache.has(cacheKey)) {
@@ -575,19 +582,19 @@ export class BehavioralLearningModule {
 
     // Préparation des données d'entrée
     const inputVector = this.contextToVector(context, profile);
-    
+
     // Prédiction par réseau de neurones
     const neuralPrediction = this.feedForward(inputVector);
-    
+
     // Analyse des patterns comportementaux
     const patternPredictions = this.analyzePatternMatches(profile, context);
-    
+
     // Combinaison des prédictions
     const finalPrediction = this.combinePredictions(neuralPrediction, patternPredictions, profile);
-    
+
     // Génération des alternatives
     const alternatives = this.generateAlternatives(finalPrediction, profile, context);
-    
+
     // Construction du résultat
     const executionTime = performance.now() - startTime;
     const result: PredictionResult = {
@@ -620,33 +627,33 @@ export class BehavioralLearningModule {
    */
   private contextToVector(context: Record<string, any>, profile: UserProfile): number[] {
     const vector: number[] = [];
-    
+
     // Dimension 1-2: Timing
     const now = new Date();
     vector.push(this.normalizeValue(now.getHours(), 0, 23));
     vector.push(this.normalizeValue(now.getDay(), 0, 6));
-    
+
     // Dimension 3: Action récente
     const lastAction = profile.interaction_history[profile.interaction_history.length - 1]?.action || '';
     vector.push(this.encodeAction(lastAction));
-    
+
     // Dimension 4: Historique de succès
     const recentOutcomes = profile.interaction_history.slice(-10);
     const successRate = recentOutcomes.filter(i => i.outcome === 'positive').length / Math.max(recentOutcomes.length, 1);
     vector.push(successRate);
-    
+
     // Dimension 5-7: Contexte actuel
     vector.push(this.normalizeValue(Object.keys(context).length, 0, 10));
     vector.push(context.complexity ? this.normalizeValue(context.complexity, 0, 100) : 0.5);
     vector.push(context.priority ? this.normalizeValue(context.priority, 0, 10) : 0.5);
-    
+
     // Dimension 8-9: Profil utilisateur
     vector.push(this.normalizeValue(profile.learning_metadata.total_interactions, 0, 1000));
     vector.push(profile.learning_metadata.accuracy_score);
-    
+
     // Dimension 10: Similarité avec patterns existants
     vector.push(this.calculatePatternSimilarity(context, profile));
-    
+
     return vector;
   }
 
@@ -666,7 +673,7 @@ export class BehavioralLearningModule {
 
     for (const pattern of profile.behavioral_patterns) {
       if (pattern.confidence < this.learningConfig.confidence_threshold) continue;
-      
+
       const similarity = this.calculateContextSimilarity(pattern.context, context);
       if (similarity > 0.5) {
         const action = this.extractActionFromPattern(pattern);
@@ -697,12 +704,12 @@ export class BehavioralLearningModule {
     reasoning: string[];
   } {
     const reasoning: string[] = [];
-    
+
     // Analyse de la prédiction neuronale
     const neuralAction = this.interpretNeuralOutput(neuralPrediction);
     const neuralConfidence = Math.max(...neuralPrediction);
     reasoning.push(`Réseau de neurones suggère: ${neuralAction} (${(neuralConfidence * 100).toFixed(1)}%)`);
-    
+
     // Meilleure prédiction par patterns
     const bestPattern = patternPredictions[0];
     if (bestPattern) {
@@ -748,7 +755,7 @@ export class BehavioralLearningModule {
     probability: number;
   }> {
     const alternatives: Array<{ action: string; probability: number }> = [];
-    
+
     // Alternatives basées sur les préférences
     const sortedPreferences = Array.from(profile.preferences.entries())
       .sort((a, b) => b[1] - a[1])
@@ -782,19 +789,19 @@ export class BehavioralLearningModule {
    */
   private generateExploratoryActions(context: Record<string, any>): string[] {
     const actions: string[] = [];
-    
+
     // Actions basées sur le contexte
     if (context.type === 'effect') {
       actions.push('modify_parameters', 'try_variation', 'save_favorite');
     }
-    
+
     if (context.complexity && context.complexity > 5) {
       actions.push('simplify', 'get_help', 'use_template');
     }
 
     // Actions génériques utiles
     actions.push('preview', 'compare', 'share', 'bookmark');
-    
+
     return [...new Set(actions)]; // Dédoublonnage
   }
 
@@ -804,7 +811,7 @@ export class BehavioralLearningModule {
   private generateBasicPrediction(context: Record<string, any>): PredictionResult {
     const commonActions = ['preview', 'modify', 'save', 'share'];
     const action = commonActions[Math.floor(Math.random() * commonActions.length)];
-    
+
     return {
       predicted_action: action,
       confidence: 0.4,
@@ -847,6 +854,7 @@ export class BehavioralLearningModule {
     }
 
     console.log(`📊 Validation: ${wasAccurate ? '✅' : '❌'} ${predictedAction} -> ${actualAction}`);
+    this.saveLearningData(); // Sauvegarde après validation
   }
 
   /**
@@ -898,11 +906,11 @@ export class BehavioralLearningModule {
    */
   private calculateImpactScore(interaction: any): number {
     let score = 0.5;
-    
+
     if (interaction.outcome === 'positive') score += 0.3;
     if (interaction.context.priority > 5) score += 0.2;
     if (interaction.context.duration > 1000) score += 0.1;
-    
+
     return Math.min(1.0, score);
   }
 
@@ -923,16 +931,16 @@ export class BehavioralLearningModule {
     const keys1 = Object.keys(context1);
     const keys2 = Object.keys(context2);
     const allKeys = [...new Set([...keys1, ...keys2])];
-    
+
     if (allKeys.length === 0) return 1.0;
-    
+
     let matches = 0;
     for (const key of allKeys) {
       if (context1[key] === context2[key]) {
         matches++;
       }
     }
-    
+
     return matches / allKeys.length;
   }
 
@@ -941,11 +949,11 @@ export class BehavioralLearningModule {
    */
   private calculatePatternSimilarity(context: Record<string, any>, profile: UserProfile): number {
     if (profile.behavioral_patterns.length === 0) return 0.5;
-    
+
     const similarities = profile.behavioral_patterns.map(pattern =>
       this.calculateContextSimilarity(pattern.context, context)
     );
-    
+
     return similarities.reduce((sum, sim) => sum + sim, 0) / similarities.length;
   }
 
@@ -986,7 +994,7 @@ export class BehavioralLearningModule {
 
     const positiveOutcomes = recentInteractions.filter(i => i.outcome === 'positive').length;
     const accuracy = positiveOutcomes / recentInteractions.length;
-    
+
     profile.learning_metadata.accuracy_score = (profile.learning_metadata.accuracy_score + accuracy) / 2;
   }
 
@@ -1019,7 +1027,7 @@ export class BehavioralLearningModule {
     };
   } {
     const globalStats = Object.fromEntries(this.performanceMetrics);
-    
+
     // Calcul de la précision globale
     const totalPredictions = globalStats.predictions_made || 1;
     const accuratePredictions = globalStats.accurate_predictions || 0;
@@ -1059,7 +1067,7 @@ export class BehavioralLearningModule {
    */
   public configureLearning(config: Partial<typeof BehavioralLearningModule.prototype.learningConfig>): void {
     this.learningConfig = { ...this.learningConfig, ...config };
-    
+
     if (config.learning_rate) {
       this.neuralNetwork.learning_rate = config.learning_rate;
     }
@@ -1113,21 +1121,21 @@ export class BehavioralLearningModule {
   public importLearningData(dataJson: string): void {
     try {
       const data = JSON.parse(dataJson);
-      
+
       if (data.neural_network) {
         this.neuralNetwork = { ...this.neuralNetwork, ...data.neural_network };
       }
-      
+
       if (data.global_patterns) {
         this.globalPatterns = new Map(Object.entries(data.global_patterns));
       }
-      
+
       if (data.user_profile) {
         const profile = data.user_profile;
         profile.preferences = new Map(Object.entries(profile.preferences));
         this.userProfiles.set(profile.user_id, profile);
       }
-      
+
       if (data.all_user_profiles) {
         for (const profile of data.all_user_profiles) {
           profile.preferences = new Map(Object.entries(profile.preferences));
@@ -1138,6 +1146,30 @@ export class BehavioralLearningModule {
       console.log('📥 Données d\'apprentissage importées avec succès');
     } catch (error) {
       console.error('❌ Erreur import données:', error);
+    }
+  }
+
+  /**
+   * 💾 Sauvegarde des données d'apprentissage
+   */
+  private saveLearningData(): void {
+    const dataToSave = this.exportLearningData();
+    this.persistenceSystem.saveData(dataToSave);
+    console.log('💾 Données d\'apprentissage sauvegardées');
+  }
+
+  /**
+   * 📥 Chargement des données d'apprentissage
+   */
+  private loadLearningData(): void {
+    const loadedData = this.persistenceSystem.loadData();
+    if (loadedData) {
+      try {
+        this.importLearningData(loadedData);
+        console.log('📥 Données d\'apprentissage chargées au démarrage');
+      } catch (error) {
+        console.error('❌ Erreur lors du chargement des données d\'apprentissage:', error);
+      }
     }
   }
 
@@ -1156,13 +1188,14 @@ export class BehavioralLearningModule {
     // Optimisation des profils utilisateurs
     for (const [userId, profile] of this.userProfiles.entries()) {
       this.cleanupObsoletePatterns(profile);
-      
+
       // Suppression des profils inactifs (> 90 jours)
       if (now - profile.learning_metadata.last_updated > 90 * 24 * 60 * 60 * 1000) {
         this.userProfiles.delete(userId);
       }
     }
 
+    this.saveLearningData(); // Sauvegarde après nettoyage
     console.log('🧹 Nettoyage du module d\'apprentissage effectué');
   }
 
