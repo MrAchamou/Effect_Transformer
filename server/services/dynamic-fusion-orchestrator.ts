@@ -1,4 +1,3 @@
-
 /**
  * 🌟 DYNAMIC FUSION ORCHESTRATOR 2.0 - RÉVOLUTIONNAIRE 🌟
  * 
@@ -13,6 +12,11 @@
  * - Adaptation niveau par niveau
  * - Intelligence créative de fusion
  */
+
+import { AdvancedEnhancer } from './advanced-enhancer';
+import { AITransformer } from './ai-transformer';
+import { IntelligentCategorizer } from './intelligent-categorizer';
+import ContextualIntelligenceModerator from './contextual-intelligence-moderator';
 
 interface EffectEssence {
   core_behavior: {
@@ -92,6 +96,7 @@ export class DynamicFusionOrchestrator {
   private fusionEngine: CreativeFusionEngine;
   private reconstructor: EffectReconstructor;
   private enhancementIntegrator: EnhancementIntegrator;
+  private contextualModerator: ContextualIntelligenceModerator;
 
   constructor() {
     this.initializeFusionSystems();
@@ -108,6 +113,7 @@ export class DynamicFusionOrchestrator {
     this.fusionEngine = new CreativeFusionEngine();
     this.reconstructor = new EffectReconstructor();
     this.enhancementIntegrator = new EnhancementIntegrator();
+    this.contextualModerator = new ContextualIntelligenceModerator();
 
     console.log('⚡ Systèmes de fusion créative initialisés');
   }
@@ -342,7 +348,7 @@ export class DynamicFusionOrchestrator {
     // 1. EXTRACTION DE L'ESSENCE DE L'EFFET ORIGINAL
     console.log('🔍 Extraction de l\'essence créative...');
     const originalEssence = await this.essenceExtractor.extractEffectEssence(originalCode);
-    
+
     // 2. SÉLECTION ET ANALYSE DES MODULES ACTIFS
     console.log('📋 Sélection des modules de fusion...');
     const activeModules = this.selectModulesForLevel(selectedLevel);
@@ -360,25 +366,29 @@ export class DynamicFusionOrchestrator {
       fusionOptions
     );
 
-    // 4. FUSION CRÉATIVE INTELLIGENTE
-    console.log('⚡ Fusion créative en cours...');
-    const fusedEssence = await this.fusionEngine.performCreativeFusion(fusionBlueprint);
+    // 4. MODÉRATION CONTEXTUELLE DES PARAMÈTRES DE FUSION
+    console.log('🧠 Application de la modération contextuelle...');
+    const moderatedBlueprint = await this.contextualModerator.moderateFusionBlueprint(fusionBlueprint);
 
-    // 5. RECONSTRUCTION COMPLÈTE DE L'EFFET
+    // 5. FUSION CRÉATIVE INTELLIGENTE
+    console.log('⚡ Fusion créative en cours...');
+    const fusedEssence = await this.fusionEngine.performCreativeFusion(moderatedBlueprint);
+
+    // 6. RECONSTRUCTION COMPLÈTE DE L'EFFET
     console.log('🏗️ Reconstruction de l\'effet fusionné...');
     const reconstructedCode = await this.reconstructor.rebuildEffect(fusedEssence);
 
-    // 6. INTÉGRATION DES AMÉLIORATIONS
+    // 7. INTÉGRATION DES AMÉLIORATIONS
     console.log('✨ Intégration des améliorations finales...');
     const finalEffect = await this.enhancementIntegrator.integrateEnhancements(
       reconstructedCode,
-      fusionBlueprint
+      moderatedBlueprint // Utilisation du blueprint modéré
     );
 
-    // 7. GÉNÉRATION DU RAPPORT DE TRANSFORMATION
+    // 8. GÉNÉRATION DU RAPPORT DE TRANSFORMATION
     const transformationReport = this.generateTransformationReport(
       originalEssence,
-      fusionBlueprint,
+      moderatedBlueprint, // Utilisation du blueprint modéré
       finalEffect
     );
 
@@ -401,7 +411,7 @@ export class DynamicFusionOrchestrator {
    */
   private selectModulesForLevel(level: number): any[] {
     const selectedModules: any[] = [];
-    
+
     // Sélectionner tous les modules jusqu'au niveau demandé + modules universels
     this.moduleRegistry.forEach((moduleConfig, moduleId) => {
       if (moduleConfig.level <= level || moduleConfig.universal === true) {
@@ -417,13 +427,13 @@ export class DynamicFusionOrchestrator {
       // 1. Prioriser les modules universels
       if (a.universal && !b.universal) return -1;
       if (!a.universal && b.universal) return 1;
-      
+
       // 2. Prioriser par priorité spécifique
       if (a.priority && b.priority) return b.priority - a.priority;
-      
+
       // 3. Prioriser par niveau (plus élevé = plus important)
       if (a.level !== b.level) return b.level - a.level;
-      
+
       // 4. Prioriser par poids technique pour l'optimisation
       return b.technical_weight - a.technical_weight;
     });
@@ -439,7 +449,7 @@ export class DynamicFusionOrchestrator {
     options: any
   ): FusionBlueprint {
     const levelConfig = this.levelConfigurations.get(level)!;
-    
+
     return {
       original_essence: essence,
       active_modules: profiles,
@@ -482,7 +492,7 @@ export class DynamicFusionOrchestrator {
 
   private analyzeModuleContributions(modules: ModuleFusionProfile[]): Record<string, string[]> {
     const contributions: Record<string, string[]> = {};
-    
+
     modules.forEach(module => {
       contributions[module.module_id] = [
         `Poids de fusion: ${module.fusion_weight}`,
@@ -497,13 +507,13 @@ export class DynamicFusionOrchestrator {
 
   private identifyFusionInnovations(blueprint: FusionBlueprint): string[] {
     const innovations: string[] = [];
-    
+
     if (blueprint.fusion_strategy === 'revolutionary') {
       innovations.push('Reconstruction créative totale');
       innovations.push('Fusion quantique des comportements');
       innovations.push('Évolution esthétique automatique');
     }
-    
+
     if (blueprint.active_modules.length >= 15) {
       innovations.push('Intégration multi-modules complexe');
       innovations.push('Synergie créative avancée');
@@ -561,7 +571,7 @@ export class DynamicFusionOrchestrator {
 
   private calculateOverallSuccessRate(): number {
     if (this.fusionHistory.size === 0) return 100;
-    
+
     let totalSuccess = 0;
     this.fusionHistory.forEach(fusion => {
       totalSuccess += fusion.transformation_report.enhancement_metrics.module_integration_success;
@@ -722,7 +732,7 @@ class EffectEssenceExtractor {
   private assessCPUIntensity(code: string): string {
     const mathOperations = (code.match(/Math\./g) || []).length;
     const loops = (code.match(/for|while/g) || []).length;
-    
+
     if (mathOperations > 20 || loops > 10) return 'high';
     if (mathOperations > 10 || loops > 5) return 'medium';
     return 'low';
@@ -773,7 +783,7 @@ class ModuleFusionAnalyzer {
     for (const module of modules) {
       const compatibility = this.calculateModuleCompatibility(essence, module);
       const fusionWeight = this.calculateFusionWeight(essence, module, compatibility);
-      
+
       profiles.push({
         module_id: module.id,
         fusion_weight: fusionWeight,
@@ -794,7 +804,7 @@ class ModuleFusionAnalyzer {
     if (module.specialization === 'creativity' && essence.creative_dna.innovation_index > 0.7) {
       compatibility += 0.2;
     }
-    
+
     if (module.specialization === 'performance' && essence.technical_aspects.optimization_potential > 0.6) {
       compatibility += 0.15;
     }
@@ -804,7 +814,7 @@ class ModuleFusionAnalyzer {
 
   private calculateFusionWeight(essence: EffectEssence, module: any, compatibility: number): number {
     let weight = compatibility * 0.5; // Base sur compatibilité
-    
+
     // Poids basé sur le type de module et l'essence de l'effet
     weight += module.creative_weight * essence.creative_dna.innovation_index * 0.3;
     weight += module.technical_weight * essence.technical_aspects.optimization_potential * 0.2;
@@ -856,7 +866,7 @@ class ModuleFusionAnalyzer {
 class CreativeFusionEngine {
   async performCreativeFusion(blueprint: FusionBlueprint): Promise<any> {
     console.log(`🎨 Fusion créative avec stratégie: ${blueprint.fusion_strategy}`);
-    
+
     const fusedEssence = {
       original: blueprint.original_essence,
       enhanced_properties: this.enhanceProperties(blueprint),
@@ -870,7 +880,7 @@ class CreativeFusionEngine {
 
   private enhanceProperties(blueprint: FusionBlueprint): any {
     const enhancements: Record<string, any> = {};
-    
+
     blueprint.active_modules.forEach(module => {
       if (module.fusion_algorithm === 'creative' || module.fusion_algorithm === 'quantum') {
         enhancements[module.module_id] = {
@@ -886,7 +896,7 @@ class CreativeFusionEngine {
 
   private integrateModules(blueprint: FusionBlueprint): any {
     const integrations: Record<string, any> = {};
-    
+
     blueprint.active_modules.forEach(module => {
       integrations[module.module_id] = {
         integration_strength: module.fusion_weight,
@@ -919,7 +929,7 @@ class CreativeFusionEngine {
 
   private calculateAestheticEvolution(blueprint: FusionBlueprint): number {
     let evolution = blueprint.original_essence.creative_dna.innovation_index;
-    
+
     blueprint.active_modules.forEach(module => {
       if (module.creative_contribution.aesthetic_enhancement > 0.5) {
         evolution += module.fusion_weight * 0.3;
@@ -931,7 +941,7 @@ class CreativeFusionEngine {
 
   private calculateBehavioralSophistication(blueprint: FusionBlueprint): number {
     let sophistication = blueprint.original_essence.creative_dna.complexity_factor;
-    
+
     blueprint.active_modules.forEach(module => {
       sophistication += module.behavioral_influence.animation_sophistication * module.fusion_weight * 0.2;
     });
@@ -957,10 +967,10 @@ class CreativeFusionEngine {
   private calculateFusionHarmony(blueprint: FusionBlueprint): number {
     // Calculer l'harmonie entre l'essence originale et les modules
     let harmony = 0.8; // Base élevée
-    
+
     const totalWeight = blueprint.active_modules.reduce((sum, m) => sum + m.fusion_weight, 0);
     const averageWeight = totalWeight / blueprint.active_modules.length;
-    
+
     if (averageWeight > 0.7) harmony += 0.1;
     if (blueprint.fusion_strategy === 'balanced') harmony += 0.05;
 
@@ -970,7 +980,7 @@ class CreativeFusionEngine {
   private calculateCreativeCoherence(blueprint: FusionBlueprint): number {
     // Mesurer la cohérence créative du résultat
     let coherence = blueprint.original_essence.creative_dna.innovation_index;
-    
+
     const creativeModules = blueprint.active_modules.filter(m => m.fusion_algorithm === 'creative' || m.fusion_algorithm === 'quantum');
     coherence += creativeModules.length * 0.05;
 
@@ -980,7 +990,7 @@ class CreativeFusionEngine {
   private calculateInnovationIntegration(blueprint: FusionBlueprint): number {
     // Évaluer l'intégration des innovations
     let integration = 0.6; // Base
-    
+
     blueprint.active_modules.forEach(module => {
       if (module.creative_contribution.behavioral_innovation > 0.6) {
         integration += 0.1;
@@ -992,7 +1002,7 @@ class CreativeFusionEngine {
 
   private generatePerformanceOptimizations(blueprint: FusionBlueprint): any[] {
     const optimizations: any[] = [];
-    
+
     blueprint.active_modules.forEach(module => {
       if (module.technical_enhancement.performance_optimization > 0.5) {
         optimizations.push({
@@ -1036,19 +1046,19 @@ class CreativeFusionEngine {
 class EffectReconstructor {
   async rebuildEffect(fusedEssence: any): Promise<string> {
     console.log('🏗️ Reconstruction complète de l\'effet...');
-    
+
     // Générer le nouveau code basé sur l'essence fusionnée
     let reconstructedCode = this.generateReconstructedCode(fusedEssence);
-    
+
     // COMPRESSION ET OPTIMISATION UNIVERSELLE
     reconstructedCode = await this.applyUniversalOptimization(reconstructedCode);
-    
+
     return reconstructedCode;
   }
 
   private async applyUniversalOptimization(code: string): Promise<string> {
     console.log('⚡ Application optimisation universelle...');
-    
+
     // 1. SUPPRESSION ESPACES ET COMMENTAIRES INUTILES
     let optimized = code
       .replace(/\/\*[\s\S]*?\*\//g, '') // Supprimer commentaires multi-lignes
@@ -1063,12 +1073,12 @@ class EffectReconstructor {
 
     // 2. COMPACTAGE AVANCÉ
     optimized = this.advancedCompression(optimized);
-    
+
     // 3. REFORMULATION INTELLIGENTE
     optimized = this.intelligentReformulation(optimized);
-    
+
     console.log(`✅ Code réduit de ${code.length} à ${optimized.length} caractères (-${Math.round((1 - optimized.length/code.length) * 100)}%)`);
-    
+
     return optimized;
   }
 
@@ -1116,7 +1126,7 @@ export class FusedEffect{
     this.initializeFusedCore(options);
     this.setupEnhancedBehaviors();
     this.activateModuleIntegrations();
-    
+
     console.log('🌟 Effet fusionné révolutionnaire activé');
   }
 
@@ -1125,7 +1135,7 @@ export class FusedEffect{
     this.originalEssence = ${JSON.stringify(essence.original, null, 2)};
     this.enhancedProperties = ${JSON.stringify(essence.enhanced_properties, null, 2)};
     this.creativeEvolution = ${JSON.stringify(essence.creative_evolution, null, 2)};
-    
+
     // Fusion des paramètres originaux avec les améliorations
     this.fusedConfig = this.mergeFusedConfiguration(options);
   }
@@ -1164,7 +1174,7 @@ export default FusedEffect;
 
   private generateBehaviorIntegrations(essence: any): string {
     let integrations = '';
-    
+
     Object.entries(essence.module_integrations).forEach(([moduleId, integration]: [string, any]) => {
       integrations += `
     // Intégration ${moduleId}
@@ -1181,7 +1191,7 @@ export default FusedEffect;
 
   private generateModuleActivations(essence: any): string {
     let activations = '';
-    
+
     Object.keys(essence.module_integrations).forEach(moduleId => {
       activations += `
     // Activation module ${moduleId}
@@ -1200,7 +1210,7 @@ export default FusedEffect;
     this.applyCreativeEvolution(deltaTime);
     this.executeModuleEnhancements(deltaTime);
     this.optimizePerformance(deltaTime);
-    
+
     // Animation basée sur l'essence créative originale
     if (this.originalEssence.core_behavior.animation_type === 'particle_system') {
       this.animateParticleSystemFused(deltaTime);
@@ -1216,16 +1226,16 @@ export default FusedEffect;
     return `
     // Rendu fusionné optimisé
     context.save();
-    
+
     // Application des améliorations visuelles
     this.applyAestheticEnhancements(context);
-    
-    // Rendu principal basé sur l'essence
+
+    // Rendu principal fusionné
     this.renderFusedCore(context);
-    
+
     // Application des optimisations de performance
     this.applyPerformanceOptimizations(context);
-    
+
     context.restore();
 `;
   }
@@ -1233,7 +1243,7 @@ export default FusedEffect;
   private generateUtilityMethods(essence: any): string {
     return `
   // === MÉTHODES UTILITAIRES FUSIONNÉES ===
-  
+
   mergeFusedConfiguration(options) {
     return {
       ...this.originalEssence.core_behavior.visual_properties,
@@ -1335,10 +1345,10 @@ export default FusedEffect;
 class EnhancementIntegrator {
   async integrateEnhancements(code: string, blueprint: FusionBlueprint): Promise<any> {
     console.log('✨ Intégration des améliorations finales...');
-    
+
     const finalCode = this.applyFinalEnhancements(code, blueprint);
     const evolutionSummary = this.generateEvolutionSummary(blueprint);
-    
+
     return {
       code: finalCode,
       evolution_summary: evolutionSummary
@@ -1347,7 +1357,7 @@ class EnhancementIntegrator {
 
   private applyFinalEnhancements(code: string, blueprint: FusionBlueprint): string {
     let enhancedCode = code;
-    
+
     // Application des améliorations finales basées sur la stratégie
     if (blueprint.fusion_strategy === 'revolutionary') {
       enhancedCode = this.applyRevolutionaryEnhancements(enhancedCode);
@@ -1398,7 +1408,7 @@ console.log('🏛️ EFFET FONDAMENTAL - Bases solides établies');
 
   private summarizeAestheticImprovements(blueprint: FusionBlueprint): string[] {
     const improvements: string[] = [];
-    
+
     if (blueprint.expected_transformation.visual_enhancement > 70) {
       improvements.push('Amélioration visuelle majeure');
       improvements.push('Esthétique révolutionnaire');
@@ -1412,9 +1422,9 @@ console.log('🏛️ EFFET FONDAMENTAL - Bases solides établies');
 
   private summarizeBehavioralEnhancements(blueprint: FusionBlueprint): string[] {
     const enhancements: string[] = [];
-    
+
     enhancements.push(`${blueprint.active_modules.length} modules de comportement intégrés`);
-    
+
     if (blueprint.expected_transformation.creative_evolution > 80) {
       enhancements.push('Évolution comportementale révolutionnaire');
     }
@@ -1424,11 +1434,11 @@ console.log('🏛️ EFFET FONDAMENTAL - Bases solides établies');
 
   private summarizePerformanceOptimizations(blueprint: FusionBlueprint): string[] {
     const optimizations: string[] = [];
-    
+
     if (blueprint.expected_transformation.performance_boost > 50) {
       optimizations.push('Optimisation performance majeure');
     }
-    
+
     optimizations.push('Intégration modules de performance');
     optimizations.push('Optimisations automatiques');
 
@@ -1437,12 +1447,12 @@ console.log('🏛️ EFFET FONDAMENTAL - Bases solides établies');
 
   private summarizeInnovationBreakthroughs(blueprint: FusionBlueprint): string[] {
     const breakthroughs: string[] = [];
-    
+
     if (blueprint.fusion_strategy === 'revolutionary') {
       breakthroughs.push('Breakthrough technologique majeur');
       breakthroughs.push('Innovation créative révolutionnaire');
     }
-    
+
     if (blueprint.active_modules.length >= 20) {
       breakthroughs.push('Intégration complexe multi-modules');
     }
